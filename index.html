@@ -649,7 +649,12 @@
     <div class="bn" data-i18n="name_div">Your division?</div>
     <div id="divGrid"></div>
     <div class="bn" style="margin-top:10px;">🎭 Avatar</div>
-    <div id="avatarGrid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0;"></div>
+    <button id="avatarPreviewBtn" type="button" style="display:flex;align-items:center;gap:10px;width:100%;background:rgba(255,255,255,.08);border:2px solid var(--gold);border-radius:14px;padding:8px 12px;cursor:pointer;font-family:inherit;color:#fff;margin:8px 0;">
+      <img id="avatarPreviewImg" alt="avatar" style="width:52px;height:52px;border-radius:50%;background:#fff;object-fit:cover;flex-shrink:0;">
+      <span style="flex:1;text-align:left;"><b id="avatarPreviewName" style="display:block;font-size:16px;">Avatar 1</b><small style="color:var(--panel-soft);font-size:12px;">Tap to change 👇</small></span>
+      <span id="avatarPreviewChev" style="font-size:22px;color:var(--gold);">▾</span>
+    </button>
+    <div id="avatarGrid" style="display:none;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0;max-height:220px;overflow-y:auto;touch-action:pan-y;padding:4px;background:rgba(0,0,0,.3);border-radius:12px;border:2px solid rgba(255,255,255,.15);"></div>
     <button class="btn" id="nameBtn" data-i18n="name_go">Start</button>
     <div class="bn" style="margin-top:14px;opacity:.8">🔑 <span id="codeLbl">Have a recovery code?</span></div>
     <div style="display:flex;gap:8px;margin-top:6px;">
@@ -5169,35 +5174,79 @@ function avatarUrl(i) {
   var seed = AVATAR_SEEDS[Math.floor(i / AVATAR_STYLES.length) % AVATAR_SEEDS.length];
   return 'https://api.dicebear.com/7.x/' + AVATAR_STYLES[s] + '/svg?seed=' + encodeURIComponent(seed);
 }
-function renderAvatarPicker() {
+var avatarListOpen = false, avatarBuilt = false;
+function renderAvatarPreview() {
   try {
-    var el = $('avatarGrid'); if (!el) return;
+    var img = $('avatarPreviewImg'), nm = $('avatarPreviewName'), chev = $('avatarPreviewChev');
+    if (img) {
+      img.src = avatarUrl(selAvatar);
+      img.onerror = function () { img.onerror = null; img.src = avatarUrl(0); };
+    }
+    if (nm) nm.textContent = 'Avatar ' + (selAvatar + 1);
+    if (chev) chev.textContent = avatarListOpen ? '▴' : '▾';
+  } catch (e) {}
+}
+function toggleAvatarList(force) {
+  avatarListOpen = (typeof force === 'boolean') ? force : !avatarListOpen;
+  var el = $('avatarGrid');
+  if (el) {
+    el.style.display = avatarListOpen ? 'grid' : 'none';
+    if (avatarListOpen && !avatarBuilt) { buildAvatarGrid(); }
+  }
+  renderAvatarPreview();
+}
+function buildAvatarGrid() {
+  try {
+    var el = $('avatarGrid'); if (!el || avatarBuilt) return;
+    avatarBuilt = true;
     var total = AVATAR_STYLES.length * AVATAR_SEEDS.length;
     el.innerHTML = '';
     for (var i = 0; i < total; i++) {
-      var b = document.createElement('button');
-      b.className = 'divBtn' + (i === selAvatar ? ' sel' : '');
-      b.setAttribute('data-av', i);
-      b.style.padding = '2px';
-      b.style.overflow = 'hidden';
-      var img = document.createElement('img');
-      img.src = avatarUrl(i);
-      img.style.width = '100%'; img.style.height = '100%';
-      img.style.borderRadius = '8px';
-      img.style.display = 'block';
-      img.loading = 'lazy';
-      b.appendChild(img);
-      el.appendChild(b);
+      (function (idx) {
+        var b = document.createElement('button');
+        b.className = 'divBtn' + (idx === selAvatar ? ' sel' : '');
+        b.setAttribute('data-av', idx);
+        b.style.padding = '2px';
+        b.style.overflow = 'hidden';
+        b.style.display = 'none'; // sudhu full-load hole dekha jabe
+        b.style.background = '#fff';
+        var img = document.createElement('img');
+        img.style.width = '100%'; img.style.height = '100%';
+        img.style.borderRadius = '8px';
+        img.style.display = 'block';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.onload = function () { b.style.display = 'block'; };
+        img.onerror = function () { try { b.parentNode && b.parentNode.removeChild(b); } catch (e) {} };
+        img.src = avatarUrl(idx);
+        img.alt = 'Avatar ' + (idx + 1);
+        b.appendChild(img);
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          selAvatar = idx;
+          try { localStorage.setItem('rrAvatar', String(selAvatar)); } catch (e2) {}
+          Array.prototype.forEach.call(el.querySelectorAll('[data-av]'), function (x) {
+            x.classList.toggle('sel', +x.getAttribute('data-av') === selAvatar);
+          });
+          renderAvatarPreview(); renderProfile();
+          try { toggleAvatarList(false); } catch (e2) {}
+          try { sfx.move(); } catch (e2) {}
+        });
+        el.appendChild(b);
+      })(i);
     }
-    Array.prototype.forEach.call(el.querySelectorAll('[data-av]'), function (b) {
-      b.addEventListener('click', function (e) {
-        e.stopPropagation();
-        selAvatar = +b.getAttribute('data-av');
-        try { localStorage.setItem('rrAvatar', String(selAvatar)); } catch (e2) {}
-        renderAvatarPicker(); renderProfile();
-        try { sfx.move(); } catch (e2) {}
-      });
-    });
+  } catch (e) {}
+}
+function renderAvatarPicker() {
+  try {
+    renderAvatarPreview();
+    var btn = $('avatarPreviewBtn');
+    if (btn && !btn._avBound) {
+      btn._avBound = true;
+      btn.addEventListener('click', function (e) { e.stopPropagation(); toggleAvatarList(); try { sfx.move(); } catch (e2) {} });
+    }
+    // list age theke build kori na — preview-te click korle tobe-i load hobe
+    if (avatarListOpen) buildAvatarGrid();
   } catch (e) {}
 }
 function getAvatar() { return avatarUrl(selAvatar); }
@@ -5224,7 +5273,7 @@ function renderProfile() {
   try {
     var bn = lang === 'bn';
     if ($('profName')) $('profName').textContent = playerName || (bn ? 'রাইডার' : 'Rider');
-    if ($('profAvatar')) $('profAvatar').innerHTML = '<img src="' + getAvatar() + '" style="width:64px;height:64px;border-radius:50%;border:3px solid var(--gold);">';
+    if ($('profAvatar')) $('profAvatar').innerHTML = '<img src="' + getAvatar() + '" style="width:64px;height:64px;border-radius:50%;border:3px solid var(--gold);background:#fff;" onerror="this.style.display=\'none\';this.parentNode.textContent=\'🏍️\'">';
     if ($('profDiv')) $('profDiv').textContent = '📍 ' + (playerDiv ? divName(playerDiv) : '');
     if ($('profLvl')) $('profLvl').textContent = riderLevel;
     if ($('profBest')) $('profBest').textContent = best;
