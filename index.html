@@ -2567,52 +2567,78 @@ function makeRails(x, z, parent) { // rail line + sleepers
 }
 function makeLegLandmark(idx, side, z, parent) {
   var x = side * (9.5 + rnd(0, 3));
-  if (idx === 0) { // Rangpur: Carmichael gate (sada colonial) + town
+  var L = LEGS[idx] || LEGS[0], kind = L.lm || 'paddy', nm = legName(L);
+  function board(bg) { legBoard(100 + idx, nm, bg, x - side * 2.2, 1.9, z + 2, side, parent); }
+  if (kind === 'town') { // bysto shohor: dokan + busstand
     box(4.2, 2.2, 2.2, 0xf0ead8, x, 1.1, z, parent);
     for (var cl = -1.5; cl <= 1.5; cl++) cyl(0.12, 2.0, 0.12, 0xffffff, x + cl, 1.0, z + (side > 0 ? -1.25 : 1.25), parent);
     box(4.4, 0.45, 2.4, 0xc23b3b, x, 2.42, z, parent);
     box(1.0, 1.4, 0.1, 0x6b4a2f, x, 0.7, z + (side > 0 ? -1.15 : 1.15), parent);
-    legBoard(100 + idx, LANDMARK_TX[0][lang], '#2d7a4f', x - side * 2.8, 1.9, z + 2, side, parent);
-  } else if (idx === 1) { // Dinajpur: Kantajew mondir (terracotta) + lichu dokan
+    makeUmbrella(x + side * 3.5, z + 1.5, parent, 0xc23b3b);
+    board('#2d7a4f');
+  } else if (kind === 'temple') { // oitihasik mondir (terracotta)
     box(3.2, 0.5, 3.2, 0x9a4a2a, x, 0.25, z, parent);
     box(2.4, 0.5, 2.4, 0xa8542f, x, 0.75, z, parent);
     box(1.6, 0.5, 1.6, 0xb05c33, x, 1.25, z, parent);
     cyl(0.1, 0.8, 0.1, 0xc9a86a, x, 1.9, z, parent);
-    makeUmbrella(x + side * 3.5, z + 1.5, parent, 0xc23b3b); // lichu dokan
-    legBoard(100 + idx, LANDMARK_TX[1][lang], '#8a5a2e', x - side * 2.4, 1.9, z + 2, side, parent);
-  } else if (idx === 2) { // Thakurgaon: dhan khet + rural bazar stall
-    for (var r = 0; r < 3; r++) box(3.0, 0.5, 0.5, r % 2 ? 0x7ab648 : 0x8fc25a, x + (r - 1) * 0.2, 0.25, z - 1 + r * 1.1, parent);
-    makeUmbrella(x + side * 3.2, z + 1, parent, 0x2d7a4f);
-    legBoard(100 + idx, LANDMARK_TX[2][lang], '#2d7a4f', x - side * 1.8, 1.9, z + 2, side, parent);
-  } else if (idx === 3) { // Panchagarh: cha bagan + border pillar
+    board('#8a5a2e');
+  } else if (kind === 'tea') { // cha bagan + border pillar
     makeTeaBush(x, z, parent); makeTeaBush(x + 1.8, z + 1.2, parent);
-    box(0.5, 1.6, 0.5, 0xf0ead8, x + side * 3.5, 0.8, z, parent); // border pillar
+    box(0.5, 1.6, 0.5, 0xf0ead8, x + side * 3.5, 0.8, z, parent);
     box(0.54, 0.3, 0.54, 0x2d7a4f, x + side * 3.5, 1.7, z, parent);
-    legBoard(100 + idx, LANDMARK_TX[3][lang], '#3d6fa5', x - side * 2.2, 1.9, z + 2, side, parent);
-  } else if (idx === 4) { // Nilphamari: Saidpur station + railway
-    box(3.4, 2.0, 2.2, 0xe8d8b0, x, 1.0, z, parent);
-    box(3.6, 0.3, 2.4, 0xc23b3b, x, 2.15, z, parent);
-    makeRails(x - side * 4.2, z, parent);
-    legBoard(100 + idx, LANDMARK_TX[4][lang], '#c23b3b', x - side * 2.6, 1.9, z + 2, side, parent);
-  } else if (idx === 5) { // Lalmonirhat: rail crossing + Teesta barrage wall
-    makeRails(x, z, parent);
-    box(4.5, 1.0, 0.5, 0x9aa0a8, x + side * 4.0, 0.5, z - 1, parent); // barrage
-    box(0.15, 2.2, 0.15, 0xdddddd, x - side * 2.5, 1.1, z + 1.5, parent);
-    box(1.2, 0.3, 0.1, 0xdd2222, x - side * 2.5, 2.0, z + 1.5, parent); // crossing sign
-    legBoard(100 + idx, LANDMARK_TX[5][lang], '#3d6fa5', x - side * 1.8, 1.9, z + 2, side, parent);
-  } else if (idx === 6) { // Kurigram: Dharla bridge + char nouka
+    board('#3d6fa5');
+  } else if (kind === 'rail') { // rail line + station/crossing
+    makeRails(x - side * 3.5, z, parent);
+    box(3.0, 1.8, 2.0, 0xe8d8b0, x + side * 1.5, 0.9, z, parent);
+    box(3.2, 0.3, 2.2, 0xc23b3b, x + side * 1.5, 1.95, z, parent);
+    board('#c23b3b');
+  } else if (kind === 'bridge') { // nodi bridge + nouka
     box(0.5, 2.2, 0.5, 0x8a8a8a, x - 1.8, 1.1, z, parent);
     box(0.5, 2.2, 0.5, 0x8a8a8a, x + 1.8, 1.1, z, parent);
     box(4.6, 0.35, 1.2, 0x9aa0a8, x, 2.35, z, parent);
-    var boat = new THREE.Group(); boat.position.set(x + side * 3.5, 0.05, z + 1); parent.add(boat);
-    box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, boat);
-    legBoard(100 + idx, LANDMARK_TX[6][lang], '#2d7a4f', x - side * 2.6, 1.9, z, side, parent);
-  } else { // Gaibandha: Balashi ferry ghat + nouka + pukur
+    var btb = new THREE.Group(); btb.position.set(x + side * 3.5, 0.05, z + 1); parent.add(btb);
+    box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, btb);
+    board('#2d7a4f');
+  } else if (kind === 'ghat') { // ferry ghat + nouka + pukur
     makePond(x, z, parent);
-    var boat2 = new THREE.Group(); boat2.position.set(x - side * 1.5, 0.05, z + 0.5); parent.add(boat2);
-    box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, boat2);
-    box(2.6, 0.15, 1.4, 0x8a6a3f, x + side * 4.0, 0.35, z - 1, parent); // ghat platform
-    legBoard(100 + idx, LANDMARK_TX[7][lang], '#2d7a4f', x - side * 1.8, 1.9, z + 2, side, parent);
+    var gbt = new THREE.Group(); gbt.position.set(x - side * 1.5, 0.05, z + 0.5); parent.add(gbt);
+    box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, gbt);
+    box(2.6, 0.15, 1.4, 0x8a6a3f, x + side * 4.0, 0.35, z - 1, parent);
+    board('#2d7a4f');
+  } else if (kind === 'border') { // simanto: pillar + checkpoint bar
+    box(0.5, 1.6, 0.5, 0xf0ead8, x, 0.8, z, parent);
+    box(0.54, 0.3, 0.54, 0x2d7a4f, x, 1.7, z, parent);
+    box(0.18, 2.4, 0.18, 0xdddddd, x + side * 3.0, 1.2, z, parent);
+    box(3.0, 0.25, 0.12, 0xdd2222, x + side * 1.5, 2.2, z, parent);
+    board('#7a4a1a');
+  } else if (kind === 'airport') { // Saidpur: tower + runway strip
+    box(1.2, 4.5, 1.2, 0x9aa0a8, x, 2.25, z, parent);
+    box(2.0, 1.0, 2.0, 0x3d6fa5, x, 5.0, z, parent);
+    box(6.0, 0.06, 1.6, 0x444444, x + side * 4.5, 0.03, z - 1, parent);
+    makeRails(x - side * 4.0, z + 1.5, parent);
+    board('#3d6fa5');
+  } else if (kind === 'highway') { // mohasorok: truck + roadside dokan
+    box(2.2, 1.6, 1.4, pick([0x2d7a4f, 0x3d6fa5, 0xff8c1a]), x, 1.0, z, parent);
+    box(2.2, 0.5, 1.4, 0x333333, x, 0.25, z, parent);
+    makeUmbrella(x + side * 3.5, z + 1.5, parent, 0xffc83d);
+    board('#8a5a2e');
+  } else if (kind === 'river') { // nodi/chor: pani + nouka + ghat
+    var w = 5 + Math.random() * 2;
+    var wp = new THREE.Mesh(new THREE.PlaneGeometry(w, 3), waterMat);
+    wp.rotation.x = -Math.PI / 2; wp.position.set(x, 0.02, z); parent.add(wp);
+    var rbt = new THREE.Group(); rbt.position.set(x + 1, 0.05, z + 0.5); parent.add(rbt);
+    box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, rbt);
+    box(2.0, 0.12, 1.0, 0x8a6a3f, x - side * 3.0, 0.3, z - 1, parent);
+    board('#2d7a4f');
+  } else if (kind === 'market') { // gramin bazar: stall sari
+    makeUmbrella(x - 1.5, z, parent, 0xc23b3b);
+    makeUmbrella(x + 1.5, z + 1, parent, 0x2d7a4f);
+    makeUmbrella(x, z - 1.5, parent, 0xffc83d);
+    board('#8a5a2e');
+  } else { // paddy: dhan khet
+    for (var r = 0; r < 3; r++) box(3.0, 0.5, 0.5, r % 2 ? 0x7ab648 : 0x8fc25a, x + (r - 1) * 0.2, 0.25, z - 1 + r * 1.1, parent);
+    makeUmbrella(x + side * 3.2, z + 1, parent, 0x2d7a4f);
+    board('#2d7a4f');
   }
 }
 function addLegGate() { // map surute rasta-jure swagotom gate
@@ -3385,7 +3411,7 @@ var BANNERS_TX = [
   ['Welcome Rangpur', 'স্বাগতম রংপুর'], ['Nobanno Fest', 'নবান্ন উৎসব']
 ];
 function legName(l) { return lang === 'bn' ? l.bn : l.en; }
-function legReal(l) { var i = LEGS.indexOf(l); return lang === 'bn' ? l.real : (REAL_EN[i] || l.real); }
+function legReal(l) { return lang === 'bn' ? l.real : (l.re || l.real); }
 function bikeColName(i) { return (lang === 'bn' ? BIKE_BN : BIKE_EN)[i % BIKE_BN.length]; }
 function bikeName(i) { return bikeColName(i); }
 function bikeTag(i) { return (lang === 'bn' ? TAG_BN : TAG_EN)[i % TAG_BN.length]; }
@@ -3758,16 +3784,84 @@ function diffK() { try { var L = (typeof leg === 'function' ? leg().len : 5000) 
 var GRAV = 36, JUMP_V = 12.5; // jump height ~2.17m: mud/goat/bull/rickshaw par, bus/truck dodge
 var LOCS = [[0, 'Rangpur Town', 'রংপুর শহর'], [350, 'Modern More', 'মডার্ন মোড়'], [900, 'Pairaband', 'পায়রাবন্দ'],
             [1600, 'Taraganj', 'তারাগঞ্জ'], [2500, 'Badarganj', 'বদরগঞ্জ'], [3600, 'Mithapukur', 'মিঠাপুকুর'], [5000, 'Kaunia', 'কাউনিয়া']];
-/* ---------- Rangpur Division route (proti zilla ~4 min) ---------- */
+/* ---------- Rangpur Division: 58 upazila, proti thana ~2 min (2900m) ---------- */
 var LEGS = [
-  { bn: 'রংপুর', en: 'Rangpur', len: 5800, theme: 'town', real: '০ কি.মি.', de: 'Jahaj Company Mor', db: 'জাহাজ কোম্পানি মোড়' },
-  { bn: 'দিনাজপুর', en: 'Dinajpur', len: 5800, theme: 'town', real: '৬৫ কি.মি.', de: 'Dinajpur Sadar', db: 'দিনাজপুর সদর' },
-  { bn: 'ঠাকুরগাঁও', en: 'Thakurgaon', len: 5800, theme: 'village', real: '৯০ কি.মি.', de: 'Ranisankail Road', db: 'রানীশংকৈল রোড' },
-  { bn: 'পঞ্চগড়', en: 'Panchagarh', len: 5800, theme: 'tea', real: '১০৫ কি.মি.', de: 'Banglabandha Road', db: 'বাংলাবান্ধা রোড' },
-  { bn: 'নীলফামারী', en: 'Nilphamari', len: 5800, theme: 'town', real: '৬০ কি.মি.', de: 'Saidpur', db: 'সৈয়দপুর' },
-  { bn: 'লালমনিরহাট', en: 'Lalmonirhat', len: 5800, theme: 'village', real: '৪৫ কি.মি.', de: 'Burimari Road', db: 'বুড়িমারী রোড' },
-  { bn: 'কুড়িগ্রাম', en: 'Kurigram', len: 5800, theme: 'village', real: '৫০ কি.মি.', de: 'Dharla Bridge', db: 'ধরলা ব্রিজ' },
-  { bn: 'গাইবান্ধা', en: 'Gaibandha', len: 5800, theme: 'village', real: '৭৫ কি.মি.', de: 'Balashi Ghat Road', db: 'বালাসী ঘাট রোড' }
+  // 🟢 রংপুর — ৮
+  { bn: 'রংপুর সদর', en: 'Rangpur Sadar', len: 2900, theme: 'town', lm: 'town', real: '০ কি.মি.', re: '0 km' },
+  { bn: 'গঙ্গাচড়া', en: 'Gangachara', len: 2900, theme: 'village', lm: 'river', real: '১২ কি.মি.', re: '12 km' },
+  { bn: 'তারাগঞ্জ', en: 'Taraganj', len: 2900, theme: 'village', lm: 'highway', real: '২০ কি.মি.', re: '20 km' },
+  { bn: 'বদরগঞ্জ', en: 'Badarganj', len: 2900, theme: 'village', lm: 'paddy', real: '২৮ কি.মি.', re: '28 km' },
+  { bn: 'মিঠাপুকুর', en: 'Mithapukur', len: 2900, theme: 'village', lm: 'highway', real: '২২ কি.মি.', re: '22 km' },
+  { bn: 'পীরগঞ্জ', en: 'Pirganj', len: 2900, theme: 'village', lm: 'market', real: '৩৫ কি.মি.', re: '35 km' },
+  { bn: 'পীরগাছা', en: 'Pirgacha', len: 2900, theme: 'village', lm: 'paddy', real: '১৮ কি.মি.', re: '18 km' },
+  { bn: 'কাউনিয়া', en: 'Kaunia', len: 2900, theme: 'village', lm: 'rail', real: '১৫ কি.মি.', re: '15 km' },
+  // 🔵 দিনাজপুর — ১৩
+  { bn: 'দিনাজপুর সদর', en: 'Dinajpur Sadar', len: 2900, theme: 'town', lm: 'town', real: '৬৫ কি.মি.', re: '65 km' },
+  { bn: 'বিরল', en: 'Biral', len: 2900, theme: 'village', lm: 'paddy', real: '৭৫ কি.মি.', re: '75 km' },
+  { bn: 'বোচাগঞ্জ', en: 'Bochaganj', len: 2900, theme: 'village', lm: 'river', real: '৮৫ কি.মি.', re: '85 km' },
+  { bn: 'কাহারোল', en: 'Kaharol', len: 2900, theme: 'village', lm: 'paddy', real: '৭২ কি.মি.', re: '72 km' },
+  { bn: 'খানসামা', en: 'Khansama', len: 2900, theme: 'village', lm: 'paddy', real: '৮০ কি.মি.', re: '80 km' },
+  { bn: 'চিরিরবন্দর', en: 'Chirirbandar', len: 2900, theme: 'village', lm: 'rail', real: '৭৮ কি.মি.', re: '78 km' },
+  { bn: 'পার্বতীপুর', en: 'Parbatipur', len: 2900, theme: 'town', lm: 'rail', real: '৯০ কি.মি.', re: '90 km' },
+  { bn: 'ফুলবাড়ী', en: 'Phulbari', len: 2900, theme: 'village', lm: 'highway', real: '৯৫ কি.মি.', re: '95 km' },
+  { bn: 'বিরামপুর', en: 'Birampur', len: 2900, theme: 'town', lm: 'highway', real: '১০৫ কি.মি.', re: '105 km' },
+  { bn: 'হাকিমপুর', en: 'Hakimpur', len: 2900, theme: 'village', lm: 'border', real: '১১৫ কি.মি.', re: '115 km' },
+  { bn: 'ঘোড়াঘাট', en: 'Ghoraghat', len: 2900, theme: 'village', lm: 'temple', real: '১১০ কি.মি.', re: '110 km' },
+  { bn: 'নবাবগঞ্জ', en: 'Nawabganj', len: 2900, theme: 'village', lm: 'paddy', real: '১০০ কি.মি.', re: '100 km' },
+  { bn: 'বীরগঞ্জ', en: 'Birganj', len: 2900, theme: 'village', lm: 'market', real: '৮৮ কি.মি.', re: '88 km' },
+  // 🟡 গাইবান্ধা — ৭
+  { bn: 'গাইবান্ধা সদর', en: 'Gaibandha Sadar', len: 2900, theme: 'town', lm: 'town', real: '৭৫ কি.মি.', re: '75 km' },
+  { bn: 'ফুলছড়ি', en: 'Phulchari', len: 2900, theme: 'village', lm: 'ghat', real: '৮৫ কি.মি.', re: '85 km' },
+  { bn: 'সাঘাটা', en: 'Saghata', len: 2900, theme: 'village', lm: 'river', real: '৯০ কি.মি.', re: '90 km' },
+  { bn: 'সুন্দরগঞ্জ', en: 'Sundarganj', len: 2900, theme: 'village', lm: 'river', real: '৯৫ কি.মি.', re: '95 km' },
+  { bn: 'সাদুল্লাপুর', en: 'Sadullapur', len: 2900, theme: 'village', lm: 'paddy', real: '৮২ কি.মি.', re: '82 km' },
+  { bn: 'পলাশবাড়ী', en: 'Palashbari', len: 2900, theme: 'village', lm: 'market', real: '৮৮ কি.মি.', re: '88 km' },
+  { bn: 'গোবিন্দগঞ্জ', en: 'Gobindaganj', len: 2900, theme: 'town', lm: 'highway', real: '১০০ কি.মি.', re: '100 km' },
+  // 🟠 কুড়িগ্রাম — ৯
+  { bn: 'কুড়িগ্রাম সদর', en: 'Kurigram Sadar', len: 2900, theme: 'town', lm: 'town', real: '৫০ কি.মি.', re: '50 km' },
+  { bn: 'উলিপুর', en: 'Ulipur', len: 2900, theme: 'village', lm: 'river', real: '৬০ কি.মি.', re: '60 km' },
+  { bn: 'চিলমারী', en: 'Chilmari', len: 2900, theme: 'village', lm: 'ghat', real: '৬৫ কি.মি.', re: '65 km' },
+  { bn: 'রৌমারী', en: 'Roumari', len: 2900, theme: 'village', lm: 'border', real: '৮০ কি.মি.', re: '80 km' },
+  { bn: 'রাজীবপুর', en: 'Rajibpur', len: 2900, theme: 'village', lm: 'river', real: '৮৫ কি.মি.', re: '85 km' },
+  { bn: 'রাজারহাট', en: 'Rajarhat', len: 2900, theme: 'village', lm: 'market', real: '৫৮ কি.মি.', re: '58 km' },
+  { bn: 'নাগেশ্বরী', en: 'Nageshwari', len: 2900, theme: 'village', lm: 'paddy', real: '৭০ কি.মি.', re: '70 km' },
+  { bn: 'ভুরুঙ্গামারী', en: 'Bhurungamari', len: 2900, theme: 'village', lm: 'border', real: '৯০ কি.মি.', re: '90 km' },
+  { bn: 'ফুলবাড়ী', en: 'Fulbari', len: 2900, theme: 'village', lm: 'paddy', real: '৬২ কি.মি.', re: '62 km' },
+  // 🔴 লালমনিরহাট — ৫
+  { bn: 'লালমনিরহাট সদর', en: 'Lalmonirhat Sadar', len: 2900, theme: 'town', lm: 'rail', real: '৪৫ কি.মি.', re: '45 km' },
+  { bn: 'আদিতমারী', en: 'Aditmari', len: 2900, theme: 'village', lm: 'paddy', real: '৫২ কি.মি.', re: '52 km' },
+  { bn: 'কালীগঞ্জ', en: 'Kaliganj', len: 2900, theme: 'village', lm: 'market', real: '৫৮ কি.মি.', re: '58 km' },
+  { bn: 'হাতীবান্ধা', en: 'Hatibandha', len: 2900, theme: 'village', lm: 'river', real: '৬৫ কি.মি.', re: '65 km' },
+  { bn: 'পাটগ্রাম', en: 'Patgram', len: 2900, theme: 'village', lm: 'border', real: '৭৫ কি.মি.', re: '75 km' },
+  // 🟣 নীলফামারী — ৬
+  { bn: 'নীলফামারী সদর', en: 'Nilphamari Sadar', len: 2900, theme: 'town', lm: 'town', real: '৬০ কি.মি.', re: '60 km' },
+  { bn: 'সৈয়দপুর', en: 'Saidpur', len: 2900, theme: 'town', lm: 'airport', real: '৭০ কি.মি.', re: '70 km' },
+  { bn: 'ডোমার', en: 'Domar', len: 2900, theme: 'village', lm: 'paddy', real: '৭৮ কি.মি.', re: '78 km' },
+  { bn: 'ডিমলা', en: 'Dimla', len: 2900, theme: 'village', lm: 'bridge', real: '৮৫ কি.মি.', re: '85 km' },
+  { bn: 'জলঢাকা', en: 'Jaldhaka', len: 2900, theme: 'village', lm: 'market', real: '৭২ কি.মি.', re: '72 km' },
+  { bn: 'কিশোরগঞ্জ', en: 'Kishoreganj', len: 2900, theme: 'village', lm: 'paddy', real: '৬৮ কি.মি.', re: '68 km' },
+  // 🟤 পঞ্চগড় — ৫
+  { bn: 'পঞ্চগড় সদর', en: 'Panchagarh Sadar', len: 2900, theme: 'town', lm: 'town', real: '১০৫ কি.মি.', re: '105 km' },
+  { bn: 'তেঁতুলিয়া', en: 'Tetulia', len: 2900, theme: 'tea', lm: 'tea', real: '১২০ কি.মি.', re: '120 km' },
+  { bn: 'আটোয়ারী', en: 'Atwari', len: 2900, theme: 'village', lm: 'paddy', real: '১১২ কি.মি.', re: '112 km' },
+  { bn: 'বোদা', en: 'Boda', len: 2900, theme: 'village', lm: 'market', real: '১১০ কি.মি.', re: '110 km' },
+  { bn: 'দেবীগঞ্জ', en: 'Debiganj', len: 2900, theme: 'village', lm: 'river', real: '১১৫ কি.মি.', re: '115 km' },
+  // ⚫ ঠাকুরগাঁও — ৫
+  { bn: 'ঠাকুরগাঁও সদর', en: 'Thakurgaon Sadar', len: 2900, theme: 'town', lm: 'town', real: '৯০ কি.মি.', re: '90 km' },
+  { bn: 'বালিয়াডাঙ্গী', en: 'Baliadangi', len: 2900, theme: 'village', lm: 'paddy', real: '১০০ কি.মি.', re: '100 km' },
+  { bn: 'রাণীশংকৈল', en: 'Ranisankail', len: 2900, theme: 'village', lm: 'market', real: '১০৮ কি.মি.', re: '108 km' },
+  { bn: 'পীরগঞ্জ', en: 'Thakurgaon Pirganj', len: 2900, theme: 'village', lm: 'paddy', real: '৯৮ কি.মি.', re: '98 km' },
+  { bn: 'হরিপুর', en: 'Haripur', len: 2900, theme: 'village', lm: 'border', real: '১১৫ কি.মি.', re: '115 km' }
+];
+var DIST_HEADS = [
+  { n: 0, dot: '🟢', en: 'Rangpur', bn: 'রংপুর' },
+  { n: 8, dot: '🔵', en: 'Dinajpur', bn: 'দিনাজপুর' },
+  { n: 21, dot: '🟡', en: 'Gaibandha', bn: 'গাইবান্ধা' },
+  { n: 28, dot: '🟠', en: 'Kurigram', bn: 'কুড়িগ্রাম' },
+  { n: 37, dot: '🔴', en: 'Lalmonirhat', bn: 'লালমনিরহাট' },
+  { n: 42, dot: '🟣', en: 'Nilphamari', bn: 'নীলফামারী' },
+  { n: 48, dot: '🟤', en: 'Panchagarh', bn: 'পঞ্চগড়' },
+  { n: 53, dot: '⚫', en: 'Thakurgaon', bn: 'ঠাকুরগাঁও' }
 ];
 // baki division — coming soon (route map-e lock row)
 var LOCKED_DIVS = [
@@ -3783,7 +3877,7 @@ try {
   selLeg = Math.min(selLeg, LEGS.length - 1);
   unlockLeg = Math.min(unlockLeg, LEGS.length - 1);
 } catch (e) {}
-function dropName(l) { return lang === 'bn' ? (l.db || l.de) : (l.de || l.db); }
+function dropName(l) { return lang === 'bn' ? (l.db || l.bn) : (l.de || l.en); }
 function confettiBurst() {
   for (var ci = 0; ci < 5; ci++) sparks(player.position.x + rnd(-2, 2), py + rnd(1, 3), rnd(-3, 1), 14);
   pop('🎉', player.position.x, py + 3, 0, '#ffe066');
@@ -5362,8 +5456,13 @@ function renderDest() {
   var mv = $('mDestVal'); if (mv) mv.textContent = locked ? '🔒 ' + LN : LN;
   var rm = $('routeMap');
   if (rm) {
-    var html = '';
+    var html = '', headK = 0;
     for (var i = 0; i < LEGS.length; i++) {
+      while (headK < DIST_HEADS.length - 1 && i >= DIST_HEADS[headK + 1].n) headK++;
+      if (i === DIST_HEADS[headK].n) {
+        var dh = DIST_HEADS[headK];
+        html += '<div class="legRow" style="border-color:var(--gold);background:rgba(255,200,61,.1);cursor:default;"><span>' + dh.dot + ' <b>' + (lang === 'bn' ? dh.bn : dh.en) + '</b></span><span class="km">~2 min/upazila</span></div>';
+      }
       var g = LEGS[i], lk = i > unlockLeg, dn = i < unlockLeg || (i === LEGS.length - 1 && unlockLeg >= LEGS.length);
       var cls = 'legRow' + (i === selLeg ? ' sel' : '') + (lk ? ' lock' : ' done');
       var st = lk ? '🔒' : (i === selLeg ? T('running') : '✅');
@@ -5416,7 +5515,7 @@ function achList() {
     nm('clean', '💥', 'Crash-free run', 'ক্র্যাশ ছাড়া রান', pendingClean),
     nm('b5k', '🏆', 'Best 5000', 'সেরা ৫০০০', best >= 5000),
     nm('st7', '🔥', '7-day streak', '৭ দিনের স্ট্রিক', maxStreak() >= 7),
-    nm('tet', '🗺️', 'Reach Gaibandha', 'গাইবান্ধা যাও', unlockLeg >= LEGS.length - 1),
+    nm('tet', '🗺️', 'Finish Rangpur Division', 'পুরো রংপুর শেষ করো', unlockLeg >= LEGS.length - 1),
     nm('lv5', '🏍️', 'Level 5', 'লেভেল ৫', riderLevel >= 5)
   ];
 }
