@@ -142,7 +142,7 @@
   #flash { position: fixed; inset: 0; background: #b5651d; opacity: 0; pointer-events: none; transition: opacity .5s; }
   #vignette {
     position: fixed; inset: 0; pointer-events: none;
-    background: radial-gradient(ellipse at 50% 44%, rgba(0,0,0,0) 52%, rgba(12,16,6,.16) 82%, rgba(8,12,4,.34) 100%);
+    background: radial-gradient(ellipse at 50% 44%, rgba(0,0,0,0) 48%, rgba(20,14,8,.18) 78%, rgba(10,8,5,.42) 100%);
   }
   #nightDark {
     position: fixed; inset: 0; pointer-events: none; opacity: 0;
@@ -576,7 +576,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 try {
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = 1.28;
 } catch (e) {}
 $('stage').appendChild(renderer.domElement);
 
@@ -625,8 +625,8 @@ sunLight.shadow.mapSize.set(LOW ? 256 : 2048, LOW ? 256 : 2048);
 sunLight.shadow.camera.left = -20; sunLight.shadow.camera.right = 20;
 sunLight.shadow.camera.top = 20; sunLight.shadow.camera.bottom = -20;
 sunLight.shadow.camera.near = 5; sunLight.shadow.camera.far = 60;
-sunLight.shadow.bias = -0.0015;
-sunLight.shadow.radius = 4; // soft edge
+sunLight.shadow.bias = -0.0009;
+sunLight.shadow.radius = 7; // soft edge
 scene.add(sunLight);
 var sunTarget = new THREE.Object3D(); scene.add(sunTarget); sunLight.target = sunTarget;
 /* shared night-glow materials — raate opacity barano hoy (1 draw state, sosta) */
@@ -646,6 +646,29 @@ var tailGlowMat = new THREE.SpriteMaterial({ map: GLOWTEX, color: 0xff3b30, tran
 var playerTailGlowMat = new THREE.SpriteMaterial({ map: GLOWTEX, color: 0xff3b30, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
 var playerHeadGlowMat = new THREE.SpriteMaterial({ map: GLOWTEX, color: 0xfff2b0, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
 var bikeLogoMat = null; // player bike logo — setLang-এ map বদলায়
+/* procedural sky cubemap — gari/bike body-te sky-r protibimbo (sosta 64px faces) */
+var SKYCUBE = (function () {
+  try {
+    var faces = [];
+    var tops = ['#3f8fd6', '#3f8fd6', '#7fb8ec', '#6b9450', '#8fc3ee', '#8fc3ee'];
+    var bots = ['#cdeafd', '#cdeafd', '#fff3d6', '#4a6b30', '#e8f4ff', '#e8f4ff'];
+    for (var f = 0; f < 6; f++) {
+      var cc = document.createElement('canvas'); cc.width = cc.height = 64;
+      var xx = cc.getContext('2d');
+      var gg = xx.createLinearGradient(0, 0, 0, 64);
+      gg.addColorStop(0, tops[f]); gg.addColorStop(0.55, bots[f]); gg.addColorStop(1, f === 2 ? '#fff8e0' : bots[f]);
+      xx.fillStyle = gg; xx.fillRect(0, 0, 64, 64);
+      if (f !== 3) { // horizon warm strip (sunset tone)
+        xx.fillStyle = 'rgba(255,200,120,0.35)'; xx.fillRect(0, 30, 64, 8);
+      }
+      faces.push(cc);
+    }
+    var cube = new THREE.CubeTexture(faces);
+    cube.needsUpdate = true;
+    try { cube.encoding = THREE.sRGBEncoding; } catch (e) {}
+    return cube;
+  } catch (e) { return null; }
+})();
 
 var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 700);
 var camCfg = { fov: 60, dist: 9.5, h: 4.8 };
@@ -663,7 +686,7 @@ window.addEventListener('resize', resize); resize();
 
 /* ---------- geometry / material helpers ---------- */
 var BOX = new THREE.BoxGeometry(1, 1, 1);
-var SPH = new THREE.SphereGeometry(1, 14, 10);
+var SPH = new THREE.SphereGeometry(1, (typeof LOW !== 'undefined' && LOW) ? 20 : 32, (typeof LOW !== 'undefined' && LOW) ? 14 : 24);
 var CYL = new THREE.CylinderGeometry(1, 1, 1, 14);
 var CONE3 = new THREE.ConeGeometry(0.32, 0.62, 3);
 var HALF = new THREE.CylinderGeometry(1, 1, 1, 18, 1, true, Math.PI / 2, Math.PI);
@@ -891,7 +914,8 @@ function paddyTexture() {
 var roadMat, paddyMat, tinMats = [], thatchMat, signMats = [], bannerMats = [], waterMat = null;
 var barkMat, leafMat, teaMat, strawMat, bambooMat, wallMats = [];
 function buildTextures() {
-  roadMat = new THREE.MeshLambertMaterial({ map: roadTexture() });
+  try { roadMat = new THREE.MeshStandardMaterial({ map: roadTexture(), metalness: 0.0, roughness: 0.95, envMap: SKYCUBE, envMapIntensity: 0.35 }); }
+  catch (e) { roadMat = new THREE.MeshLambertMaterial({ map: roadTexture() }); }
   paddyMat = new THREE.MeshLambertMaterial({ map: paddyTexture() });
   thatchMat = new THREE.MeshLambertMaterial({ map: thatchTexture() });
   waterMat = new THREE.MeshLambertMaterial({ map: waterTexture() });
@@ -1392,15 +1416,28 @@ function limb(w, h, d, c, px, py, pz, parent) {
 var SKIN = 0xc98b5e;
 // --- motorcycle (demo theke port, game material-e) ---
 var bikeG = new THREE.Group(); pivot.add(bikeG);
-box(0.38, 0.45, 1.7, 0x0f0f0f, 0, 0.72, 0, bikeG); // body
-box(0.34, 0.12, 0.95, 0x0a0a0a, 0, 0.98, -0.25, bikeG); // seat
-ell(0.29, 0.2, 0.44, 0x0f0f0f, 0, 0.92, 0.45, bikeG); // tank
-box(0.5, 0.07, 0.07, 0xdddddd, 0, 1.12, -1.05, bikeG); // handlebar
+/* glossy standard mats + env reflection — body/chrome/visor/helmet/fabric */
+var bikePaintM = 0x0f0f0f, bikeTankM = 0x0f0f0f, bikeChromeM = 0xcccccc, visorM = 0x0e1c30,
+    helmetM = 0x00b341, jacketM = 0x1c1c1c, clothM = 0x0d0d0d, boxGreenM = 0x0d8a4f;
+try {
+  bikePaintM = new THREE.MeshStandardMaterial({ color: 0x0f0f0f, metalness: 0.6, roughness: 0.32, envMap: SKYCUBE, envMapIntensity: 1.0 });
+  bikeTankM = new THREE.MeshStandardMaterial({ color: 0x141414, metalness: 0.7, roughness: 0.25, envMap: SKYCUBE, envMapIntensity: 1.2 });
+  bikeChromeM = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.95, roughness: 0.15, envMap: SKYCUBE, envMapIntensity: 1.4 });
+  visorM = new THREE.MeshStandardMaterial({ color: 0x0e1c30, metalness: 0.9, roughness: 0.08, envMap: SKYCUBE, envMapIntensity: 1.8 });
+  helmetM = new THREE.MeshStandardMaterial({ color: 0x00b341, metalness: 0.35, roughness: 0.22, envMap: SKYCUBE, envMapIntensity: 1.1 });
+  jacketM = new THREE.MeshStandardMaterial({ color: 0x232323, metalness: 0.05, roughness: 0.85 });
+  clothM = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, metalness: 0.05, roughness: 0.9 });
+  boxGreenM = new THREE.MeshStandardMaterial({ color: 0x0d8a4f, metalness: 0.3, roughness: 0.4, envMap: SKYCUBE, envMapIntensity: 0.8 });
+} catch (e) {}
+box(0.38, 0.45, 1.7, bikePaintM, 0, 0.72, 0, bikeG); // body
+box(0.34, 0.12, 0.95, clothM, 0, 0.98, -0.25, bikeG); // seat
+ell(0.29, 0.2, 0.44, bikeTankM, 0, 0.92, 0.45, bikeG); // tank
+box(0.5, 0.07, 0.07, bikeChromeM, 0, 1.12, -1.05, bikeG); // handlebar
 box(0.03, 0.25, 0.03, 0x222222, -0.22, 1.25, -1.05, bikeG); box(0.03, 0.25, 0.03, 0x222222, 0.22, 1.25, -1.05, bikeG);
 box(0.12, 0.08, 0.03, 0x111111, -0.22, 1.4, -1.05, bikeG); box(0.12, 0.08, 0.03, 0x111111, 0.22, 1.4, -1.05, bikeG); // rear-view mirror
-box(0.06, 0.7, 0.06, 0xcccccc, -0.12, 0.75, -1.0, bikeG); box(0.06, 0.7, 0.06, 0xcccccc, 0.12, 0.75, -1.0, bikeG); // front fork
-var exP = cyl(0.05, 1.1, 0.05, 0x999999, 0.25, 0.45, 0.3, bikeG); exP.rotation.x = Math.PI / 2; // chrome exhaust pipe
-var exM = cyl(0.08, 0.4, 0.08, 0xcccccc, 0.25, 0.45, 0.95, bikeG); exM.rotation.x = Math.PI / 2; // muffler
+box(0.06, 0.7, 0.06, bikeChromeM, -0.12, 0.75, -1.0, bikeG); box(0.06, 0.7, 0.06, bikeChromeM, 0.12, 0.75, -1.0, bikeG); // front fork
+var exP = cyl(0.05, 1.1, 0.05, bikeChromeM, 0.25, 0.45, 0.3, bikeG); exP.rotation.x = Math.PI / 2; // chrome exhaust pipe
+var exM = cyl(0.08, 0.4, 0.08, bikeChromeM, 0.25, 0.45, 0.95, bikeG); exM.rotation.x = Math.PI / 2; // muffler
 box(0.28, 0.06, 0.5, 0x1a1a1a, 0, 0.68, -1.0, bikeG); // front fender
 var tailMat = new THREE.MeshPhongMaterial({ color: 0x8a1010, emissive: 0x000000 });
 box(0.22, 0.14, 0.06, tailMat, 0, 0.82, 1.35, bikeG); // taillight (pichone, camera dike)
@@ -1408,6 +1445,17 @@ var ptGlow = new THREE.Sprite(playerTailGlowMat); ptGlow.scale.set(0.75, 0.75, 1
 box(0.28, 0.16, 0.02, 0xffdd00, 0, 0.58, 1.3, bikeG); // plate
 var wheelF = wheel(0.42, 0.14, 0, 0.42, -1.0, bikeG);
 var wheelB = wheel(0.42, 0.14, 0, 0.42, 1.0, bikeG);
+[wheelF, wheelB].forEach(function (ww) { // spoke wheel: chrome hub + crossed spokes (chakar sathe ghore)
+  try {
+    var hub = new THREE.Mesh(CYL, bikeChromeM); hub.scale.set(0.18, 1.2, 0.18); hub.castShadow = false; ww.add(hub);
+    for (var s = 0; s < 4; s++) {
+      var sp = new THREE.Mesh(BOX, bikeChromeM);
+      sp.scale.set(1.7, 0.5, 0.09); sp.rotation.y = s * Math.PI / 4; sp.castShadow = false; ww.add(sp);
+    }
+  } catch (e) {}
+});
+var heatShim = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOWTEX, color: 0xcfd8e3, transparent: true, opacity: 0, depthWrite: false }));
+heatShim.scale.set(0.5, 0.5, 1); heatShim.position.set(0.25, 0.45, 1.35); bikeG.add(heatShim); // heat haze: silencer-er gorom shimmer
 // headlight samne (-z)
 var hl = box(0.2, 0.16, 0.06, 0xffffcc, 0, 1.0, -1.28, bikeG);
 var hlBeam = new THREE.Mesh(new THREE.CircleGeometry(0.5, 12), new THREE.MeshBasicMaterial({ color: 0xfff2b0, transparent: true, opacity: 0, fog: false }));
@@ -1415,23 +1463,24 @@ hlBeam.position.set(0, 0.9, -2.2); hlBeam.rotation.y = Math.PI; bikeG.add(hlBeam
 var hlGlow = new THREE.Sprite(playerHeadGlowMat); hlGlow.scale.set(1.1, 1.1, 1); hlGlow.position.set(0, 1.0, -1.42); bikeG.add(hlGlow);
 // --- delivery box (pichone, camera dike logo) ---
 if (!steadTex) steadTex = createTextTexture();
-box(0.58, 0.62, 0.42, 0x0d8a4f, 0, 1.52, 0.75, bikeG);
+box(0.58, 0.62, 0.42, boxGreenM, 0, 1.52, 0.75, bikeG);
 var logoMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshBasicMaterial({ map: steadTex }));
 bikeLogoMat = logoMesh.material;
 logoMesh.position.set(0, 1.52, 0.97); logoMesh.rotation.y = 0; bikeG.add(logoMesh);
 box(0.6, 0.05, 0.44, 0xeeeeee, 0, 1.24, 0.75, bikeG); // reflective strip
 // --- rider: jacket, helmet, boot ---
-var legL = limb(0.2, 0.62, 0.22, 0x0d0d0d, -0.17, 0.9, 0.15);
-var legR = limb(0.2, 0.62, 0.22, 0x0d0d0d, 0.17, 0.9, 0.15);
+var legL = limb(0.2, 0.62, 0.22, clothM, -0.17, 0.9, 0.15);
+var legR = limb(0.2, 0.62, 0.22, clothM, 0.17, 0.9, 0.15);
 box(0.22, 0.12, 0.34, 0x0a0a0a, 0, -0.62, -0.08, legL);
 box(0.22, 0.12, 0.34, 0x0a0a0a, 0, -0.62, -0.08, legR);
-var torsoM = box(0.5, 0.62, 0.34, 0x1c1c1c, 0, 1.32, 0.35, pivot);
+box(0.24, 0.1, 0.2, jacketM, 0, 1.52, 0.28, pivot); // jacket collar/scarf roll (kapor detail)
+var torsoM = box(0.5, 0.62, 0.34, jacketM, 0, 1.32, 0.35, pivot);
 torsoM.rotation.x = 0.35; // samne jhuke
 ell(0.2, 0.22, 0.2, SKIN, 0, 1.72, 0.1, pivot); // matha
-ell(0.24, 0.2, 0.24, 0x00b341, 0, 1.78, 0.12, pivot); // sobuj helmet
-box(0.3, 0.12, 0.04, 0x050505, 0, 1.74, -0.1, pivot); // visor (samne)
-var armL = limb(0.15, 0.6, 0.17, 0x1c1c1c, -0.33, 1.55, 0.3);
-var armR = limb(0.15, 0.6, 0.17, 0x1c1c1c, 0.33, 1.55, 0.3);
+ell(0.24, 0.2, 0.24, helmetM, 0, 1.78, 0.12, pivot); // sobuj helmet (glossy)
+box(0.3, 0.12, 0.04, visorM, 0, 1.74, -0.1, pivot); // visor (samne, shine)
+var armL = limb(0.15, 0.6, 0.17, jacketM, -0.33, 1.55, 0.3);
+var armR = limb(0.15, 0.6, 0.17, jacketM, 0.33, 1.55, 0.3);
 box(0.15, 0.15, 0.15, 0x151515, 0, -0.65, -0.1, armL);
 box(0.15, 0.15, 0.15, 0x151515, 0, -0.65, -0.1, armR);
 armL.rotation.x = -0.9; armR.rotation.x = -0.9; // handle dhora
@@ -1445,6 +1494,8 @@ try { // toon ink outline — box parts-e kalo edge, bike cartoon lage
 scene.add(player);
 var blob = new THREE.Mesh(new THREE.CircleGeometry(1.0, 18), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.42 }));
 blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03; scene.add(blob);
+var blobCore = new THREE.Mesh(new THREE.CircleGeometry(0.55, 18), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3 }));
+blobCore.rotation.x = -Math.PI / 2; blobCore.position.y = 0.035; scene.add(blobCore); // contact core — khoro edge soft lage
 
 /* far sun + clouds */
 (function () {
@@ -1474,6 +1525,10 @@ blob.rotation.x = -Math.PI / 2; blob.position.y = 0.03; scene.add(blob);
   sunBloom1.scale.set(110, 110, 1); sunBloom1.position.set(-16, 34, -298); scene.add(sunBloom1);
   sunBloom2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, opacity: 0.35, fog: false, depthWrite: false, blending: THREE.AdditiveBlending }));
   sunBloom2.scale.set(200, 200, 1); sunBloom2.position.set(-16, 34, -299); scene.add(sunBloom2);
+  sunHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, opacity: 0.12, fog: false, depthWrite: false, blending: THREE.AdditiveBlending }));
+  sunHalo.scale.set(340, 340, 1); sunHalo.position.set(-16, 34, -300); scene.add(sunHalo); // god-ray feel: boro faint halo
+  sunStreak = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, opacity: 0.4, fog: false, depthWrite: false, blending: THREE.AdditiveBlending }));
+  sunStreak.scale.set(220, 16, 1); sunStreak.position.set(-16, 34, -297); scene.add(sunStreak); // lens streak: horizontal flare
   var moonTex = (function () { // realistic moon: maria + craters
     var c = document.createElement('canvas'); c.width = c.height = 128;
     var x = c.getContext('2d');
@@ -1529,17 +1584,17 @@ var spPts = new THREE.Points(spGeo, spMat); spPts.frustumCulled = false; scene.a
 var headSpot = new THREE.SpotLight(0xfff0c8, 0, 42, 0.55, 0.65, 1.2);
 headSpot.position.set(0, 1.2, -0.6); scene.add(headSpot);
 var headTgt = new THREE.Object3D(); headTgt.position.set(0, 0, -22); scene.add(headTgt); headSpot.target = headTgt;
-var fxWet = 1, sunDisc, sunGlow, sunBloom1, sunBloom2, sunCoreRef, moonDisc, moonGlow, farCloudMat, driftCloudMat;
+var fxWet = 1, sunDisc, sunGlow, sunBloom1, sunBloom2, sunHalo, sunStreak, sunCoreRef, moonDisc, moonGlow, farCloudMat, driftCloudMat;
 
 /* ---------- dust particles (game-world atmosphere) ---------- */
-var DUST_N = 90;
+var DUST_N = (typeof LOW !== 'undefined' && LOW) ? 90 : 150;
 var dustGeo = new THREE.BufferGeometry();
 var dustPos = new Float32Array(DUST_N * 3);
 for (var di = 0; di < DUST_N; di++) {
   dustPos[di * 3] = rnd(-6, 6); dustPos[di * 3 + 1] = rnd(0.05, 2.2); dustPos[di * 3 + 2] = rnd(-40, 15);
 }
 dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-var dustMat = new THREE.PointsMaterial({ color: 0xcdb789, size: 0.14, transparent: true, opacity: 0.5, depthWrite: false });
+var dustMat = new THREE.PointsMaterial({ color: 0xd8c092, size: 0.16, transparent: true, opacity: 0.5, depthWrite: false });
 var dust = new THREE.Points(dustGeo, dustMat); scene.add(dust);
 
 /* ---------- rain (weather) ---------- */
@@ -1739,7 +1794,12 @@ function headPair(g, z, y) {
 var PHM = {};
 function P(c, shine, spec) {
   var k = c + '_' + (shine || 120);
-  if (!PHM[k]) PHM[k] = new THREE.MeshPhongMaterial({ color: c, shininess: shine || 120, specular: spec || 0x999999 });
+  if (!PHM[k]) {
+    var rough = Math.max(0.18, Math.min(0.55, 0.62 - (shine || 120) / 500));
+    try {
+      PHM[k] = new THREE.MeshStandardMaterial({ color: c, metalness: 0.55, roughness: rough, envMap: SKYCUBE, envMapIntensity: 0.9 });
+    } catch (e) { PHM[k] = new THREE.MeshPhongMaterial({ color: c, shininess: shine || 120, specular: spec || 0x999999 }); }
+  }
   return PHM[k];
 }
 function paintBox(w, h, d, c, x, y, z, p) {
@@ -1747,11 +1807,15 @@ function paintBox(w, h, d, c, x, y, z, p) {
   m.castShadow = true; m.receiveShadow = true; if (p) p.add(m); return m;
 }
 function chromeBox(w, h, d, x, y, z, p) {
-  var m = new THREE.Mesh(BOX, P(0xdddddd, 220, 0xffffff)); m.scale.set(w, h, d); m.position.set(x, y, z);
+  var m = new THREE.Mesh(BOX, P(0xdddddd, 320, 0xffffff)); m.scale.set(w, h, d); m.position.set(x, y, z);
+  try { m.material.metalness = 0.95; m.material.roughness = 0.12; m.material.envMapIntensity = 1.4; } catch (e) {}
   m.castShadow = true; if (p) p.add(m); return m;
 }
 function glassBox(w, h, d, x, y, z, p) {
-  var m = new THREE.Mesh(BOX, P(0x9fd4e8, 240, 0xffffff)); m.scale.set(w, h, d); m.position.set(x, y, z);
+  var mg;
+  try { mg = new THREE.MeshStandardMaterial({ color: 0x9fd4e8, metalness: 0.15, roughness: 0.06, envMap: SKYCUBE, envMapIntensity: 1.6 }); }
+  catch (e) { mg = P(0x9fd4e8, 240, 0xffffff); }
+  var m = new THREE.Mesh(BOX, mg); m.scale.set(w, h, d); m.position.set(x, y, z);
   if (p) p.add(m); return m;
 }
 function wheelArch(x, y, z, r, p) {
@@ -3433,6 +3497,11 @@ function animatePlayer(dt) {
     var spin = dt * (10 + speed * 0.9);
     wheelF.rotation.x += spin; wheelB.rotation.x += spin;
     bikeG.position.y = Math.abs(Math.cos(runT)) * 0.05;
+    try { // heat haze: goti barle silencer-e shimmer
+      var hsK = Math.min(1, speed / 40);
+      heatShim.material.opacity = hsK * (0.1 + 0.06 * Math.sin(runT * 7));
+      var hsS = 0.4 + hsK * 0.5 + Math.sin(runT * 7) * 0.05; heatShim.scale.set(hsS, hsS, 1);
+    } catch (e) {}
     bikeG.rotation.x += (0 - bikeG.rotation.x) * Math.min(1, dt * 10);
     bikeG.rotation.z = Math.sin(runT * 0.5) * 0.02; // halka dol
     pivot.position.y = 0 + Math.abs(Math.cos(runT)) * 0.04;
@@ -3647,6 +3716,7 @@ function update(dt) {
   if (state !== 'crash' && state !== 'over') animatePlayer(dt);
   blob.position.x = player.position.x + curveAt(0);
   var bs = Math.max(0.35, 1 - py * 0.22); blob.scale.setScalar(bs); blob.material.opacity = 0.32 * bs;
+  try { blobCore.position.x = blob.position.x; blobCore.position.z = blob.position.z; blobCore.scale.setScalar(bs); blobCore.material.opacity = 0.28 * bs; } catch (e) {}
 
   /* pickups */
   var px = player.position.x, ph = sliding ? 0.9 : 2.0;
@@ -3746,23 +3816,23 @@ function update(dt) {
   var toen2 = 'Noon'; try { toen2 = timePhase(dayT).en; } catch (e) {}
   if (toen2 === 'Morning') { // sokal: norom golapi-sonali alo
     sunLight.intensity = 1.0; sunLight.color.setRGB(1, 0.87, 0.75);
-    if (typeof hemi !== 'undefined') hemi.intensity = 0.8;
+    if (typeof hemi !== 'undefined') { hemi.intensity = 0.8; try { hemi.color.setHex(0xfff6de); } catch (e) {} }
   } else if (toen2 === 'Noon') { // dupur: sobcheye ujjal sada rod
     sunLight.intensity = 1.15; sunLight.color.setRGB(1, 0.98, 0.94);
-    if (typeof hemi !== 'undefined') hemi.intensity = 0.9;
+    if (typeof hemi !== 'undefined') { hemi.intensity = 0.9; try { hemi.color.setHex(0xfff6de); } catch (e) {} }
   } else if (toen2 === 'Afternoon') { // bikal: sonali rod
     sunLight.intensity = 1.05; sunLight.color.setRGB(1, 0.9, 0.72);
-    if (typeof hemi !== 'undefined') hemi.intensity = 0.85;
-  } else if (toen2 === 'Evening') { // sondha: komola alo + komola kuasha
-    sunLight.intensity = 0.7; sunLight.color.setRGB(1, 0.6, 0.32);
-    if (typeof hemi !== 'undefined') hemi.intensity = 0.6;
-    scene.fog.color.setRGB(0.95, 0.66, 0.45);
+    if (typeof hemi !== 'undefined') { hemi.intensity = 0.85; try { hemi.color.setHex(0xfff6de); } catch (e) {} }
+  } else if (toen2 === 'Evening') { // sondha: cinematic komola alo + komola kuasha
+    sunLight.intensity = 0.78; sunLight.color.setRGB(1, 0.55, 0.28);
+    if (typeof hemi !== 'undefined') { hemi.intensity = 0.62; try { hemi.color.setHex(0xffd9b0); } catch (e) {} }
+    scene.fog.color.setRGB(0.98, 0.62, 0.42);
   } else if (toen2 === 'Midnight') { // modhyorat: sobcheye ondhokar
     sunLight.intensity = 0.22; sunLight.color.setRGB(0.55, 0.68, 1);
-    if (typeof hemi !== 'undefined') hemi.intensity = 0.3;
+    if (typeof hemi !== 'undefined') { hemi.intensity = 0.3; try { hemi.color.setHex(0x8fa8ff); } catch (e) {} }
   } else { // raat: chander nil alo
     sunLight.intensity = 0.32; sunLight.color.setRGB(0.72, 0.8, 1);
-    if (typeof hemi !== 'undefined') hemi.intensity = 0.35;
+    if (typeof hemi !== 'undefined') { hemi.intensity = 0.35; try { hemi.color.setHex(0x8fa8ff); } catch (e) {} }
   }
   if (typeof hlBeam !== 'undefined') hlBeam.material.opacity = clamp(nightK * 1.4, 0, 1) * 0.4; // sondha thekei headlight
   try { // raater alo: lamp, janala, garir light
@@ -3880,7 +3950,13 @@ function update(dt) {
   if (roadMat) {
     fxWet += (((weather === 'rain' || weather === 'heavy') ? 0.68 : 1) - fxWet) * Math.min(1, dt * 0.8);
     roadMat.color.setScalar(fxWet);
-    roadMat.needsUpdate = true;
+    try { // brishti-te ceramic shine: roughness kome, reflection bare
+      var wetK = 1 - fxWet; // 0 dry → ~0.32 wet
+      roadMat.roughness = 0.95 - wetK * 2.1;
+      if (roadMat.roughness < 0.26) roadMat.roughness = 0.26;
+      roadMat.metalness = wetK * 0.35;
+      roadMat.envMapIntensity = 0.35 + wetK * 2.8;
+    } catch (e) {}
   }
   try { if (waterMat && waterMat.map) { waterMat.map.offset.x += dt * 0.02; waterMat.map.offset.y -= dt * 0.015; } } catch (e) {} // srot boiche
   if (sunDisc) {
@@ -3902,6 +3978,14 @@ function update(dt) {
       sunBloom2.material.color.setHex(duskK > 0.4 ? 0xffb377 : 0xfff2b0);
       sunBloom2.material.opacity = 0.35 * sunO; sunBloom2.visible = sunO > 0.02;
     }
+    if (typeof sunHalo !== 'undefined' && sunHalo) {
+      sunHalo.material.color.setHex(duskK > 0.4 ? 0xffb377 : 0xfff2b0);
+      sunHalo.material.opacity = (0.1 + duskK * 0.12) * sunO; sunHalo.visible = sunO > 0.02;
+    }
+    if (typeof sunStreak !== 'undefined' && sunStreak) {
+      sunStreak.material.color.setHex(duskK > 0.4 ? 0xffc98a : 0xffffff);
+      sunStreak.material.opacity = (0.22 + duskK * 0.3) * sunO; sunStreak.visible = sunO > 0.02;
+    }
     if (typeof moonDisc !== 'undefined' && moonDisc) {
       moonDisc.material.opacity = moonO; moonDisc.visible = moonO > 0.02;
     }
@@ -3915,6 +3999,8 @@ function update(dt) {
       sunGlow.position.y = sunY;
       if (typeof sunBloom1 !== 'undefined' && sunBloom1) sunBloom1.position.y = sunY;
       if (typeof sunBloom2 !== 'undefined' && sunBloom2) sunBloom2.position.y = sunY;
+      if (typeof sunHalo !== 'undefined' && sunHalo) sunHalo.position.y = sunY;
+      if (typeof sunStreak !== 'undefined' && sunStreak) sunStreak.position.y = sunY;
       if (typeof moonDisc !== 'undefined' && moonDisc) moonDisc.position.y = moonY;
       if (typeof moonGlow !== 'undefined' && moonGlow) moonGlow.position.y = moonY;
     } catch (e) {}
