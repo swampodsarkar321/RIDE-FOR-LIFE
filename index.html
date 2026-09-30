@@ -1795,14 +1795,14 @@ var SKIN = 0xc98b5e;
 var bikeG = new THREE.Group(); pivot.add(bikeG);
 /* glossy standard mats + env reflection — body/chrome/visor/helmet/fabric */
 var bikePaintM = 0x0f0f0f, bikeTankM = 0x0f0f0f, bikeChromeM = 0xcccccc, visorM = 0x0e1c30,
-    helmetM = 0x00b341, jacketM = 0x1c1c1c, clothM = 0x0d0d0d, boxGreenM = 0x0d8a4f;
+    helmetM = 0x00b341, jacketM = 0xc23b3b, clothM = 0x0d0d0d, boxGreenM = 0x0d8a4f;
 try {
   bikePaintM = new THREE.MeshStandardMaterial({ color: 0x0f0f0f, metalness: 0.6, roughness: 0.32, envMap: SKYCUBE, envMapIntensity: 1.0 });
   bikeTankM = new THREE.MeshStandardMaterial({ color: 0x141414, metalness: 0.7, roughness: 0.25, envMap: SKYCUBE, envMapIntensity: 1.2 });
   bikeChromeM = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.95, roughness: 0.15, envMap: SKYCUBE, envMapIntensity: 1.4 });
   visorM = new THREE.MeshStandardMaterial({ color: 0x0e1c30, metalness: 0.9, roughness: 0.08, envMap: SKYCUBE, envMapIntensity: 1.8 });
   helmetM = new THREE.MeshStandardMaterial({ color: 0x00b341, metalness: 0.35, roughness: 0.22, envMap: SKYCUBE, envMapIntensity: 1.1 });
-  jacketM = new THREE.MeshStandardMaterial({ color: 0x232323, metalness: 0.05, roughness: 0.85 });
+  jacketM = new THREE.MeshStandardMaterial({ color: 0xc23b3b, metalness: 0.05, roughness: 0.85 });
   clothM = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, metalness: 0.05, roughness: 0.9 });
   boxGreenM = new THREE.MeshStandardMaterial({ color: 0x0d8a4f, metalness: 0.3, roughness: 0.4, envMap: SKYCUBE, envMapIntensity: 0.8 });
 } catch (e) {}
@@ -1853,13 +1853,16 @@ box(0.22, 0.12, 0.34, 0x0a0a0a, 0, -0.62, -0.08, legR);
 box(0.24, 0.1, 0.2, jacketM, 0, 1.52, 0.28, pivot); // jacket collar/scarf roll (kapor detail)
 var torsoM = box(0.5, 0.62, 0.34, jacketM, 0, 1.32, 0.35, pivot);
 torsoM.rotation.x = 0.35; // samne jhuke
+var reflM = new THREE.MeshBasicMaterial({ color: 0xffe14d }); // raate jwolbe
+var refl = box(0.42, 0.09, 0.02, reflM, 0, 1.32, 0.53, pivot); // reflective strip (camera dike)
+refl.rotation.x = 0.35;
 ell(0.2, 0.22, 0.2, SKIN, 0, 1.72, 0.1, pivot); // matha
 ell(0.24, 0.2, 0.24, helmetM, 0, 1.78, 0.12, pivot); // sobuj helmet (glossy)
 box(0.3, 0.12, 0.04, visorM, 0, 1.74, -0.1, pivot); // visor (samne, shine)
 var armL = limb(0.15, 0.8, 0.17, jacketM, -0.30, 1.45, -0.25);
 var armR = limb(0.15, 0.8, 0.17, jacketM, 0.30, 1.45, -0.25);
-box(0.15, 0.15, 0.15, 0x151515, 0, -0.80, -0.02, armL);
-box(0.15, 0.15, 0.15, 0x151515, 0, -0.80, -0.02, armR);
+box(0.15, 0.15, 0.15, 0xe8c39e, 0, -0.80, -0.02, armL); // gloves — raateo dekha jabe
+box(0.15, 0.15, 0.15, 0xe8c39e, 0, -0.80, -0.02, armR);
 armL.rotation.x = 1.15; armR.rotation.x = 1.15; // handle dhora (samne jhuke grip-e)
 player.scale.setScalar(0.95);
 player.traverse(function (m) { if (m.isMesh) { m.castShadow = true; m.receiveShadow = false; } });
