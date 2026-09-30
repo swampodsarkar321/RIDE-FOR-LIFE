@@ -2708,9 +2708,9 @@ function submitScore(s, pc) { // proti player 1 entry — sudhu highest score th
 function worldRows(arr, showDiv) {
   return arr.map(function (e, i) {
     var me = (playerName && e.n === playerName) ? ' me' : '';
-    var av = e.av || '🧑‍💼';
+    var av = e.av || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Rider';
     var sub = e.p + '📦' + (showDiv && (e.dv || e.div) ? ' · ' + divName(e.dv || e.div) : '');
-    return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm">' + av + ' ' + (e.n || T('rider')) + '<small>' + sub + '</small></span><span class="sc">' + e.s + '</span></div>';
+    return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm"><img src="' + av + '" style="width:28px;height:28px;border-radius:50%;vertical-align:-6px;margin-right:4px;"> ' + (e.n || T('rider')) + '<small>' + sub + '</small></span><span class="sc">' + e.s + '</span></div>';
   }).join('');
 }
 function refreshWorldBoards() { // over screen-e world + division (10s throttle)
@@ -5093,16 +5093,36 @@ function renderBoard() {
   refreshWorldBoards();
 }
 function upLvl(kind) { return kind === 's' ? upSpeed : kind === 'h' ? upHandle : kind === 'f' ? upFuel : kind === 'm' ? upMag : upNitro; }
-/* ---------- avatar system ---------- */
-var AVATARS = ['🧑‍💼', '👩‍💼', '🧑‍🎤', '👩‍🎤', '🧑‍🚀', '👩‍🚀', '🧑‍🍳', '👩‍🍳', '🧑‍🔧', '👩‍🔧', '🧑‍🎨', '👩‍🎨', '🧑‍⚕️', '👩‍⚕️', '🧑‍🏫', '👩‍🏫', '🧑‍🌾', '👩‍🌾', '🧑‍💻', '👩‍💻', '🧑‍🚒', '👩‍🚒', '🧑‍✈️', '👩‍✈️'];
+/* ---------- avatar system (DiceBear) ---------- */
+var AVATAR_STYLES = ['adventurer', 'avataaars', 'fun-emoji', 'lorelei', 'notionists', 'open-peeps', 'personas', 'pixel-art'];
+var AVATAR_SEEDS = ['Rider', 'Biker', 'Racer', 'Scooter', 'Moto', 'Speed', 'Turbo', 'Nitro', 'Dash', 'Zoom', 'Flash', 'Storm', 'Blaze', 'Spark', 'Thunder', 'Volt', 'Power', 'Force', 'Max', 'Pro', 'Star', 'Hero', 'Legend', 'King'];
 var selAvatar = 0;
 try { selAvatar = +localStorage.getItem('rrAvatar') || 0; } catch (e) {}
+function avatarUrl(i) {
+  var s = i % AVATAR_STYLES.length;
+  var seed = AVATAR_SEEDS[Math.floor(i / AVATAR_STYLES.length) % AVATAR_SEEDS.length];
+  return 'https://api.dicebear.com/7.x/' + AVATAR_STYLES[s] + '/svg?seed=' + encodeURIComponent(seed);
+}
 function renderAvatarPicker() {
   try {
     var el = $('avatarGrid'); if (!el) return;
-    el.innerHTML = AVATARS.map(function (a, i) {
-      return '<button class="divBtn' + (i === selAvatar ? ' sel' : '') + '" data-av="' + i + '" style="font-size:28px;padding:6px;">' + a + '</button>';
-    }).join('');
+    var total = AVATAR_STYLES.length * AVATAR_SEEDS.length;
+    el.innerHTML = '';
+    for (var i = 0; i < total; i++) {
+      var b = document.createElement('button');
+      b.className = 'divBtn' + (i === selAvatar ? ' sel' : '');
+      b.setAttribute('data-av', i);
+      b.style.padding = '2px';
+      b.style.overflow = 'hidden';
+      var img = document.createElement('img');
+      img.src = avatarUrl(i);
+      img.style.width = '100%'; img.style.height = '100%';
+      img.style.borderRadius = '8px';
+      img.style.display = 'block';
+      img.loading = 'lazy';
+      b.appendChild(img);
+      el.appendChild(b);
+    }
     Array.prototype.forEach.call(el.querySelectorAll('[data-av]'), function (b) {
       b.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -5114,7 +5134,8 @@ function renderAvatarPicker() {
     });
   } catch (e) {}
 }
-function getAvatar() { return AVATARS[selAvatar % AVATARS.length]; }
+function getAvatar() { return avatarUrl(selAvatar); }
+function getAvatarEmoji() { return '🧑‍💼'; }
 var myRankCache = null, myRankFetching = false;
 function fetchMyRank() {
   if (myRankCache || myRankFetching || !fbReady || !FBDB) return;
@@ -5137,7 +5158,7 @@ function renderProfile() {
   try {
     var bn = lang === 'bn';
     if ($('profName')) $('profName').textContent = playerName || (bn ? 'রাইডার' : 'Rider');
-    if ($('profAvatar')) $('profAvatar').textContent = getAvatar();
+    if ($('profAvatar')) $('profAvatar').innerHTML = '<img src="' + getAvatar() + '" style="width:64px;height:64px;border-radius:50%;border:3px solid var(--gold);">';
     if ($('profDiv')) $('profDiv').textContent = '📍 ' + (playerDiv ? divName(playerDiv) : '');
     if ($('profLvl')) $('profLvl').textContent = riderLevel;
     if ($('profBest')) $('profBest').textContent = best;
