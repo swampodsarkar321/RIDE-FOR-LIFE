@@ -300,11 +300,7 @@
     border: 3px solid rgba(255,255,255,.14);
   }
   .emblem { display: flex; justify-content: center; margin-bottom: 8px; font-size: 40px; }
-  #menuLogo {
-    width: min(150px, 38vw); border-radius: 18px; display: block; margin: 0 auto 6px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.55), 0 0 0 3px rgba(255,200,61,.5);
-    animation: logoFloat 3s ease-in-out infinite;
-  }
+  #menuLogo { display: none; }
   @keyframes logoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
   h1, h2, h3, .sec, .bn, .tag, .best, .stat b, .pill b, .speedo-num b, .lbrow .sc, .lbrow .rk {
     font-family: 'Rubik', 'Baloo Da 2', system-ui, sans-serif;
@@ -542,7 +538,6 @@
   @media (min-width: 900px) {
     #pageMain { max-width: 720px; }
     .mx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
-    .mx-grid #startCard { grid-column: 1 / -1; }
     .mx-grid .mx-duo { grid-column: 1 / -1; }
     .mm-logo { width: min(220px, 30vw); }
   }
@@ -646,10 +641,8 @@
         </div>
       </div>
       <div class="mm-divbadge">📍<span><span data-i18n="mm_div">RANGPUR</span><small data-i18n="mm_divs">DIVISION</small></span></div>
-      <img class="mm-logo" id="menuLogo" src="ride-for-life-logo.png" alt="Ride For Life">
       <div class="mm-tag" data-i18n="mm_tag">Deliver More Than Just Packages</div>
       <div class="mx-grid">
-      <button class="mx gold" id="startCard"><span class="ico">📍</span><span class="tx"><b data-i18n="mm_start">Start Ride</b><small data-i18n="mm_start_s">Take Your Delivery Mission</small></span><span class="chev">›</span></button>
       <button class="mx blue" data-page="pageDest"><span class="ico">🗺️</span><span class="tx"><b data-i18n="mm_map">Map</b><small data-i18n="mm_map_s">Explore Rangpur &amp; Nearby Areas</small></span><span class="chev">›</span></button>
       <button class="mx purple" id="missionRow" data-page="pageMission"><span class="ico">🎯</span><span class="tx"><b data-i18n="mm_jobs">Daily Mission</b><small data-i18n="mm_jobs_s">Complete Today's Challenge</small></span><span class="chev">›</span></button>
       <button class="mx green" data-page="pageGarage"><span class="ico">🛠️</span><span class="tx"><b data-i18n="mm_garage">Garage</b><small data-i18n="mm_garage_s">Upgrade Your Bike &amp; Gear</small></span><span class="chev">›</span></button>
@@ -5900,7 +5893,6 @@ function boot() {
   $('splashInstall').addEventListener('click', function () { promptInstall(); });
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
   $('profRow').addEventListener('click', function () { renderProfile(); });
-  $('startCard').addEventListener('click', function () { eventMode = null; renderEvents(); startGame(false); });
   $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
   $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
   $('coinPlus').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
