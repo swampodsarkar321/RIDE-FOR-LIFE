@@ -1,0 +1,47 @@
+{
+  "rules": {
+    "players": {
+      ".read": true,
+      "$uid": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['name', 'best', 'bank', 'level', 'at']) && newData.child('name').isString() && newData.child('name').val().length <= 20 && newData.child('best').isNumber() && newData.child('best').val() >= 0 && newData.child('best').val() <= 50000000 && newData.child('bank').isNumber() && newData.child('bank').val() >= 0 && newData.child('bank').val() <= 50000000 && newData.child('level').isNumber() && newData.child('level').val() >= 1 && newData.child('level').val() <= 100 && newData.child('at').isNumber()"
+      }
+    },
+    "scores_by_player": {
+      ".read": true,
+      ".indexOn": ["s", "div", "t"],
+      "$uid": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['n', 's', 't']) && newData.child('n').isString() && newData.child('n').val().length <= 20 && newData.child('s').isNumber() && newData.child('s').val() >= 0 && newData.child('s').val() <= 5000000 && newData.child('t').isNumber()"
+      }
+    },
+    "codes": {
+      "$code": {
+        ".read": true,
+        ".write": "newData.hasChildren(['u', 'at']) && newData.child('u').isString() && newData.child('u').val().length <= 40 && newData.child('at').isNumber()"
+      }
+    },
+    "config": {
+      ".read": true,
+      ".write": true,
+      "bikes": {
+        "$k": {
+          ".validate": "newData.val() == null || newData.hasChildren(['name_en', 'color', 'price'])"
+        }
+      },
+      "events": {
+        "$k": {
+          ".validate": "newData.val() == null || newData.hasChildren(['name_en'])"
+        }
+      },
+      "billboards": {
+        "$k": {
+          ".validate": "newData.val() == null || (newData.hasChildren(['img']) && newData.child('img').isString() && newData.child('img').val().length <= 400000)"
+        }
+      },
+      "activeEvent": {
+        ".validate": "newData.val() == null || (newData.isString() && newData.val().length <= 40)"
+      }
+    }
+  }
+}
