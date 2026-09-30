@@ -663,6 +663,7 @@
 <script>
 (function () {
 'use strict';
+window._splashStart = Date.now();
 var $ = function (id) { return document.getElementById(id); };
 var rnd = function (a, b) { return a + Math.random() * (b - a); };
 var pick = function (a) { return a[(Math.random() * a.length) | 0]; };
@@ -5323,7 +5324,13 @@ function boot() {
   state = 'menu'; speed = 9;
   loadProgress('Done!');
   try {
-    var sp = $('splash'); if (sp) { sp.classList.add('hide'); setTimeout(function () { sp.style.display = 'none'; }, 600); }
+    var sp = $('splash');
+    if (sp) {
+      var elapsed = Date.now() - (window._splashStart || Date.now());
+      var wait = Math.max(0, 5000 - elapsed);
+      sp.classList.add('hide');
+      setTimeout(function () { sp.style.display = 'none'; }, Math.max(600, wait));
+    }
   } catch (e) {}
   $('loading').classList.add('hidden');
   last = performance.now();
