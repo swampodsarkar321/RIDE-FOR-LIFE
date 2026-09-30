@@ -1512,103 +1512,7 @@ function makeEgret(x, y, z, parent) {
 
 var BLD_COLS = [0xe8dcc0, 0xd6c49a];
 
-/* ---------- SteadFast billboard (roadside, image-style) ---------- */
-var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [], boardBag = [], boardBagStamp = '', billboardsOn = true, AVATAR_BOARDS = [];
-try { billboardsOn = localStorage.getItem('rrBbOn') !== '0'; } catch (e) {}
-function initAvatarBoards() { // avatar billboard: player-er moto face image
-  if (AVATAR_BOARDS.length) return;
-  for (var i = 0; i < 8; i++) {
-    var avUrl = avatarUrl(i * 7);
-    var rec = { img: avUrl, mat: new THREE.MeshBasicMaterial({ color: 0x2d7a4f }), ready: false, failed: false };
-    AVATAR_BOARDS.push(rec);
-    try {
-      if (!boardLoader) { boardLoader = new THREE.TextureLoader(); try { boardLoader.setCrossOrigin('anonymous'); } catch (e2) {} }
-      boardLoader.load(avUrl, function (tex) {
-        try { tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4; rec.mat.map = tex; rec.mat.needsUpdate = true; rec.ready = true; } catch (e2) {}
-      }, undefined, function () { rec.failed = true; });
-    } catch (e2) { rec.failed = true; }
-  }
-}
-function syncAdminBoards(list) { // admin panel theke image billboard — live
-  try {
-    var seen = {};
-    Object.keys(list || {}).forEach(function (k) {
-      var b = list[k]; if (!b || !b.img) return;
-      var img = String(b.img).slice(0, 300000);
-      if (!img) return;
-      seen[img] = true;
-      for (var i = 0; i < ADMIN_BOARDS.length; i++) if (ADMIN_BOARDS[i].img === img) return;
-      (function (url) {
-        var rec = { img: url, mat: new THREE.MeshBasicMaterial({ color: 0xffffff }), ready: false, failed: false };
-        ADMIN_BOARDS.push(rec);
-        try {
-          if (!boardLoader) { boardLoader = new THREE.TextureLoader(); try { boardLoader.setCrossOrigin('anonymous'); } catch (e2) {} }
-          boardLoader.load(url, function (tex) {
-            try { tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4; rec.mat.map = tex; rec.mat.needsUpdate = true; rec.ready = true; } catch (e2) {}
-          }, undefined, function () { rec.failed = true; });
-        } catch (e2) { rec.failed = true; }
-      })(img);
-    });
-    for (var j = ADMIN_BOARDS.length - 1; j >= 0; j--) if (!seen[ADMIN_BOARDS[j].img]) ADMIN_BOARDS.splice(j, 1);
-    while (ADMIN_BOARDS.length > 12) ADMIN_BOARDS.shift();
-    try { boardBag = []; boardBagStamp = ''; } catch (e) {} // config bodlale shuffle abar notun kore
-  } catch (e) {}
-}
-function pickBoardMat() { // shuffled bag: sob image ghuriye, repeat chara
-  try {
-    if (!billboardMat) billboardMat = new THREE.MeshBasicMaterial({ map: makeBillboardTexture() });
-    initAvatarBoards();
-    var stamp = ADMIN_BOARDS.length + AVATAR_BOARDS.length + ':' + ADMIN_BOARDS.filter(function (b) { return b.ready; }).length + AVATAR_BOARDS.filter(function (b) { return b.ready; }).length;
-    if (!boardBag.length || stamp !== boardBagStamp) {
-      boardBagStamp = stamp;
-      boardBag = [billboardMat];
-      for (var i = 0; i < ADMIN_BOARDS.length; i++) if (ADMIN_BOARDS[i].ready) boardBag.push(ADMIN_BOARDS[i].mat);
-      for (var j = 0; j < AVATAR_BOARDS.length; j++) if (AVATAR_BOARDS[j].ready) boardBag.push(AVATAR_BOARDS[j].mat);
-      for (var k = boardBag.length - 1; k > 0; k--) { var m = (Math.random() * (k + 1)) | 0; var t = boardBag[k]; boardBag[k] = boardBag[m]; boardBag[m] = t; }
-    }
-    return boardBag.pop();
-  } catch (e) { return billboardMat; }
-}
-function makeBillboardTexture() {
-  var c = document.createElement('canvas'); c.width = 1024; c.height = 512;
-  var g = c.getContext('2d');
-  g.fillStyle = '#f4f8ff'; g.fillRect(0, 0, 1024, 512);
-  g.fillStyle = '#1a1a1a'; g.font = '800 72px "Baloo Da 2", Arial, sans-serif'; g.textAlign = 'center';
-  g.fillText(lang === 'bn' ? 'এগিয়ে চলো' : 'Keep Going', 300, 190);
-  g.fillText(lang === 'bn' ? 'দুর্বার গতিতে' : 'At Full Speed', 300, 270);
-  // logo pinwheel
-  g.save(); g.translate(730, 180);
-  var cols = ['#0d8a4f', '#333333', '#0d8a4f', '#333333'];
-  for (var i = 0; i < 4; i++) {
-    g.save(); g.rotate(i * Math.PI / 2);
-    g.fillStyle = cols[i]; g.beginPath();
-    g.moveTo(0, 0); g.lineTo(90, -28); g.lineTo(170, 0); g.lineTo(90, 28); g.closePath(); g.fill();
-    g.restore();
-  }
-  g.fillStyle = '#0d8a4f'; g.beginPath(); g.arc(0, 0, 30, 0, Math.PI * 2); g.fill();
-  g.restore();
-  g.fillStyle = '#111111'; g.font = '800 90px Arial, sans-serif';
-  g.fillText(lang === 'bn' ? 'স্টেডফাস্ট' : 'SteadFast', 730, 360);
-  g.strokeStyle = '#d0d8e4'; g.lineWidth = 10; g.strokeRect(5, 5, 1014, 502);
-  var t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
-}
-function makeBillboard(side, z, parent) {
-  var g = new THREE.Group(); g.position.set(side * 9.5, 0, z);
-  var x = side * 9.5;
-  cyl(0.18, 5.5, 0.18, 0x2a3a55, x, 2.75, z, parent); // pole
-  box(0.5, 0.5, 0.5, 0x2a3a55, x, 5.4, z, parent);
-  var board = new THREE.Mesh(PG(7.5, 3.75), pickBoardMat());
-  board.position.set(x, 7.4, z);
-  board.rotation.y = 0; // traffic-er dike mukh — drive korar somoy clear pora jay
-  parent.add(board);
-  var back = box(7.7, 3.9, 0.15, 0x33415c, x, 7.4, z - 0.12, parent);
-  [-1, 1].forEach(function (s2) { // diagonal brace
-    var b2 = box(0.09, 3.0, 0.09, 0x2a3a55, x, 6.3, z + s2 * 1.5, parent);
-    b2.rotation.x = s2 * 0.5;
-  });
-  // floodlight
-  box(0.12, 0.12, 0.5, 0x222222, x, 9.5, z, parent);
-}
+/* roadside billboard removed */
 
 /* ---------- road segments ---------- */
 var SEG_LEN = 40, SEG_N = 6, segs = [], hutCooldown = 0, shopCooldown = 0;
@@ -1793,7 +1697,6 @@ function decorate(seg) {
     });
     makeLamp(side, -5 + rnd(-1, 1), d);
     makeLamp(side, 15 + rnd(-1, 1), d);
-    if (billboardsOn && Math.random() < (town ? 0.65 : 0.50)) makeBillboard(side, rnd(-12, 12), d);
     if (!town && Math.random() < 0.4) makeEgret(side * (6.5 + rnd(0, 3)), rnd(0.3, 0.4), rnd(-16, 16), d);
     if (Math.random() < 0.55) { try { makeLegLandmark(typeof selLeg !== 'undefined' ? selLeg : 0, side, rnd(-14, 14), d); } catch (e) {} }
   });
@@ -3457,7 +3360,7 @@ function setLang(l) {
   lang = (l === 'bn') ? 'bn' : 'en';
   try { localStorage.setItem('rrLang', lang); } catch (e) {}
   try {
-    signMats.length = 0; bannerMats.length = 0; billboardMat = null;
+    signMats.length = 0; bannerMats.length = 0;
     for (var k in legSignMats) delete legSignMats[k];
     for (var k2 in legGateMats) delete legGateMats[k2];
     gateTex = null; checkTex = null; pickupTex = null; pickupMat = null; steadTex = null;
@@ -3585,8 +3488,6 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
           ADMIN_EVENTS.push({ id: 'c_' + k, ico: e.ico || '⭐', en: [e.name_en || 'Custom', e.desc_en || ''], bn: [e.name_bn || e.name_en || 'কাস্টম', e.desc_bn || e.desc_en || ''],
             p: { night: !!e.night, coinX: +e.coinX || 1, fuelX: +e.fuelX || 1, fuelPick: +e.fuelPick || 35, nitroRate: +e.nitroRate || 0, nitroDur: +e.nitroDur || 6, quota: +e.quota || 0, reward: +e.reward || 0, bonusX: +e.bonusX || 1, scoreX: +e.scoreX || 1 } });
         });
-        try { syncAdminBoards(cfg.billboards); } catch (e2) {}
-        try { billboardsOn = cfg.billboardsOn !== false; } catch (e2) {}
         if (!bikeUnlocked(selBike)) selBike = firstOwned();
         if (eventMode && eventMode.charAt(0) === 'c' && !evP().quota && evP().scoreX === 1 && !evP().night && (evP().coinX || 1) === 1) { var still = false; for (var q = 0; q < ADMIN_EVENTS.length; q++) if (ADMIN_EVENTS[q].id === eventMode) still = true; if (!still) eventMode = null; }
         // live event lock: admin jeta live korbe setai cholbe
@@ -6114,7 +6015,6 @@ function boot() {
   });
   try { renderDaily(); } catch (e) {}
   renderAvatarPicker();
-  initAvatarBoards();
   state = 'menu'; speed = 9;
   loadProgress('Done!');
   try {
