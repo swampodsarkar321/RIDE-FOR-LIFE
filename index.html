@@ -2617,7 +2617,7 @@ var combo = 0, comboT = 0, lastComboShown = -1;
 /* level/xp/garage */
 var xp = 0, riderLevel = 1, bankCoins = 0, upSpeed = 0, upHandle = 0, bagLevel = 0;
 var playerName = '', selBike = 0, playerDiv = '', tParcels = 0;
-var BIKE_PRICE = [0, 300, 600, 800, 1200, 2000]; // joto valo ability toto dam (0 = free)
+var BIKE_PRICE = [0, 1000, 2000, 3000, 4500, 7000]; // joto valo ability toto dam (0 = free)
 var ownedBikes = [0]; // new user: normal bike free
 var DIVS = [
   { id: 'dhaka', en: 'Dhaka', bn: 'ঢাকা' },
@@ -2718,6 +2718,7 @@ STR.en.up_speed = 'Speed'; STR.bn.up_speed = 'গতি';
 STR.en.up_speed_sub = 'Higher top speed'; STR.bn.up_speed_sub = 'বেশি সর্বোচ্চ গতি';
 STR.en.up_ctrl = 'Control'; STR.bn.up_ctrl = 'নিয়ন্ত্রণ';
 STR.en.up_ctrl_sub = 'Easier turning'; STR.bn.up_ctrl_sub = 'সহজে মোড়';
+STR.en.need_repair = '🔧 Bike smashed! Repair in garage first!'; STR.bn.need_repair = '🔧 বাইক ভাঙা! আগে গ্যারেজে মেরামত করো!';
 STR.en.buynow = 'BUY ৳{0}'; STR.bn.buynow = 'কিনো ৳{0}';
 STR.en.exp_done = '<b>⚡ Express x{0}!</b><small>{1} parcels in {2}s · ৳{3}</small>'; STR.bn.exp_done = '<b>⚡ এক্সপ্রেস x{0}!</b><small>{1} পার্সেল {2}সে-তে · ৳{3}</small>';
 STR.en.lane_l = 'left'; STR.bn.lane_l = 'বাম';
@@ -3181,12 +3182,18 @@ function fmtBest() { return best > 0 ? F('best', best) : ''; }
 function startGame(keepScore) {
   if (state === 'menu') { justFinished = -1; carryScore = 0; }
   var emergency = '';
-  if (hpStore <= 0) { // never soft-lock: auto repair
-    if (bankCoins >= 100) { bankCoins -= 100; hpStore = 100; emergency = T('rep_full'); }
-    else { hpStore = 35; emergency = T('rep_low'); }
-    try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrHp', String(hpStore)); } catch (e) {}
-    cloudSave();
-    renderGarage();
+  if (hpStore <= 0) { // bike full smashed: repair na kore ride noy
+    var rc0 = repairCost();
+    if (bankCoins < rc0) { // taka na thakle emergency 35% free (atke thakbe na)
+      hpStore = 35;
+      try { localStorage.setItem('rrHp', '35'); } catch (e) {}
+      cloudSave(); renderGarage();
+      toast(elHint, T('rep_low'), 2500);
+    } else {
+      toast(elHint, T('need_repair'), 2800);
+      try { showPage('pageGarage'); } catch (e) {}
+      return;
+    }
   }
   ac(); engineStart();
   if (!bikeUnlocked(selBike)) selBike = firstOwned();
