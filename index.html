@@ -1297,8 +1297,22 @@ function makeEgret(x, y, z, parent) {
 var BLD_COLS = [0xe8dcc0, 0xd6c49a];
 
 /* ---------- SteadFast billboard (roadside, image-style) ---------- */
-var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [], boardBag = [], boardBagStamp = '', billboardsOn = true;
+var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [], boardBag = [], boardBagStamp = '', billboardsOn = true, AVATAR_BOARDS = [];
 try { billboardsOn = localStorage.getItem('rrBbOn') !== '0'; } catch (e) {}
+function initAvatarBoards() { // avatar billboard: player-er moto face image
+  if (AVATAR_BOARDS.length) return;
+  for (var i = 0; i < 8; i++) {
+    var avUrl = avatarUrl(i * 7);
+    var rec = { img: avUrl, mat: new THREE.MeshBasicMaterial({ color: 0x2d7a4f }), ready: false, failed: false };
+    AVATAR_BOARDS.push(rec);
+    try {
+      if (!boardLoader) { boardLoader = new THREE.TextureLoader(); try { boardLoader.setCrossOrigin('anonymous'); } catch (e2) {} }
+      boardLoader.load(avUrl, function (tex) {
+        try { tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4; rec.mat.map = tex; rec.mat.needsUpdate = true; rec.ready = true; } catch (e2) {}
+      }, undefined, function () { rec.failed = true; });
+    } catch (e2) { rec.failed = true; }
+  }
+}
 function syncAdminBoards(list) { // admin panel theke image billboard — live
   try {
     var seen = {};
@@ -1327,25 +1341,14 @@ function syncAdminBoards(list) { // admin panel theke image billboard — live
 function pickBoardMat() { // shuffled bag: sob image ghuriye, repeat chara
   try {
     if (!billboardMat) billboardMat = new THREE.MeshBasicMaterial({ map: makeBillboardTexture() });
-    var pool = [billboardMat];
-    // avatar billboard: player-er moto face image
-    for (var i = 0; i < 8; i++) {
-      var avUrl = avatarUrl(i * 7);
-      var rec = { img: avUrl, mat: new THREE.MeshBasicMaterial({ color: 0xffffff }), ready: false, failed: false };
-      ADMIN_BOARDS.push(rec);
-      try {
-        if (!boardLoader) { boardLoader = new THREE.TextureLoader(); try { boardLoader.setCrossOrigin('anonymous'); } catch (e2) {} }
-        boardLoader.load(avUrl, function (tex) {
-          try { tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4; rec.mat.map = tex; rec.mat.needsUpdate = true; rec.ready = true; } catch (e2) {}
-        }, undefined, function () { rec.failed = true; });
-      } catch (e2) { rec.failed = true; }
-    }
-    var stamp = ADMIN_BOARDS.length + ':' + ADMIN_BOARDS.filter(function (b) { return b.ready; }).length;
+    initAvatarBoards();
+    var stamp = ADMIN_BOARDS.length + AVATAR_BOARDS.length + ':' + ADMIN_BOARDS.filter(function (b) { return b.ready; }).length + AVATAR_BOARDS.filter(function (b) { return b.ready; }).length;
     if (!boardBag.length || stamp !== boardBagStamp) {
       boardBagStamp = stamp;
       boardBag = [billboardMat];
       for (var i = 0; i < ADMIN_BOARDS.length; i++) if (ADMIN_BOARDS[i].ready) boardBag.push(ADMIN_BOARDS[i].mat);
-      for (var j = boardBag.length - 1; j > 0; j--) { var k = (Math.random() * (j + 1)) | 0; var t = boardBag[j]; boardBag[j] = boardBag[k]; boardBag[k] = t; }
+      for (var j = 0; j < AVATAR_BOARDS.length; j++) if (AVATAR_BOARDS[j].ready) boardBag.push(AVATAR_BOARDS[j].mat);
+      for (var k = boardBag.length - 1; k > 0; k--) { var m = (Math.random() * (k + 1)) | 0; var t = boardBag[k]; boardBag[k] = boardBag[m]; boardBag[m] = t; }
     }
     return boardBag.pop();
   } catch (e) { return billboardMat; }
@@ -5467,6 +5470,7 @@ function boot() {
   });
   try { renderDaily(); } catch (e) {}
   renderAvatarPicker();
+  initAvatarBoards();
   state = 'menu'; speed = 9;
   loadProgress('Done!');
   try {
