@@ -454,6 +454,7 @@
         <button class="mrow" data-page="pageBoard"><span data-i18n="m_board">🏆 My Best Runs</span><span class="mval"></span><span class="chev">›</span></button>
         <button class="mrow" data-page="pageProfile" id="profRow"><span data-i18n="m_profile">👤 Profile</span><span class="mval" id="mProfVal"></span><span class="chev">›</span></button>
         <button class="mrow" id="dailyRow" data-page="pageMain"><span>🎁 Daily Reward</span><span class="mval" id="mDailyVal"></span><span class="chev">›</span></button>
+        <button class="mrow" id="missionRow"><span>🎯 Daily Mission</span><span class="mval" id="mMissionVal"></span><span class="chev">›</span></button>
       </div>
       <button class="btn" id="menuSettingsBtn" style="background:#2d7a4f;box-shadow:0 5px 0 #14521f;font-size:22px;margin-top:10px;" data-i18n="menu_settings">⚙️ Settings</button>
       <button class="btn" id="menuHowBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;font-size:22px;margin-top:10px;">❓ How to</button>
@@ -2560,6 +2561,43 @@ function checkAdminNotif() { // admin pathano notification check
   } catch (e) {}
 }
 var DAILY_PAY = [100, 150, 200, 250, 300, 400, 500];
+var MISSIONS = [
+  { id: 'parcel', en: 'Deliver {0} parcels', bn: '{0} পার্সেল ডেলিভার করো', target: 20, reward: 300 },
+  { id: 'score', en: 'Score {0} points', bn: '{0} পয়েন্ট স্কোর করো', target: 3000, reward: 400 },
+  { id: 'distance', en: 'Ride {0}m', bn: '{0}মি দৌড়াও', target: 5000, reward: 350 },
+  { id: 'nearmiss', en: '{0} near-miss', bn: '{0} নিয়ার-মিস', target: 15, reward: 250 },
+  { id: 'order', en: 'Complete {0} orders', bn: '{0} অর্ডার শেষ করো', target: 5, reward: 500 }
+];
+var missionState = { date: '', idx: 0, progress: 0, done: false };
+try {
+  var ms = JSON.parse(localStorage.getItem('rrMission') || 'null');
+  if (ms && ms.date === dayStr()) missionState = ms;
+  else { missionState = { date: dayStr(), idx: (Math.random() * MISSIONS.length) | 0, progress: 0, done: false }; }
+} catch (e) { missionState = { date: dayStr(), idx: 0, progress: 0, done: false }; }
+function missionInfo() { return MISSIONS[missionState.idx % MISSIONS.length]; }
+function missionText() {
+  var m = missionInfo();
+  var txt = lang === 'bn' ? m.bn : m.en;
+  return txt.split('{0}').join(m.target);
+}
+function missionProgress() { return Math.min(missionState.progress, missionInfo().target); }
+function missionDone() { return missionState.done; }
+function saveMission() { try { localStorage.setItem('rrMission', JSON.stringify(missionState)); } catch (e) {} }
+function addMissionProgress(n) {
+  if (missionState.done) return;
+  var m = missionInfo();
+  missionState.progress += n;
+  if (missionState.progress >= m.target) {
+    missionState.done = true;
+    bankCoins += m.reward;
+    try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
+    cloudSave();
+    try { logEv('mission_done', { id: m.id }); } catch (e) {}
+    try { toast(elLoc, '🎯 ' + missionText() + ' — ৳' + m.reward + '!', 3200); } catch (e) {}
+    try { sfx.power(); } catch (e) {}
+  }
+  saveMission();
+}
 function dayStr(d) { d = d || new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function dailyState() {
   try { return JSON.parse(localStorage.getItem('rrDaily') || '{"last":"","streak":0}'); }
@@ -2594,6 +2632,11 @@ function renderDaily() {
     } else cb.style.display = 'none';
     var mv = $('mDailyVal');
     if (mv) mv.textContent = info.claimable ? '❗' : info.streak + '🔥';
+    var mEl = $('mMissionVal');
+    if (mEl) {
+      if (missionDone()) mEl.textContent = '✅';
+      else mEl.textContent = missionProgress() + '/' + missionInfo().target;
+    }
   } catch (e) {}
 }
 /* ---------- invite rewards queue ---------- */
@@ -4196,6 +4239,8 @@ function update(dt) {
     dist += speed * dt;
     xp += speed * dt * 0.1;
     score += speed * dt * (doubleT > 0 ? 2 * scoreXK : scoreXK);
+    if (missionInfo().id === 'score') addMissionProgress(speed * dt * (doubleT > 0 ? 2 * scoreXK : scoreXK));
+    if (missionInfo().id === 'distance') addMissionProgress(speed * dt);
     // gontobye pouchano?
     if (!arrived && dist >= leg().len) {
       arrived = true; endReason = 'arrive'; arrivedName = legName(leg());
@@ -4250,6 +4295,7 @@ function update(dt) {
       var dx = Math.abs(player.position.x - o.x);
       if (dx > o.hw + 0.18 && dx < o.hw + 1.1) {
         nmStreak++; nmTotal++;
+        if (missionInfo().id === 'nearmiss') addMissionProgress(1);
         try { localStorage.setItem('rrNm', String(nmTotal)); } catch (e) {}
         var nmPts = Math.round((20 + Math.min(nmStreak, 10) * 5) * (doubleT > 0 ? 2 * scoreXK : scoreXK));
         score += nmPts;
@@ -4316,6 +4362,7 @@ function update(dt) {
             xMult = xSec < 45 ? 2 : xSec < 90 ? 1.5 : xSec < 150 ? 1.2 : 1;
             pay2 = Math.round(orderReward * xMult);
           }
+          addMissionProgress(1); // order complete
           // special parcel rules
           var spNote = '';
           if (spType === 'med') { pay2 = Math.round(pay2 * 2); spNote = '🚨'; } // emergency: double pay
@@ -4407,6 +4454,7 @@ function update(dt) {
           continue;
         }
         parcelCount++; missionGot++; carried++;
+        addMissionProgress(1); // parcel mission
         combo++; comboT = 4;
         var mult = Math.min(5, 1 + ((combo / 3) | 0)); // proti 3 combo-te x barbe, max x5
         var pts = 50 * mult * (doubleT > 0 ? 2 * scoreXK : scoreXK);
