@@ -479,7 +479,7 @@
       <div class="secCard">
         <div id="bikeSel">
           <button class="arr" id="bikeL">◀</button>
-          <div id="bikeName">🏍️ Black Bike</div>
+          <div id="bikeName">🏍️ Honda Dream</div>
           <button class="arr" id="bikeR">▶</button>
         </div>
         <div id="bikeDots">●○○○○○</div>
@@ -2938,7 +2938,7 @@ var BANNERS_TX = [
 function legName(l) { return lang === 'bn' ? l.bn : l.en; }
 function legReal(l) { var i = LEGS.indexOf(l); return lang === 'bn' ? l.real : (REAL_EN[i] || l.real); }
 function bikeColName(i) { return (lang === 'bn' ? BIKE_BN : BIKE_EN)[i % BIKE_BN.length]; }
-function bikeName(i) { return bikeColName(i) + T('bike_word'); }
+function bikeName(i) { return bikeColName(i); }
 function bikeTag(i) { return (lang === 'bn' ? TAG_BN : TAG_EN)[i % TAG_BN.length]; }
 function themeName(t) { return (THEME_TX[t] || THEME_TX.village)[lang] || THEME_TX.village.en; }
 function applyLang() {
