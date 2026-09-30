@@ -2906,8 +2906,8 @@ bn: {
 }};
 function T(k) { try { var L = STR[lang] || STR.en; return (L[k] !== undefined ? L[k] : (STR.en[k] !== undefined ? STR.en[k] : k)); } catch (e) { return k; } }
 function F(k) { var s = T(k); for (var i = 1; i < arguments.length; i++) s = s.split('{' + (i - 1) + '}').join(arguments[i]); return s; }
-var BIKE_EN = ['Black', 'Green', 'Orange', 'Blue', 'Purple', 'Red'];
-var BIKE_BN = ['কালো', 'সবুজ', 'কমলা', 'নীল', 'বেগুনি', 'লাল'];
+var BIKE_EN = ['Honda Dream', 'Yamaha FZS', 'Suzuki Gixxer', 'TVS Apache', 'Bajaj Pulsar', 'Hero Splendor'];
+var BIKE_BN = ['হোন্ডা ড্রিম', 'যামাহা এফজেড', 'সুজুকি গিক্সার', 'টিভিএস অ্যাপাচি', 'বাজাজ পালসার', 'হিরো স্প্লেন্ডর'];
 var TAG_EN = ['All-rounder', 'Fuel saver', 'More speed', 'Easy turning', 'Strong body', 'Racing bike'];
 var TAG_BN = ['সবদিক ঠিকঠাক', 'তেল সাশ্রয়ী', 'বেশি গতি', 'সহজে মোড় নেয়', 'শক্ত বডি', 'রেসিং বাইক'];
 var THEME_TX = { sea: { en: 'Seaside', bn: 'সাগর পাড়' }, port: { en: 'Hills+Port', bn: 'পাহাড়+বন্দর' }, village: { en: 'Village', bn: 'গ্রাম' }, city: { en: 'City', bn: 'শহর' }, town: { en: 'Town', bn: 'মফস্বল' }, tea: { en: 'Tea Garden', bn: 'চা-বাগান' }, pond: { en: 'Ponds+Village', bn: 'পুকুর+গ্রাম' } };
@@ -3199,7 +3199,7 @@ STR.en.pick_sign = '📦 PICKUP'; STR.bn.pick_sign = '📦 পার্সেল
 var BIKE_COLS_L = 6; // (BIKE_NAMES removed — use bikeName()/bikeColName())
 var BIKE_STATS = [
   { spd: 0, hnd: 0,    fuel: 1.00, dmg: 20, tag: 'সবদিক ঠিকঠাক' },
-  { spd: 0, hnd: 0.15, fuel: 0.85, dmg: 20, tag: 'তেল সাশ্রয়ী' },
+  { spd: 1, hnd: 0.10, fuel: 0.90, dmg: 18, tag: 'ভারী ও স্থির' },
   { spd: 2, hnd: 0,    fuel: 1.05, dmg: 20, tag: 'বেশি গতি' },
   { spd: 0, hnd: 0.35, fuel: 1.00, dmg: 20, tag: 'সহজে মোড় নেয়' },
   { spd: 1, hnd: 0.15, fuel: 0.95, dmg: 14, tag: 'শক্ত বডি' },
@@ -4772,7 +4772,7 @@ function frame(now) {
 }
 
 /* ---------- garage + bike color ---------- */
-var BIKE_COLS = [0x0f0f0f, 0x0d8a4f, 0xff8c1a, 0x2a9df4, 0x9b5de5, 0xdd2222];
+var BIKE_COLS = [0x0f0f0f, 0xdd2222, 0x2a9df4, 0xff8c1a, 0x9b5de5, 0x222222];
 /* ---------- PWA install prompt ---------- */
 var deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', function (e) {
