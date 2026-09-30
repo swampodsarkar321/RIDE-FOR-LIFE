@@ -531,8 +531,15 @@
     <div class="bn" data-i18n="pause_sub">Take a breather</div>
     <p class="tag" data-i18n="pause_tag">The bullock cart will wait. Catch your breath.</p>
     <button class="btn" id="resumeBtn" data-i18n="resume">Resume</button>
+    <button class="btn" id="photoBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;margin-top:10px;">📷 Photo</button>
   </div>
 </div>
+
+<div id="photoBar" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:30;gap:10px;">
+  <button class="btn" id="photoCap" style="font-size:20px;">📸 Capture</button>
+  <button class="btn" id="photoExit" style="font-size:20px;background:#444;box-shadow:0 5px 0 #222;">✕</button>
+</div>
+<div class="tag" id="photoHint" style="display:none;position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 14px);z-index:30;background:rgba(0,0,0,.55);padding:4px 16px;border-radius:999px;">Drag to rotate camera</div>
 
 <div class="overlay hidden" id="tutOverlay">
   <div class="card">
@@ -3610,7 +3617,40 @@ $('menuBtn').addEventListener('click', function (e) {
   speed = 9; last = performance.now();
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
 });
-$('resumeBtn').addEventListener('click', resumeGame);
+  $('resumeBtn').addEventListener('click', resumeGame);
+/* ---------- photo mode: pause theke camera ghuriye screenshot ---------- */
+var photoOn = false, photoYaw = 0, photoPitch = 0, photoDrag = null;
+function applyPhotoCam() {
+  try {
+    var tx = player.position.x * 0.3 + curveAt(-8) * 0.5, ty = 1.5, tz = -8;
+    var bx = player.position.x * 0.45 + curveAt(-8) * 0.3, by = camCfg.h + py * 0.25 + photoPitch, bz = camCfg.dist;
+    var dx = bx - tx, dz = bz - tz, cs = Math.cos(photoYaw), sn = Math.sin(photoYaw);
+    camera.position.set(tx + dx * cs - dz * sn, by, tz + dx * sn + dz * cs);
+    camera.lookAt(tx, ty, tz);
+    renderer.render(scene, camera);
+  } catch (e) {}
+}
+function photoMode(on) {
+  photoOn = on;
+  try {
+    ['hud', 'pops'].forEach(function (id) { var el = $(id); if (el) el.style.display = on ? 'none' : ''; });
+    var br = $('brakeBtn'); if (br) br.style.display = on ? 'none' : '';
+    $('pause').classList.add('hidden');
+    $('photoBar').style.display = on ? 'flex' : 'none';
+    $('photoHint').style.display = on ? 'block' : 'none';
+    if (on) { photoYaw = 0; photoPitch = 0; applyPhotoCam(); try { logEv('photo', {}); } catch (e) {} }
+    else applyPhotoCam();
+  } catch (e) {}
+}
+function capturePhoto() {
+  try {
+    renderer.render(scene, camera); // same-task render → toDataURL safe
+    var url = renderer.domElement.toDataURL('image/png');
+    var a = document.createElement('a'); a.href = url; a.download = 'ride-for-life.png';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { try { document.body.removeChild(a); } catch (e) {} }, 800);
+  } catch (e) {}
+}
 $('pauseBtn').addEventListener('click', function (e) { e.currentTarget.blur(); pauseGame(); });
 $('mute').addEventListener('click', function (e) { muted = !muted; e.currentTarget.textContent = muted ? '🔇' : '🔊'; e.currentTarget.blur(); if (muted) engineStop(); else if (state === 'play') engineStart(); });
 $('settingsBtn').addEventListener('click', function (e) {
@@ -4685,6 +4725,22 @@ function boot() {
   bb.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); btnBrake = true; bb.classList.add('held'); });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { bb.addEventListener(ev, function () { btnBrake = false; bb.classList.remove('held'); }); });
   bb.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  $('photoBtn').addEventListener('click', function () { photoMode(true); });
+  $('photoExit').addEventListener('click', function () { photoMode(false); if (state === 'pause') $('pause').classList.remove('hidden'); });
+  $('photoCap').addEventListener('click', function () { capturePhoto(); });
+  (function () { // photo drag-orbit (sudhu photo mode-e)
+    var cv = renderer.domElement, lx = 0, ly = 0, on = false;
+    function pos(e) { var t = e.touches && e.touches[0] ? e.touches[0] : e; return [t.clientX, t.clientY]; }
+    cv.addEventListener('pointerdown', function (e) { if (!photoOn) return; on = true; var p = pos(e); lx = p[0]; ly = p[1]; });
+    window.addEventListener('pointermove', function (e) {
+      if (!photoOn || !on) return;
+      var p = pos(e);
+      photoYaw = Math.max(-1.1, Math.min(1.1, photoYaw + (p[0] - lx) * 0.005));
+      photoPitch = Math.max(-1, Math.min(3, photoPitch + (p[1] - ly) * 0.008));
+      lx = p[0]; ly = p[1]; applyPhotoCam();
+    });
+    ['pointerup', 'pointercancel'].forEach(function (ev) { window.addEventListener(ev, function () { on = false; }); });
+  })();
   for (var i = 0; i < SEG_N; i++) segs.push(makeSeg(i));
   try { makeFlyBirds(); } catch (e) {}
   $('menuBest').textContent = fmtBest() + (playerName ? ' · ' + playerName : '');
