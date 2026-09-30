@@ -2637,9 +2637,11 @@ var EVENTS = [
   { id: 'night', ico: '🌙', en: ['Night Run', 'Night ride, double coins'], bn: ['নাইট রান', 'রাতে চালাও, দ্বিগুণ কয়েন'], p: { night: true, coinX: 2 } },
   { id: 'fuel', ico: '⛽', en: ['Fuel Challenge', 'Fast drain, 1.5x bonus'], bn: ['ফুয়েল চ্যালেঞ্জ', 'তাড়াতাড়ি তেল শেষ, ১.৫x বোনাস'], p: { fuelX: 1.6, fuelPick: 50, bonusX: 1.5 } },
   { id: 'nitro', ico: '🚀', en: ['Nitro Rush', 'More nitro, 9s boost'], bn: ['নাইট্রো রাশ', 'বেশি নাইট্রো, ৯ সেকেন্ড বুস্ট'], p: { nitroRate: 0.15, nitroDur: 9 } },
-  { id: 'express', ico: '⚡', en: ['Express Delivery', '10 parcels, faster = bigger bonus'], bn: ['এক্সপ্রেস ডেলিভারি', '১০ পার্সেল, যত তাড়াতাড়ি তত বোনাস'], p: { quota: 10, reward: 600 } }
+  { id: 'express', ico: '⚡', en: ['Express Delivery', '10 parcels, faster = bigger bonus'], bn: ['এক্সপ্রেস ডেলিভারি', '১০ পার্সেল, যত তাড়াতাড়ি তত বোনাস'], p: { quota: 10, reward: 600 } },
+  { id: 'puja', ico: '🪔', en: ['Durga Puja Rush (Oct 16-21)', '12 parcels · night lights · double coins · ৳1200'], bn: ['দুর্গা পূজা রাশ (১৬-২১ অক্টোবর)', '১২ পার্সেল · রাতের আলো · দ্বিগুণ কয়েন · ৳১২০০'], p: { night: true, coinX: 2, quota: 12, reward: 1200, bonusX: 1.5 } }
 ];
 var eventMode = null, fuelDrainK = 1, fuelPickAmt = 35, scoreXK = 1;
+var activeEventId = null; // admin live korle sudhu etai cholbe
 var ADMIN_EVENTS = [], ADMIN_MINLVL = {};
 var BASE_STATS = null, BASE_COLS = null, BASE_BN = null, BASE_EN = null, BASE_TB = null, BASE_TE = null, BASE_PRC = null;
 function evP() {
@@ -2676,7 +2678,19 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
         });
         if (!bikeUnlocked(selBike)) selBike = firstOwned();
         if (eventMode && eventMode.charAt(0) === 'c' && !evP().quota && evP().scoreX === 1 && !evP().night && (evP().coinX || 1) === 1) { var still = false; for (var q = 0; q < ADMIN_EVENTS.length; q++) if (ADMIN_EVENTS[q].id === eventMode) still = true; if (!still) eventMode = null; }
-        applyLang(); applyBikeColor(); renderGarage(); renderDest();
+        // live event lock: admin jeta live korbe setai cholbe
+        try {
+          var av = cfg.activeEvent || null;
+          activeEventId = (typeof av === 'string' && av) ? av : null;
+          if (activeEventId) {
+            var okEv = false;
+            for (var ae = 0; ae < EVENTS.length; ae++) if (EVENTS[ae].id === activeEventId) okEv = true;
+            for (var ac = 0; ac < ADMIN_EVENTS.length; ac++) if (ADMIN_EVENTS[ac].id === activeEventId) okEv = true;
+            if (okEv) eventMode = activeEventId;
+            else activeEventId = null;
+          }
+        } catch (e2) { activeEventId = null; }
+        applyLang(); applyBikeColor(); renderGarage(); renderDest(); renderEvents();
       } catch (e) {}
     });
   } catch (e) {}
@@ -2688,15 +2702,27 @@ function renderEvents() {
   var el = $('eventList'); if (!el) return;
   var html = '';
   var allEv = EVENTS.concat(ADMIN_EVENTS);
+  if (activeEventId) {
+    html += '<div style="text-align:center;font-weight:800;color:var(--gold);margin-bottom:6px;">🔴 ' + (lang === 'bn' ? 'লাইভ ইভেন্ট চলছে' : 'LIVE EVENT') + '</div>';
+  }
   for (var i = 0; i < allEv.length; i++) {
     var ev = allEv[i], nm = lang === 'bn' ? ev.bn[0] : ev.en[0], ds = lang === 'bn' ? ev.bn[1] : ev.en[1];
-    html += '<button class="legRow' + (eventMode === ev.id ? ' sel' : '') + '" data-ev="' + ev.id + '"><span>' + ev.ico + ' ' + nm + ' <small style="color:var(--panel-soft)">' + ds + '</small></span><span class="st">▶</span></button>';
+    var isLive = activeEventId && activeEventId === ev.id;
+    var isLocked = activeEventId && activeEventId !== ev.id;
+    html += '<button class="legRow' + (eventMode === ev.id ? ' sel' : '') + (isLocked ? ' lock' : '') + '" data-ev="' + ev.id + '"' + (isLocked ? ' data-lock="1"' : '') + '><span>' + ev.ico + ' ' + nm + (isLive ? ' <b style="color:var(--gold)">● LIVE</b>' : '') + ' <small style="color:var(--panel-soft)">' + ds + '</small></span><span class="st">' + (isLocked ? '🔒' : '▶') + '</span></button>';
   }
   el.innerHTML = html;
   Array.prototype.forEach.call(el.querySelectorAll('.legRow'), function (b) {
-    b.addEventListener('click', function (e) { e.stopPropagation(); eventMode = b.getAttribute('data-ev'); renderEvents(); startGame(false); });
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (b.getAttribute('data-lock')) {
+        try { var hh = $('hint'); if (hh) toast(hh, lang === 'bn' ? '🔒 এখন লাইভ ইভেন্টই চলবে!' : '🔒 Live event only right now!', 1800); } catch (err) {}
+        eventMode = activeEventId; renderEvents(); startGame(false); return;
+      }
+      eventMode = b.getAttribute('data-ev'); renderEvents(); startGame(false);
+    });
   });
-  var mv = $('mEvVal'); if (mv) mv.textContent = eventMode ? evName(eventMode) : '';
+  var mv = $('mEvVal'); if (mv) mv.textContent = eventMode ? evName(eventMode) + (activeEventId === eventMode ? ' ●' : '') : '';
 }
 STR.en.name_div = 'Your division?'; STR.bn.name_div = 'তোমার বিভাগ?';
 STR.en.need_name = 'Please enter your name!'; STR.bn.need_name = 'নাম দাও!';
