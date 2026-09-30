@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ride For Life – Delivery Rider</title>
 <link rel="icon" href="ride-for-life-logo.png">
+<link rel="apple-touch-icon" href="ride-for-life-logo.png">
+<meta name="theme-color" content="#2d9c42">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -465,6 +468,7 @@
         </div>
         <div id="bikeDots">●○○○○○</div>
         <div id="bikeStats"></div>
+        <button class="btn" id="bikeBuy" style="display:none;font-size:18px;padding:6px 26px 8px;margin-top:6px;">BUY</button>
       </div>
       <div class="sec" data-i18n="sec_garage">🔧 Garage</div>
       <div class="secCard"><div id="garage"></div></div>
@@ -2221,6 +2225,7 @@ function cloudSave() { // local + cloud — sob save ekhan diye
       localStorage.setItem('rrLeg', String(selLeg));
       localStorage.setItem('rrUnlock', String(unlockLeg));
       localStorage.setItem('rangpurRushBest', String(best));
+      localStorage.setItem('rrOwned', JSON.stringify(ownedBikes));
       localStorage.setItem('rrDiv', String(playerDiv));
       localStorage.setItem('rrTParcels', String(tParcels));
       localStorage.setItem('rrSavedAt', String(now));
@@ -2230,7 +2235,7 @@ function cloudSave() { // local + cloud — sob save ekhan diye
       name: playerName || '', best: best, bank: bankCoins, level: riderLevel,
       xp: Math.floor(xp), bike: selBike, bag: bagLevel, hp: hpStore,
       leg: selLeg, unlock: unlockLeg, upS: upSpeed, upH: upHandle,
-      div: playerDiv, tp: tParcels,
+      div: playerDiv, tp: tParcels, owned: ownedBikes,
       board: getBoard(), at: now
     });
   } catch (e) {}
@@ -2257,6 +2262,7 @@ function cloudLoad() { // boot-e cloud theke notun data anle apply
         if (typeof r.name === 'string' && r.name) { playerName = r.name; try { localStorage.setItem('rrName', r.name); } catch (e) {} }
         if (typeof r.div === 'string' && r.div) { playerDiv = r.div; try { localStorage.setItem('rrDiv', r.div); } catch (e) {} }
         if (typeof r.tp === 'number') { tParcels = r.tp; try { localStorage.setItem('rrTParcels', String(r.tp)); } catch (e) {} }
+        if (r.owned && r.owned.length) { ownedBikes = r.owned; try { localStorage.setItem('rrOwned', JSON.stringify(r.owned)); } catch (e) {} }
         if (r.board && r.board.length) { try { localStorage.setItem('rrBoard', JSON.stringify(r.board.slice(0, 5))); } catch (e) {} }
         cloudSave();
         applyLang(); applyBikeColor(); renderGarage(); renderBoard(); renderDest();
@@ -2611,6 +2617,8 @@ var combo = 0, comboT = 0, lastComboShown = -1;
 /* level/xp/garage */
 var xp = 0, riderLevel = 1, bankCoins = 0, upSpeed = 0, upHandle = 0, bagLevel = 0;
 var playerName = '', selBike = 0, playerDiv = '', tParcels = 0;
+var BIKE_PRICE = [0, 300, 600, 800, 1200, 2000]; // joto valo ability toto dam (0 = free)
+var ownedBikes = [0]; // new user: normal bike free
 var DIVS = [
   { id: 'dhaka', en: 'Dhaka', bn: 'ঢাকা' },
   { id: 'chattogram', en: 'Chattogram', bn: 'চট্টগ্রাম' },
@@ -2625,21 +2633,63 @@ var selDivIdx = -1;
 function divName(id) { for (var i = 0; i < DIVS.length; i++) if (DIVS[i].id === id) return lang === 'bn' ? DIVS[i].bn : DIVS[i].en; return id || ''; }
 function divIndex(id) { for (var i = 0; i < DIVS.length; i++) if (DIVS[i].id === id) return i; return -1; }
 var EVENTS = [
-  { id: 'fest', ico: '🎉', en: ['Festival Run', 'Double score all run'], bn: ['ফেস্টিভ্যাল রান', 'পুরো রান দ্বিগুণ স্কোর'] },
-  { id: 'night', ico: '🌙', en: ['Night Run', 'Night ride, double coins'], bn: ['নাইট রান', 'রাতে চালাও, দ্বিগুণ কয়েন'] },
-  { id: 'fuel', ico: '⛽', en: ['Fuel Challenge', 'Fast drain, 1.5x bonus'], bn: ['ফুয়েল চ্যালেঞ্জ', 'তাড়াতাড়ি তেল শেষ, ১.৫x বোনাস'] },
-  { id: 'nitro', ico: '🚀', en: ['Nitro Rush', 'More nitro, 9s boost'], bn: ['নাইট্রো রাশ', 'বেশি নাইট্রো, ৯ সেকেন্ড বুস্ট'] },
-  { id: 'express', ico: '⚡', en: ['Express Delivery', '10 parcels, faster = bigger bonus'], bn: ['এক্সপ্রেস ডেলিভারি', '১০ পার্সেল, যত তাড়াতাড়ি তত বোনাস'] }
+  { id: 'fest', ico: '🎉', en: ['Festival Run', 'Double score all run'], bn: ['ফেস্টিভ্যাল রান', 'পুরো রান দ্বিগুণ স্কোর'], p: { scoreX: 2 } },
+  { id: 'night', ico: '🌙', en: ['Night Run', 'Night ride, double coins'], bn: ['নাইট রান', 'রাতে চালাও, দ্বিগুণ কয়েন'], p: { night: true, coinX: 2 } },
+  { id: 'fuel', ico: '⛽', en: ['Fuel Challenge', 'Fast drain, 1.5x bonus'], bn: ['ফুয়েল চ্যালেঞ্জ', 'তাড়াতাড়ি তেল শেষ, ১.৫x বোনাস'], p: { fuelX: 1.6, fuelPick: 50, bonusX: 1.5 } },
+  { id: 'nitro', ico: '🚀', en: ['Nitro Rush', 'More nitro, 9s boost'], bn: ['নাইট্রো রাশ', 'বেশি নাইট্রো, ৯ সেকেন্ড বুস্ট'], p: { nitroRate: 0.15, nitroDur: 9 } },
+  { id: 'express', ico: '⚡', en: ['Express Delivery', '10 parcels, faster = bigger bonus'], bn: ['এক্সপ্রেস ডেলিভারি', '১০ পার্সেল, যত তাড়াতাড়ি তত বোনাস'], p: { quota: 10, reward: 600 } }
 ];
-var eventMode = null, fuelDrainK = 1, fuelPickAmt = 35;
-function evTxt(id, k) { for (var i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === id) return lang === 'bn' ? EVENTS[i].bn[k] : EVENTS[i].en[k]; return ''; }
+var eventMode = null, fuelDrainK = 1, fuelPickAmt = 35, scoreXK = 1;
+var ADMIN_EVENTS = [], ADMIN_MINLVL = {};
+var BASE_STATS = null, BASE_COLS = null, BASE_BN = null, BASE_EN = null, BASE_TB = null, BASE_TE = null, BASE_PRC = null;
+function evP() {
+  if (!eventMode) return {};
+  for (var i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === eventMode) return EVENTS[i].p || {};
+  for (var j = 0; j < ADMIN_EVENTS.length; j++) if (ADMIN_EVENTS[j].id === eventMode) return ADMIN_EVENTS[j].p || {};
+  return {};
+}
+function loadGameConfig() { // admin panel theke bike + event ase — live
+  if (!fbReady || !FBDB) return;
+  try {
+    FBDB.ref('config').on('value', function (snap) {
+      try {
+        var cfg = snap.val() || {};
+        if (!BASE_STATS) { BASE_STATS = BIKE_STATS.slice(); BASE_COLS = BIKE_COLS.slice(); BASE_BN = BIKE_BN.slice(); BASE_EN = BIKE_EN.slice(); BASE_TB = TAG_BN.slice(); BASE_TE = TAG_EN.slice(); BASE_PRC = BIKE_PRICE.slice(); }
+        BIKE_STATS = BASE_STATS.slice(); BIKE_COLS = BASE_COLS.slice(); BIKE_BN = BASE_BN.slice(); BIKE_EN = BASE_EN.slice(); TAG_BN = BASE_TB.slice(); TAG_EN = BASE_TE.slice(); BIKE_PRICE = BASE_PRC.slice();
+        ADMIN_EVENTS = []; ADMIN_MINLVL = {};
+        var bk = cfg.bikes || {}, ev = cfg.events || {}, n = 0;
+        Object.keys(bk).forEach(function (k) {
+          if (n >= 12) return;
+          var b = bk[k]; if (!b) return;
+          var idx = BIKE_STATS.length;
+          BIKE_STATS.push({ spd: +b.spd || 0, hnd: +b.hnd || 0, fuel: +b.fuel || 1, dmg: +b.dmg || 20, tag: 'x' });
+          BIKE_COLS.push(+b.color || 0xffffff);
+          BIKE_PRICE.push(+b.price || 0);
+          BIKE_BN.push(b.name_bn || b.name_en || 'কাস্টম'); BIKE_EN.push(b.name_en || b.name_bn || 'Custom');
+          TAG_BN.push(b.tag_bn || b.tag_en || 'কাস্টম'); TAG_EN.push(b.tag_en || b.tag_bn || 'Custom');
+          ADMIN_MINLVL[idx] = +b.level || 1; n++;
+        });
+        Object.keys(ev).forEach(function (k) {
+          var e = ev[k]; if (!e) return;
+          ADMIN_EVENTS.push({ id: 'c_' + k, ico: e.ico || '⭐', en: [e.name_en || 'Custom', e.desc_en || ''], bn: [e.name_bn || e.name_en || 'কাস্টম', e.desc_bn || e.desc_en || ''],
+            p: { night: !!e.night, coinX: +e.coinX || 1, fuelX: +e.fuelX || 1, fuelPick: +e.fuelPick || 35, nitroRate: +e.nitroRate || 0, nitroDur: +e.nitroDur || 6, quota: +e.quota || 0, reward: +e.reward || 0, bonusX: +e.bonusX || 1, scoreX: +e.scoreX || 1 } });
+        });
+        if (!bikeUnlocked(selBike)) selBike = firstOwned();
+        if (eventMode && eventMode.charAt(0) === 'c' && !evP().quota && evP().scoreX === 1 && !evP().night && (evP().coinX || 1) === 1) { var still = false; for (var q = 0; q < ADMIN_EVENTS.length; q++) if (ADMIN_EVENTS[q].id === eventMode) still = true; if (!still) eventMode = null; }
+        applyLang(); applyBikeColor(); renderGarage(); renderDest();
+      } catch (e) {}
+    });
+  } catch (e) {}
+}
+function evTxt(id, k) { for (var i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === id) return lang === 'bn' ? EVENTS[i].bn[k] : EVENTS[i].en[k]; for (var j = 0; j < ADMIN_EVENTS.length; j++) if (ADMIN_EVENTS[j].id === id) return lang === 'bn' ? ADMIN_EVENTS[j].bn[k] : ADMIN_EVENTS[j].en[k]; return ''; }
 function evName(id) { return evTxt(id, 0); }
 function evDesc(id) { return evTxt(id, 1); }
 function renderEvents() {
   var el = $('eventList'); if (!el) return;
   var html = '';
-  for (var i = 0; i < EVENTS.length; i++) {
-    var ev = EVENTS[i], nm = lang === 'bn' ? ev.bn[0] : ev.en[0], ds = lang === 'bn' ? ev.bn[1] : ev.en[1];
+  var allEv = EVENTS.concat(ADMIN_EVENTS);
+  for (var i = 0; i < allEv.length; i++) {
+    var ev = allEv[i], nm = lang === 'bn' ? ev.bn[0] : ev.en[0], ds = lang === 'bn' ? ev.bn[1] : ev.en[1];
     html += '<button class="legRow' + (eventMode === ev.id ? ' sel' : '') + '" data-ev="' + ev.id + '"><span>' + ev.ico + ' ' + nm + ' <small style="color:var(--panel-soft)">' + ds + '</small></span><span class="st">▶</span></button>';
   }
   el.innerHTML = html;
@@ -2668,6 +2718,7 @@ STR.en.up_speed = 'Speed'; STR.bn.up_speed = 'গতি';
 STR.en.up_speed_sub = 'Higher top speed'; STR.bn.up_speed_sub = 'বেশি সর্বোচ্চ গতি';
 STR.en.up_ctrl = 'Control'; STR.bn.up_ctrl = 'নিয়ন্ত্রণ';
 STR.en.up_ctrl_sub = 'Easier turning'; STR.bn.up_ctrl_sub = 'সহজে মোড়';
+STR.en.buynow = 'BUY ৳{0}'; STR.bn.buynow = 'কিনো ৳{0}';
 STR.en.exp_done = '<b>⚡ Express x{0}!</b><small>{1} parcels in {2}s · ৳{3}</small>'; STR.bn.exp_done = '<b>⚡ এক্সপ্রেস x{0}!</b><small>{1} পার্সেল {2}সে-তে · ৳{3}</small>';
 STR.en.lane_l = 'left'; STR.bn.lane_l = 'বাম';
 STR.en.lane_m = 'middle'; STR.bn.lane_m = 'মাঝ';
@@ -2706,6 +2757,8 @@ try {
   selBike = +localStorage.getItem('rrBike') || 0;
   bagLevel = +localStorage.getItem('rrBag') || 0;
   hpStore = (function () { var h = +localStorage.getItem('rrHp'); return isNaN(h) ? 100 : h; })();
+  try { var ow0 = JSON.parse(localStorage.getItem('rrOwned') || 'null'); ownedBikes = (ow0 && ow0.length) ? ow0 : null; } catch (e) { ownedBikes = null; }
+  if (!ownedBikes) { ownedBikes = []; for (var bi0 = 0; bi0 < 6; bi0++) if (riderLevel >= bi0 + 1) ownedBikes.push(bi0); if (!ownedBikes.length) ownedBikes = [0]; }
 } catch (e) {}
 function bagCap() { return BAG_CAP[Math.min(bagLevel, 2)]; }
 var fuel = 100, fuelWarned = false, fuelCritT = 0, endReason = 'crash', arrivedName = '', OVER_T0 = '', OVER_S0 = '';
@@ -2713,7 +2766,25 @@ var fuelOut = false;
 var onBridge = false, bridgeT = 0;
 var keyBrake = false, btnBrake = false, brakeT = 0, nextGateDist = 230, nextCheckDist = 620;
 function repairCost() { return Math.ceil((100 - hpStore) * 1); }
-function bikeUnlocked(i) { return riderLevel >= i + 1; } // level barle notun rong khule
+function bikeUnlocked(i) {
+  try { if (ownedBikes.indexOf(i) >= 0) return true; } catch (e) {}
+  var pr = (typeof BIKE_PRICE !== 'undefined' && BIKE_PRICE[i]) || 0;
+  if (pr > 0) return false; // coin diye kinte hbe
+  var need = ADMIN_MINLVL[i] || (i + 1);
+  return riderLevel >= need;
+} // level barle notun rong khule
+function firstOwned() { try { for (var i = 0; i < BIKE_COLS.length; i++) if (bikeUnlocked(i)) return i; } catch (e) {} return 0; }
+function buyBike() {
+  if (bikeUnlocked(selBike)) return;
+  var pr = BIKE_PRICE[selBike] || 0;
+  if (pr <= 0) return;
+  if (bankCoins < pr) { toast(elHint, T('buy_fail'), 1800); return; }
+  bankCoins -= pr;
+  ownedBikes.push(selBike);
+  try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrOwned', JSON.stringify(ownedBikes)); } catch (e) {}
+  cloudSave(); applyBikeColor(); renderGarage();
+  sfx.power();
+}
 function xpNeed() { return riderLevel * 500; }
 /* day/night + weather */
 var dayT = 0.8, isNight = false, lastSkyStep = -1, lastPhase = '';
@@ -2736,7 +2807,8 @@ var carried = 0, tutStep = 0, bagWarnT = -99;
 var orderNo = 1, orderNeed = 4, orderReward = 160, eventT = 30, orderSecs = 0;
 function newOrder(loud) {
   orderSecs = 0;
-  if (eventMode === 'express') { orderNeed = 10; orderReward = 600; }
+  var EP1 = evP();
+  if (EP1.quota) { orderNeed = EP1.quota; orderReward = EP1.reward || EP1.quota * 60; }
   else { orderNeed = Math.min(bagCap(), 3 + ((Math.random() * 4) | 0)); orderReward = orderNeed * 40 + ((Math.random() * 3) | 0) * 20; }
   if (loud) toast(elLoc, F('order', orderNo, orderNeed, orderReward), 3000);
 }
@@ -2937,7 +3009,7 @@ function spawnRow(z) {
   if (fuel < 30 && Math.random() < 0.45) addPickup('fuel', LANE_X[safe], 1.0, z + 20); // tel sesh-er dike — must drop
   else if (fuel < 65 && Math.random() < 0.28) addPickup('fuel', LANE_X[safe], 1.0, z + 20); // maintain korte hobe
   else if (Math.random() < 0.05) addPickup('fuel', LANE_X[safe], 1.0, z + 20); // option sobsomoy thakbe
-  if (Math.random() < (eventMode === 'nitro' ? 0.15 : 0.04)) addPickup('nitro', LANE_X[safe], 1.2, z + 22); // majhe majhe nitro
+  if (Math.random() < (evP().nitroRate || 0.04)) addPickup('nitro', LANE_X[safe], 1.2, z + 22); // majhe majhe nitro
 }
 function gapFor() {
   var d = diffK();
@@ -3117,6 +3189,7 @@ function startGame(keepScore) {
     renderGarage();
   }
   ac(); engineStart();
+  if (!bikeUnlocked(selBike)) selBike = firstOwned();
   clearWorld();
   addLegGate();
   hp = hpStore; invT = 0; finalDead = false;
@@ -3131,11 +3204,12 @@ function startGame(keepScore) {
   var GROUND_TINT = { sea: 0xd8c98a, port: 0x7a8a58, village: 0x6b9450, city: 0x8a8f96, town: 0x7a9a58, tea: 0x4a8a3a };
   try { groundMat.color.setHex(GROUND_TINT[legTheme()] || 0x6b9450); } catch (e) {}
   magnetT = 0; doubleT = 0; nitroT = 0; crashT = 0; shake = 0; hints = { banner: 0, low: 0, jam: 0, goat: 0, gate: 0 }; lastLocIdx = -1;
-  NITRO_MAX = eventMode === 'nitro' ? 9 : 6;
-  fuelDrainK = eventMode === 'fuel' ? 1.6 : 1;
-  fuelPickAmt = eventMode === 'fuel' ? 50 : 35;
-  if (eventMode === 'fest') doubleT = 9999;
-  if (eventMode === 'night') dayT = 0.52;
+  var EP0 = evP();
+  NITRO_MAX = EP0.nitroDur || 6;
+  fuelDrainK = EP0.fuelX || 1;
+  fuelPickAmt = EP0.fuelPick || 35;
+  scoreXK = EP0.scoreX || 1;
+  if (EP0.night) dayT = 0.52;
   fuel = 100; fuelOut = false; fuelWarned = false; fuelCritT = 0; onBridge = false; brakeT = 0; endReason = 'crash';
   nextGateDist = 230; nextCheckDist = 620; aqSkip = 0;
   player.position.set(0, 0, 0); player.rotation.set(0, 0, 0);
@@ -3216,7 +3290,7 @@ function endRun() {
     }
   }
   renderBoard(); renderGarage(); renderDest();
-  eventMode = null;
+  eventMode = null; scoreXK = 1;
   try { renderEvents(); } catch (e) {}
 }
 function showOver() { state = 'over'; document.body.dataset.ui = 'over'; $('over').classList.remove('hidden'); var _nb = $('nextBtn'); (_nb && _nb.style.display !== 'none' ? _nb : $('againBtn')).focus({ preventScroll: true }); }
@@ -3380,11 +3454,11 @@ function update(dt) {
     }
     dist += speed * dt;
     xp += speed * dt * 0.1;
-    score += speed * dt * (doubleT > 0 ? 2 : 1);
+    score += speed * dt * (doubleT > 0 ? 2 * scoreXK : scoreXK);
     // gontobye pouchano?
     if (!arrived && dist >= leg().len) {
       arrived = true; endReason = 'arrive'; arrivedName = legName(leg());
-      var ab = Math.round((500 + selLeg * 200) * (eventMode === 'fuel' ? 1.5 : 1));
+      var ab = Math.round((500 + selLeg * 200) * (evP().bonusX || 1));
       score += ab; xp += 200; bankCoins += 100;
       sfx.deliver();
       if (selLeg === LEGS.length - 1) {
@@ -3434,7 +3508,7 @@ function update(dt) {
       o.passed = true;
       var dx = Math.abs(player.position.x - o.x);
       if (dx > o.hw + 0.18 && dx < o.hw + 1.1) {
-        score += 20 * (doubleT > 0 ? 2 : 1);
+        score += 20 * (doubleT > 0 ? 2 * scoreXK : scoreXK);
         pop('😱 +20', player.position.x, py + 2.9, 0, '#ff9d66'); sfx.move();
       }
     }
@@ -3493,14 +3567,14 @@ function update(dt) {
         sfx.deliver();
         if (carried >= orderNeed) {
           var pay2 = orderReward, xMult = 1, xSec = 0;
-          if (eventMode === 'express') {
+          if (evP().quota) {
             xSec = Math.round(orderSecs * 10) / 10;
             xMult = xSec < 45 ? 2 : xSec < 90 ? 1.5 : xSec < 150 ? 1.2 : 1;
             pay2 = Math.round(orderReward * xMult);
           }
           bankCoins += pay2;
           try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
-          if (eventMode === 'express') toast(elLoc, F('exp_done', xMult, carried, xSec, pay2), 3600);
+          if (evP().quota) toast(elLoc, F('exp_done', xMult, carried, xSec, pay2), 3600);
           else toast(elLoc, F('order_done', orderNo, carried, orderReward), 3200);
           orderNo++; newOrder(false);
           setTimeout(function () { newOrder(true); }, 2500);
@@ -3535,7 +3609,7 @@ function update(dt) {
     if (sliding) { slideT -= dt; if (slideT <= 0) sliding = false; }
     if (state !== 'crash') player.position.y = py;
     runT += dt * (state === 'crash' ? 0 : speed * 0.45);
-    if (eventMode === 'express' && state === 'play') orderSecs += dt;
+    if (evP().quota && state === 'play') orderSecs += dt;
   }
   if (state !== 'crash' && state !== 'over') animatePlayer(dt);
   blob.position.x = player.position.x + curveAt(0);
@@ -3553,7 +3627,7 @@ function update(dt) {
     p.mesh.rotation.y += dt * (p.type === 'coin' ? 4 : 2.5);
     var hit = state === 'play' && Math.abs(p.z) < 1.1 && Math.abs(p.x - px) < 1.0 && p.y > py - 0.5 && p.y < py + ph + 0.5;
     if (hit) {
-      if (p.type === 'coin') { coinCount += (eventMode === 'night' ? 2 : 1); score += 10 * (doubleT > 0 ? 2 : 1); sfx.coin(); sparks(p.x + curveAt(p.z), p.y, p.z, 5); }
+      if (p.type === 'coin') { coinCount += (evP().coinX || 1); score += 10 * (doubleT > 0 ? 2 * scoreXK : scoreXK); sfx.coin(); sparks(p.x + curveAt(p.z), p.y, p.z, 5); }
       else if (p.type === 'parcel') {
         if (carried >= bagCap()) {
           // byag bhorti — nite parbe na, age gate-e deliver dao
@@ -3563,7 +3637,7 @@ function update(dt) {
         parcelCount++; missionGot++; carried++;
         combo++; comboT = 4;
         var mult = Math.min(5, 1 + ((combo / 3) | 0)); // proti 3 combo-te x barbe, max x5
-        var pts = 50 * mult * (doubleT > 0 ? 2 : 1);
+        var pts = 50 * mult * (doubleT > 0 ? 2 * scoreXK : scoreXK);
         score += pts; xp += 20;
         sfx.power(); pop('📦 +' + pts, px, py + 2.7, 0); sparks(p.x + curveAt(p.z), p.y, p.z, 12);
         if (missionGot >= missionTarget) {
@@ -3943,7 +4017,6 @@ function frame(now) {
 var BIKE_COLS = [0x0f0f0f, 0x0d8a4f, 0xff8c1a, 0x2a9df4, 0x9b5de5, 0xdd2222];
 function applyBikeColor() {
   try {
-    if (!bikeUnlocked(selBike)) selBike = 0;
     var c = BIKE_COLS[selBike % BIKE_COLS.length];
     bikeG.children.forEach(function (m) {
       if (m.isMesh && m.material && m.material.color && m.geometry && m.geometry.type === 'BoxGeometry') {
@@ -3960,9 +4033,20 @@ function renderBikeSel() {
   for (var i = 0; i < BIKE_COLS.length; i++) dots += (i === selBike ? '●' : '○');
   if (dd) dd.textContent = dots;
   var bsEl = $('bikeStats'); if (bsEl) bsEl.textContent = bikeStatText(selBike);
-  n.textContent = bikeUnlocked(selBike)
-    ? '🏍️ ' + bikeName(selBike % BIKE_COLS.length)
-    : F('bike_locked', selBike + 1);
+  var bb = $('bikeBuy');
+  if (bikeUnlocked(selBike)) {
+    n.textContent = '🏍️ ' + bikeName(selBike % BIKE_COLS.length);
+    if (bb) bb.style.display = 'none';
+  } else {
+    var pr = BIKE_PRICE[selBike] || 0;
+    if (pr > 0) {
+      n.textContent = '🔒 ' + bikeName(selBike % BIKE_COLS.length) + ' · ৳' + pr;
+      if (bb) { bb.style.display = 'inline-block'; bb.textContent = F('buynow', pr); }
+    } else {
+      n.textContent = F('bike_locked', ADMIN_MINLVL[selBike] || (selBike + 1));
+      if (bb) bb.style.display = 'none';
+    }
+  }
   var mv = $('mBikeVal'); if (mv) mv.textContent = bikeColName(selBike % BIKE_COLS.length);
   var mg = $('mGarVal'); if (mg) mg.textContent = hpStore + '%';
 }
@@ -4154,6 +4238,7 @@ function buyUp(kind) {
 /* ---------- boot ---------- */
 function boot() {
   buildTextures();
+  try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {}
   OVER_T0 = ($('overTitle') || {}).textContent || ''; OVER_S0 = ($('overSub') || {}).textContent || '';
   var bb = $('brakeBtn');
   bb.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); btnBrake = true; bb.classList.add('held'); });
@@ -4165,7 +4250,7 @@ function boot() {
   updateMenuBest();
   applyLang();
   applyBikeColor(); renderGarage(); renderBoard(); renderDest();
-  cloudLoad();
+  cloudLoad(); loadGameConfig();
   if (selLeg > unlockLeg) { selLeg = unlockLeg; try { localStorage.setItem('rrLeg', String(selLeg)); } catch (e) {} renderDest(); }
   document.body.dataset.ui = 'menu';
   // prothombar: nam + bibhag (ajibon save) — na dile dhoka jabe na
@@ -4175,6 +4260,7 @@ function boot() {
   if (!playerName || !playerDiv) $('nameOverlay').classList.remove('hidden');
   $('bikeL').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(-1); });
   $('bikeR').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(1); });
+  $('bikeBuy').addEventListener('click', function (e) { e.stopPropagation(); buyBike(); });
   $('destL').addEventListener('click', function (e) { e.stopPropagation(); cycleDest(-1); });
   $('destR').addEventListener('click', function (e) { e.stopPropagation(); cycleDest(1); });
   Array.prototype.forEach.call(document.querySelectorAll('#menu .mrow'), function (btn) {

@@ -1,0 +1,30 @@
+{
+  "name": "Ride For Life - Delivery Rider",
+  "short_name": "Ride For Life",
+  "description": "Teknaf to Tetulia delivery ride across Bangladesh",
+  "start_url": ".",
+  "scope": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#10160e",
+  "theme_color": "#2d9c42",
+  "icons": [
+    {
+      "src": "ride-for-life-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "ride-for-life-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "ride-for-life-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
