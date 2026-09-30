@@ -2,6 +2,7 @@
   "name": "Ride For Life - Delivery Rider",
   "short_name": "Ride For Life",
   "description": "Teknaf to Tetulia delivery ride across Bangladesh",
+  "version": "2.0.0",
   "start_url": ".",
   "scope": ".",
   "display": "fullscreen",
