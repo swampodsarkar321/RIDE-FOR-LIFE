@@ -2958,6 +2958,7 @@ var LANE_X = [-3, 0, 3], SPAWN_Z = -135;
 var state = 'loading';
 var speed = 0, dist = 0, score = 0, coinCount = 0, parcelCount = 0;
 var lane = 1, targetX = 0, py = 0, vy = 0, onGround = true, sliding = false, slideT = 0;
+var skidX = 0, skidV = 0, skidT = 0; // wet-road drift: lateral slide velocity + timer
 var magnetT = 0, doubleT = 0, runT = 0, crashT = 0, shake = 0;
 var nitroT = 0, NITRO_MAX = 6; // nitro boost timer
 /* mission/combo/nearmiss */
@@ -3631,7 +3632,7 @@ function startGame(keepScore) {
   clearWorld();
   addLegGate();
   hp = hpStore; invT = 0; finalDead = false;
-  dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0;
+  dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0; skidX = 0; skidV = 0; skidT = 0;
   if (keepScore && carryScore > 0) { score = carryScore; } else { score = 0; }
   carryScore = 0;
   combo = 0; comboT = 0; missionGot = 0; timeScale = 1; slowT = 0; carried = 0; tutStep = 0; nmStreak = 0; runCrash = 0;
@@ -3999,6 +4000,7 @@ function update(dt) {
   var i;
   if (state === 'play') {
     var wetK = weather === 'heavy' ? 0.75 : weather === 'rain' ? 0.85 : 1; // veja/pichil rasta slow
+    var gripK = weather === 'heavy' ? 0.55 : weather === 'rain' ? 0.75 : 1; // pichil rasta kom grip
     var fuelK = fuel > 0 ? 1 : 0.5; // tel shese gati ardheke
     var bst = bikeStat();
     var L0 = (typeof leg === 'function' ? leg().len : 6000) || 6000;
@@ -4008,7 +4010,14 @@ function update(dt) {
     if (nitroT > 0) target = Math.min(target + 16, 62 + upSpeed * 2); // nitro boost
     var isBrake = keyBrake || btnBrake || brakeT > 0;
     if (brakeT > 0) brakeT -= dt;
-    if (isBrake) target = Math.min(target, 11.5);
+    if (isBrake) {
+      target = Math.min(target, 11.5);
+      // pichil rastay brake-e skid: lateral slide shuru
+      if (wetK < 1 && speed > 14 && skidT <= 0) {
+        skidT = 0.5 + Math.random() * 0.4;
+        skidV = (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 2) * (1.2 - gripK);
+      }
+    }
     speed += (target - speed) * Math.min(1, dt * (isBrake ? 4 : 2.5));
     fuel -= dt * (0.7 + speed * 0.02) * 1.3 * bst.fuel * fuelEff() * fuelDrainK; // tel ektu taratari sesh — pickup must
     if (fuel <= 30 && !fuelWarned) { fuelWarned = true; sfx.fuelLow(); toast(elHint, T('fuel_low'), 2500); }
@@ -4206,6 +4215,15 @@ function update(dt) {
       if (py <= 0) { py = 0; vy = 0; onGround = true; }
     }
     if (sliding) { slideT -= dt; if (slideT <= 0) sliding = false; }
+    // skid physics: lateral velocity decay + bike lean
+    if (skidT > 0) {
+      skidT -= dt;
+      skidX += skidV * dt;
+      skidV *= Math.exp(-dt * 3); // friction
+      if (skidT <= 0) { skidX = 0; skidV = 0; }
+    }
+    player.position.x += skidX * dt * 8; // visual lateral offset
+    bikeG.rotation.z += (-skidX * 0.15 - bikeG.rotation.z) * Math.min(1, dt * 6); // lean into skid
     if (state !== 'crash') player.position.y = py;
     runT += dt * (state === 'crash' ? 0 : speed * 0.45);
     if (evP().quota && state === 'play') orderSecs += dt;
