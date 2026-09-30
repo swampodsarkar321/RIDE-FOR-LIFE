@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="ride-for-life-logo.png">
 <meta name="theme-color" content="#2d9c42">
 <link rel="manifest" href="manifest.json">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;700;800&family=Rubik:wght@400;600;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     box-sizing: border-box;
@@ -30,7 +30,7 @@
   html, body {
     height: 100%; margin: 0; overflow: hidden;
     background: #cdeafd;
-    font-family: 'Baloo Da 2', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: 'Baloo Da 2', 'Rubik', system-ui, -apple-system, 'Segoe UI', sans-serif;
     touch-action: none; -webkit-user-select: none; user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -288,7 +288,11 @@
     animation: logoFloat 3s ease-in-out infinite;
   }
   @keyframes logoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-  h1 { margin: 0; font-size: 50px; line-height: 1; font-weight: 800; }
+  h1, h2, h3, .sec, .bn, .tag, .best, .stat b, .pill b, .speedo-num b, .lbrow .sc, .lbrow .rk {
+    font-family: 'Rubik', 'Baloo Da 2', system-ui, sans-serif;
+    letter-spacing: 0.3px;
+  }
+  .pill b, .speedo-num b, .lbrow .sc { font-variant-numeric: tabular-nums; }
   .bn { font-size: 26px; font-weight: 700; color: var(--gold); margin-top: 2px; }
   .tag { margin: 12px 0 14px; color: var(--panel-soft); font-size: 17px; line-height: 1.25; }
   .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 16px; }
