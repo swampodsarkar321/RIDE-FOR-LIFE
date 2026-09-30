@@ -4465,9 +4465,38 @@ function fetchGlobBoard() {
     }, function () { globFetching = false; });
   } catch (e) { globFetching = false; }
 }
+/* ---------- division war + weekly board ---------- */
+var warCache = null, weekCache = null, warFetching = false;
+function weekStartTs(weeksBack) {
+  var d = new Date(); d.setHours(0, 0, 0, 0);
+  var dow = (d.getDay() + 6) % 7; // Mon=0
+  return d.getTime() - (dow + (weeksBack || 0) * 7) * 86400000;
+}
+function fetchWarWeek() {
+  if (warFetching || !fbReady || !FBDB) return;
+  warFetching = true;
+  try {
+    FBDB.ref('scores_by_player').orderByChild('s').once('value').then(function (snap) {
+      var all = []; snap.forEach(function (c) { var v = c.val() || {}; v._k = c.key; all.push(v); });
+      var tot = {};
+      all.forEach(function (e) { var d = e.div || e.dv || 'unknown'; if (!tot[d]) tot[d] = { id: d, s: 0, n: 0 }; tot[d].s += e.s || 0; tot[d].n++; });
+      warCache = Object.keys(tot).map(function (k) { return tot[k]; }).sort(function (a, b) { return b.s - a.s; });
+      var ws = weekStartTs(0), ps = weekStartTs(1);
+      var wk = all.filter(function (e) { return (e.t || 0) >= ws; }).sort(function (a, b) { return b.s - a.s; });
+      var mine = -1; wk.forEach(function (e, i) { if (e._k === fbUid) mine = i + 1; });
+      var plast = all.filter(function (e) { return (e.t || 0) >= ps && (e.t || 0) < ws; }).sort(function (a, b) { return b.s - a.s; });
+      var lastRank = -1; plast.forEach(function (e, i) { if (e._k === fbUid) lastRank = i + 1; });
+      var lastId = 'w' + Math.floor(ps / 604800000), claimed = '';
+      try { claimed = localStorage.getItem('rrWeekClaim') || ''; } catch (e) {}
+      weekCache = { top: wk.slice(0, 5), myRank: mine, tot: wk.length, lastRank: lastRank, lastId: lastId, claimed: claimed === lastId };
+      warFetching = false;
+      if (lbTab === 'war' || lbTab === 'week') renderBoard();
+    }, function () { warFetching = false; });
+  } catch (e) { warFetching = false; }
+}
 function renderBoard() {
   var html = '';
-  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button></div>';
+  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">⚔️</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">📅</button></div>';
   if (lbTab === 'div') {
     if (!playerDiv) html += T('need_div');
     else if (divCache) html += divCache.length ? worldRows(divCache, false) : T('lb_empty');
@@ -4476,11 +4505,42 @@ function renderBoard() {
     if (globCache) html += globCache.length ? worldRows(globCache, true) : T('lb_empty');
     else { html += T('lb_loading'); fetchGlobBoard(); }
   }
+  if (lbTab === 'war' || lbTab === 'week') {
+    if (!warCache || !weekCache) { html += T('lb_loading'); fetchWarWeek(); }
+  }
+  if (lbTab === 'war' && warCache) {
+    html += '<h3>⚔️ Division War</h3>';
+    html += warCache.map(function (w, i) {
+      var me = playerDiv && w.id === playerDiv ? ' class="me"' : '';
+      return '<div' + me + '><b>' + (i + 1) + '.</b> ' + divName(w.id) + ' — ' + w.s + ' <small>(' + w.n + (lang === 'bn' ? ' জন)' : ' riders)') + '</small></div>';
+    }).join('') || T('lb_empty');
+  }
+  if (lbTab === 'week' && weekCache) {
+    html += '<h3>📅 ' + (lang === 'bn' ? 'এই সপ্তাহ' : 'This week') + '</h3>';
+    html += weekCache.top.length ? worldRows(weekCache.top, true) : T('lb_empty');
+    if (weekCache.myRank > 0) html += '<div class="best">🏅 ' + (lang === 'bn' ? 'তুমি #' + weekCache.myRank : 'You are #' + weekCache.myRank) + '</div>';
+    if (weekCache.lastRank > 0 && weekCache.lastRank <= 3) {
+      if (weekCache.claimed) html += '<div class="best">🎁 ' + (lang === 'bn' ? 'গত সপ্তাহের পুরস্কার নেওয়া ✓' : 'Last week claimed ✓') + '</div>';
+      else html += '<div style="text-align:center;margin-top:8px;"><button class="backBtn" id="weekClaim">🎁 ' + (lang === 'bn' ? 'গত সপ্তাহ #' + weekCache.lastRank + ': ৳' + [500, 300, 200][weekCache.lastRank - 1] + ' নাও' : 'Last week #' + weekCache.lastRank + ': claim ৳' + [500, 300, 200][weekCache.lastRank - 1]) + '</button></div>';
+    }
+  }
   html += '<div class="best">📦 ' + F('lifetime', tParcels) + '</div>';
   if ($('lbList')) {
     $('lbList').innerHTML = html;
     Array.prototype.forEach.call($('lbList').querySelectorAll('.lbtab'), function (b) {
       b.addEventListener('click', function (e) { e.stopPropagation(); lbTab = b.getAttribute('data-tab'); try { sfx.move(); } catch (err) {} renderBoard(); });
+    });
+    var wc = $('weekClaim');
+    if (wc) wc.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (!weekCache || weekCache.claimed || weekCache.lastRank < 1 || weekCache.lastRank > 3) return;
+      var rw = [500, 300, 200][weekCache.lastRank - 1];
+      bankCoins += rw;
+      try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrWeekClaim', weekCache.lastId); } catch (err) {}
+      weekCache.claimed = true;
+      cloudSave(); renderBoard(); updateMenuBest();
+      try { logEv('weekly_claim', { rank: weekCache.lastRank }); } catch (err) {}
+      sfx.coin();
     });
   }
   if ($('overBoard')) {
