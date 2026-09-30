@@ -4711,7 +4711,7 @@ function fetchWarWeek() {
 }
 function renderBoard() {
   var html = '';
-  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">⚔️</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">📅</button><button class="lbtab' + (lbTab === 'ach' ? ' sel' : '') + '" data-tab="ach">🏅</button></div>';
+  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">⚔️</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">📅</button></div>';
   if (lbTab === 'div') {
     if (!playerDiv) html += T('need_div');
     else if (divCache) html += divCache.length ? worldRows(divCache, false) : T('lb_empty');
@@ -4729,15 +4729,6 @@ function renderBoard() {
       var me = playerDiv && w.id === playerDiv ? ' class="me"' : '';
       return '<div' + me + '><b>' + (i + 1) + '.</b> ' + divName(w.id) + ' — ' + w.s + ' <small>(' + w.n + (lang === 'bn' ? ' জন)' : ' riders)') + '</small></div>';
     }).join('') || T('lb_empty');
-  }
-  if (lbTab === 'ach') {
-    html += '<h3>🏅 ' + (lang === 'bn' ? 'অর্জন (প্রতিটা ৳২০০)' : 'Badges (৳200 each)') + '</h3>';
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' + achList().map(function (a) {
-      return '<div style="padding:8px 6px;border-radius:10px;font-size:13px;font-weight:800;text-align:center;'
-        + (a.got ? 'background:linear-gradient(135deg,#2d9c42,#1a6b2a);border:2px solid #7fe0a0;color:#fff;'
-          : 'background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);color:#888;')
-        + '">' + (a.got ? a.ico : '🔒') + '<br>' + a.t + '</div>';
-    }).join('') + '</div>';
   }
   if (lbTab === 'week' && weekCache) {
     html += '<h3>📅 ' + (lang === 'bn' ? 'এই সপ্তাহ' : 'This week') + '</h3>';
