@@ -1250,9 +1250,9 @@ function makeBillboard(side, z, parent) {
   box(0.5, 0.5, 0.5, 0x2a3a55, x, 5.4, z, parent);
   var board = new THREE.Mesh(PG(7.5, 3.75), billboardMat);
   board.position.set(x, 7.4, z);
-  board.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2; // rastar dike mukh
+  board.rotation.y = 0; // traffic-er dike mukh — drive korar somoy clear pora jay
   parent.add(board);
-  var back = box(0.15, 3.9, 7.7, 0x33415c, x + (side < 0 ? -0.1 : 0.1), 7.4, z, parent);
+  var back = box(7.7, 3.9, 0.15, 0x33415c, x, 7.4, z - 0.12, parent);
   [-1, 1].forEach(function (s2) { // diagonal brace
     var b2 = box(0.09, 3.0, 0.09, 0x2a3a55, x, 6.3, z + s2 * 1.5, parent);
     b2.rotation.x = s2 * 0.5;
@@ -1410,7 +1410,7 @@ function decorate(seg) {
         makeHut(side * (8.5 + rnd(0, 1)), z, d, Math.random() < 0.4);
         var sign = new THREE.Mesh(PG(4.6, 1.1), pick(signMats));
         sign.position.set(side * (7.0), 2.4, z + 1.4);
-        sign.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2; d.add(sign);
+        sign.rotation.y = 0; d.add(sign); // traffic-er dike mukh
         hutDone = true; hutCooldown = 5; return;
       }
       var r = Math.random();
@@ -2092,7 +2092,7 @@ function legSignMat(idx, text, bg) {
 }
 function legBoard(idx, text, bg, x, y, z, side, parent, w) {
   var s = new THREE.Mesh(PG(w || 2.6, 0.65), legSignMat(idx, text, bg));
-  s.position.set(x, y, z); s.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2; parent.add(s);
+  s.position.set(x, y, z); s.rotation.y = 0; parent.add(s); // landmark board traffic-er dike
 }
 function makeUmbrella(x, z, parent, c) {
   cyl(0.06, 2.2, 0.06, 0x8a6a3f, x, 1.1, z, parent);
