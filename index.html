@@ -502,6 +502,7 @@
       <button class="btn" id="againBtn">Ride Again</button>
       <button class="btn" id="nextBtn" style="display:none;background:#2d9c42;box-shadow:0 5px 0 #14521f;">Next Map ▶</button>
       <button class="btn" id="menuBtn" data-i18n="tomenu">‹ Back to Menu</button>
+      <button class="btn" id="shareBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;">📤 Share</button>
     </div>
     <div class="best" id="overBest"></div>
     <div class="board" id="overBoard"></div>
@@ -3651,6 +3652,52 @@ function capturePhoto() {
     setTimeout(function () { try { document.body.removeChild(a); } catch (e) {} }, 800);
   } catch (e) {}
 }
+/* ---------- share card: score card baniye WhatsApp/FB-e share ---------- */
+function shareScore() {
+  try {
+    var bn = lang === 'bn';
+    var s = Math.floor(score), pc = parcelCount, tc = coinCount;
+    var c = document.createElement('canvas'); c.width = 512; c.height = 640;
+    var g = c.getContext('2d');
+    var gr = g.createLinearGradient(0, 0, 0, 640);
+    gr.addColorStop(0, '#12300f'); gr.addColorStop(1, '#0d8a4f');
+    g.fillStyle = gr; g.fillRect(0, 0, 512, 640);
+    g.strokeStyle = '#ffc83d'; g.lineWidth = 10; g.strokeRect(10, 10, 492, 620);
+    g.textAlign = 'center'; g.fillStyle = '#ffc83d';
+    g.font = '800 54px Arial, sans-serif';
+    g.fillText('RIDE FOR LIFE', 256, 110);
+    g.fillStyle = '#ffffff'; g.font = '700 32px Arial, sans-serif';
+    g.fillText(bn ? 'ডেলিভারি রাইডার' : 'Delivery Rider', 256, 160);
+    g.font = '800 64px Arial, sans-serif'; g.fillStyle = '#ffe066';
+    g.fillText(String(s), 256, 265);
+    g.fillStyle = '#ffffff'; g.font = '700 32px Arial, sans-serif';
+    g.fillText('📦 ' + pc + '   ৳' + tc, 256, 325);
+    g.fillText((bn ? 'সেরা: ' : 'Best: ') + best, 256, 375);
+    g.fillText('📍 ' + (playerDiv ? divName(playerDiv) : '') + (playerName ? ' · ' + playerName : ''), 256, 425);
+    g.fillStyle = '#ffc83d'; g.font = '700 30px Arial, sans-serif';
+    g.fillText(bn ? 'আমাকে হারাতে পারো?' : 'Can you beat me?', 256, 505);
+    g.fillStyle = '#cfe6cf'; g.font = '400 24px Arial, sans-serif';
+    g.fillText('Teknaf → Tetulia', 256, 555);
+    var txt = (bn ? 'আমার স্কোর ' : 'My score ') + s + ' — Ride For Life!';
+    if (c.toBlob) {
+      c.toBlob(function (blob) {
+        try {
+          var f = new File([blob], 'ride-for-life.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [f] })) {
+            navigator.share({ files: [f], title: 'Ride For Life', text: txt }).catch(function () {});
+            try { logEv('share', { s: s }); } catch (e) {}
+            return;
+          }
+        } catch (e) {}
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = 'ride-for-life-score.png';
+        document.body.appendChild(a); a.click();
+        setTimeout(function () { try { document.body.removeChild(a); } catch (e2) {} }, 800);
+        try { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); } catch (e2) {}
+      }, 'image/png');
+    }
+  } catch (e) {}
+}
 $('pauseBtn').addEventListener('click', function (e) { e.currentTarget.blur(); pauseGame(); });
 $('mute').addEventListener('click', function (e) { muted = !muted; e.currentTarget.textContent = muted ? '🔇' : '🔊'; e.currentTarget.blur(); if (muted) engineStop(); else if (state === 'play') engineStart(); });
 $('settingsBtn').addEventListener('click', function (e) {
@@ -4726,7 +4773,7 @@ function boot() {
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { bb.addEventListener(ev, function () { btnBrake = false; bb.classList.remove('held'); }); });
   bb.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('photoBtn').addEventListener('click', function () { photoMode(true); });
-  $('photoExit').addEventListener('click', function () { photoMode(false); if (state === 'pause') $('pause').classList.remove('hidden'); });
+  $('shareBtn').addEventListener('click', function () { shareScore(); });  $('photoExit').addEventListener('click', function () { photoMode(false); if (state === 'pause') $('pause').classList.remove('hidden'); });
   $('photoCap').addEventListener('click', function () { capturePhoto(); });
   (function () { // photo drag-orbit (sudhu photo mode-e)
     var cv = renderer.domElement, lx = 0, ly = 0, on = false;
