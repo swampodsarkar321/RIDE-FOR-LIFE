@@ -2606,7 +2606,7 @@ function missionText() {
   var txt = lang === 'bn' ? m.bn : m.en;
   return txt.split('{0}').join(m.target);
 }
-function missionProgress() { return Math.min(missionState.progress, missionInfo().target); }
+function missionProgress() { return Math.floor(Math.min(missionState.progress, missionInfo().target)); }
 function missionDone() { return missionState.done; }
 function saveMission() { try { localStorage.setItem('rrMission', JSON.stringify(missionState)); } catch (e) {} }
 function addMissionProgress(n) {
@@ -2623,8 +2623,13 @@ function addMissionProgress(n) {
     try { sfx.power(); } catch (e) {}
   }
   saveMission();
+  try {
+    var _mv = $('mMissionVal');
+    if (_mv) _mv.textContent = missionDone() ? '✅' : missionProgress() + '/' + missionInfo().target;
+  } catch (e2) {}
 }
 function dayStr(d) { d = d || new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+try { saveMission(); } catch (e) {}
 function dailyState() {
   try { return JSON.parse(localStorage.getItem('rrDaily') || '{"last":"","streak":0}'); }
   catch (e) { return { last: '', streak: 0 }; }
@@ -2637,6 +2642,10 @@ function dailyInfo() { // {claimable, streak(payable), pay}
 }
 function renderDaily() {
   try {
+    if (missionState.date !== dayStr()) {
+      missionState = { date: dayStr(), idx: (Math.random() * MISSIONS.length) | 0, progress: 0, done: false };
+      saveMission();
+    }
     var info = dailyInfo(), bn = lang === 'bn';
     $('dailyTitle').textContent = bn ? '🎁 দৈনিক পুরস্কার' : 'Daily Reward';
     $('dailySub').textContent = bn ? 'রোজ এসো, স্ট্রিক বাড়াও!' : 'Come daily, grow streak!';
@@ -4388,7 +4397,7 @@ function update(dt) {
             xMult = xSec < 45 ? 2 : xSec < 90 ? 1.5 : xSec < 150 ? 1.2 : 1;
             pay2 = Math.round(orderReward * xMult);
           }
-          addMissionProgress(1); // order complete
+          if (missionInfo().id === 'order') addMissionProgress(1); // order complete (sudhu order mission-e)
           // special parcel rules
           var spNote = '';
           if (spType === 'med') { pay2 = Math.round(pay2 * 2); spNote = '🚨'; } // emergency: double pay
@@ -4480,7 +4489,7 @@ function update(dt) {
           continue;
         }
         parcelCount++; missionGot++; carried++;
-        addMissionProgress(1); // parcel mission
+        if (missionInfo().id === 'parcel') addMissionProgress(1); // parcel mission (sudhu parcel mission-e)
         combo++; comboT = 4;
         var mult = Math.min(5, 1 + ((combo / 3) | 0)); // proti 3 combo-te x barbe, max x5
         var pts = 50 * mult * (doubleT > 0 ? 2 * scoreXK : scoreXK);
@@ -5465,10 +5474,17 @@ function boot() {
   $('bikeBuy').addEventListener('click', function (e) { e.stopPropagation(); buyBike(); });
   $('destL').addEventListener('click', function (e) { e.stopPropagation(); cycleDest(-1); });
   $('destR').addEventListener('click', function (e) { e.stopPropagation(); cycleDest(1); });
-  Array.prototype.forEach.call(document.querySelectorAll('#menu .mrow'), function (btn) {
+  Array.prototype.forEach.call(document.querySelectorAll('#menu .mrow[data-page]'), function (btn) {
     btn.addEventListener('click', function (e) {
       e.stopPropagation(); sfx.move(); showPage(btn.getAttribute('data-page'));
     });
+  });
+  $('missionRow').addEventListener('click', function (e) {
+    e.stopPropagation(); sfx.move(); renderDaily(); showPage('pageMain');
+    try {
+      var m = missionInfo();
+      toast(elHint, '🎯 ' + missionText() + ' — ' + missionProgress() + '/' + m.target + ' (৳' + m.reward + ')' + (missionDone() ? ' ✅' : ''), 3200);
+    } catch (e2) {}
   });
   Array.prototype.forEach.call(document.querySelectorAll('#menu [data-back]'), function (btn) {
     btn.addEventListener('click', function (e) { e.stopPropagation(); sfx.move(); showPage('pageMain'); });
