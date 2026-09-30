@@ -717,8 +717,8 @@ var sunLight = new THREE.DirectionalLight(0xfff0cc, 1.0);
 sunLight.position.set(-14, 26, 12);
 sunLight.castShadow = true;
 sunLight.shadow.mapSize.set(LOW ? 256 : 2048, LOW ? 256 : 2048);
-sunLight.shadow.camera.left = -20; sunLight.shadow.camera.right = 20;
-sunLight.shadow.camera.top = 20; sunLight.shadow.camera.bottom = -20;
+sunLight.shadow.camera.left = -30; sunLight.shadow.camera.right = 30;
+sunLight.shadow.camera.top = 30; sunLight.shadow.camera.bottom = -30;
 sunLight.shadow.camera.near = 5; sunLight.shadow.camera.far = 60;
 sunLight.shadow.bias = -0.0009;
 sunLight.shadow.radius = 7; // soft edge
@@ -1072,7 +1072,7 @@ var groundMat = new THREE.MeshLambertMaterial({ color: 0x6b9450 });
   groundMat.map = t;
 })();
 var ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), groundMat);
-ground.rotation.x = -Math.PI / 2; ground.position.y = -0.13; ground.receiveShadow = true; scene.add(ground);
+ground.rotation.x = -Math.PI / 2; ground.position.y = -0.15; ground.receiveShadow = true; scene.add(ground);
 
 /* ---------- drifting clouds ---------- */
 var driftClouds = [];
@@ -1404,7 +1404,8 @@ function makeMall(x, z, parent) {
 function makeSeg(i) {
   var g = new THREE.Group(), decor = new THREE.Group();
   var road = new THREE.Mesh(new THREE.PlaneGeometry(9.5, SEG_LEN), roadMat);
-  road.rotation.x = -Math.PI / 2; road.position.y = 0.001; road.receiveShadow = true; g.add(road);
+  road.rotation.x = -Math.PI / 2; road.position.y = 0.001; road.receiveShadow = true;
+  road.material.polygonOffset = true; road.material.polygonOffsetFactor = -1; road.material.polygonOffsetUnits = -1; g.add(road);
   [-1, 1].forEach(function (s) {
     box(1.6, 0.16, SEG_LEN, 0x8a6a3f, s * 5.1, 0.02, 0, g, true).receiveShadow = true;
   });
@@ -3840,6 +3841,10 @@ function photoMode(on) {
     else applyPhotoCam();
   } catch (e) {}
 }
+function exitPhotoMode() { // photo theke ber hole sob button hide
+  photoMode(false);
+  try { if (state === 'pause') $('pause').classList.remove('hidden'); } catch (e) {}
+}
 var lastPhotoBlob = null, lastPhotoURL = null;
 function addWatermark(blob, cb) { // capture-er niche "Ride For Life" watermark
   try {
@@ -5181,7 +5186,7 @@ function boot() {
   $('photoBtn').addEventListener('click', function () { photoMode(true); });
   $('photoZoomIn').addEventListener('click', function () { photoZoom = Math.max(0.6, photoZoom - 0.1); applyPhotoCam(); });
   $('photoZoomOut').addEventListener('click', function () { photoZoom = Math.min(1.5, photoZoom + 0.1); applyPhotoCam(); });
-  $('shareBtn').addEventListener('click', function () { shareScore(); });  $('photoExit').addEventListener('click', function () { photoMode(false); if (state === 'pause') $('pause').classList.remove('hidden'); });
+  $('shareBtn').addEventListener('click', function () { shareScore(); });  $('photoExit').addEventListener('click', function () { exitPhotoMode(); });
   $('photoCap').addEventListener('click', function () { capturePhoto(); });
   $('photoSave').addEventListener('click', function () { savePhoto(); });
   $('photoShareBtn').addEventListener('click', function () { sharePhotoSheet(); });
