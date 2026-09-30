@@ -1296,7 +1296,8 @@ function makeEgret(x, y, z, parent) {
 var BLD_COLS = [0xe8dcc0, 0xd6c49a];
 
 /* ---------- SteadFast billboard (roadside, image-style) ---------- */
-var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [], boardBag = [], boardBagStamp = '';
+var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [], boardBag = [], boardBagStamp = '', billboardsOn = true;
+try { billboardsOn = localStorage.getItem('rrBbOn') !== '0'; } catch (e) {}
 function syncAdminBoards(list) { // admin panel theke image billboard — live
   try {
     var seen = {};
@@ -1325,6 +1326,19 @@ function syncAdminBoards(list) { // admin panel theke image billboard — live
 function pickBoardMat() { // shuffled bag: sob image ghuriye, repeat chara
   try {
     if (!billboardMat) billboardMat = new THREE.MeshBasicMaterial({ map: makeBillboardTexture() });
+    var pool = [billboardMat];
+    // avatar billboard: player-er moto face image
+    for (var i = 0; i < 8; i++) {
+      var avUrl = avatarUrl(i * 7);
+      var rec = { img: avUrl, mat: new THREE.MeshBasicMaterial({ color: 0xffffff }), ready: false, failed: false };
+      ADMIN_BOARDS.push(rec);
+      try {
+        if (!boardLoader) { boardLoader = new THREE.TextureLoader(); try { boardLoader.setCrossOrigin('anonymous'); } catch (e2) {} }
+        boardLoader.load(avUrl, function (tex) {
+          try { tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4; rec.mat.map = tex; rec.mat.needsUpdate = true; rec.ready = true; } catch (e2) {}
+        }, undefined, function () { rec.failed = true; });
+      } catch (e2) { rec.failed = true; }
+    }
     var stamp = ADMIN_BOARDS.length + ':' + ADMIN_BOARDS.filter(function (b) { return b.ready; }).length;
     if (!boardBag.length || stamp !== boardBagStamp) {
       boardBagStamp = stamp;
@@ -1559,7 +1573,7 @@ function decorate(seg) {
     });
     makeLamp(side, -5 + rnd(-1, 1), d);
     makeLamp(side, 15 + rnd(-1, 1), d);
-    if (Math.random() < (town ? 0.45 : 0.30)) makeBillboard(side, rnd(-12, 12), d);
+    if (billboardsOn && Math.random() < (town ? 0.65 : 0.50)) makeBillboard(side, rnd(-12, 12), d);
     if (!town && Math.random() < 0.4) makeEgret(side * (6.5 + rnd(0, 3)), rnd(0.3, 0.4), rnd(-16, 16), d);
     if (Math.random() < 0.55) { try { makeLegLandmark(typeof selLeg !== 'undefined' ? selLeg : 0, side, rnd(-14, 14), d); } catch (e) {} }
   });
@@ -3126,6 +3140,7 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
             p: { night: !!e.night, coinX: +e.coinX || 1, fuelX: +e.fuelX || 1, fuelPick: +e.fuelPick || 35, nitroRate: +e.nitroRate || 0, nitroDur: +e.nitroDur || 6, quota: +e.quota || 0, reward: +e.reward || 0, bonusX: +e.bonusX || 1, scoreX: +e.scoreX || 1 } });
         });
         try { syncAdminBoards(cfg.billboards); } catch (e2) {}
+        try { billboardsOn = cfg.billboardsOn !== false; } catch (e2) {}
         if (!bikeUnlocked(selBike)) selBike = firstOwned();
         if (eventMode && eventMode.charAt(0) === 'c' && !evP().quota && evP().scoreX === 1 && !evP().night && (evP().coinX || 1) === 1) { var still = false; for (var q = 0; q < ADMIN_EVENTS.length; q++) if (ADMIN_EVENTS[q].id === eventMode) still = true; if (!still) eventMode = null; }
         // live event lock: admin jeta live korbe setai cholbe
