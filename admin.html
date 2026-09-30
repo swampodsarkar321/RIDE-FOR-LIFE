@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ride For Life — Admin Panel</title>
+<link rel="icon" href="ride-for-life-logo.png">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, 'Segoe UI', Arial, sans-serif; background: #10160e; color: #fff; padding: 0 16px 32px; }
+  header { background: linear-gradient(135deg, #0d8a4f, #12300f); border-bottom: 3px solid #ffc83d; padding: 14px 16px; margin: 0 -16px 14px; display: flex; align-items: center; gap: 12px; }
+  header img { width: 52px; height: 52px; border-radius: 12px; box-shadow: 0 0 0 2px #ffc83d; }
+  header h1 { font-size: 20px; margin: 0; color: #ffc83d; }
+  header small { display: block; color: #cfe6cf; font-size: 12px; font-weight: 400; }
+  #status { text-align: center; font-weight: 700; margin-bottom: 12px; font-size: 14px; }
+  #status.ok { color: #7dff9a; }
+  #status.bad { color: #ff7b7b; }
+  .tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; }
+  .tab { font-family: inherit; font-weight: 800; font-size: 15px; color: #fff; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.2); border-radius: 999px; padding: 6px 20px 8px; cursor: pointer; }
+  .tab.sel { background: linear-gradient(135deg, #2d9c42, #1a6b2a); border-color: #7fe0a0; }
+  .card { background: #1c2416; border: 2px solid rgba(255,255,255,.15); border-radius: 16px; padding: 14px; margin: 0 auto 16px; max-width: 640px; }
+  .card h2 { margin: 0 0 10px; font-size: 20px; color: #7dff9a; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 640px; margin: 0 auto 16px; }
+  .stat { background: linear-gradient(160deg, #1e2b18, #121a0e); border: 2px solid rgba(255,200,61,.4); border-radius: 14px; padding: 10px; text-align: center; }
+  .stat b { display: block; font-size: 30px; color: #ffc83d; }
+  .stat small { color: #aaa; font-size: 13px; }
+  table.top { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.top td { padding: 5px 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  table.top td.r { text-align: right; color: #ffc83d; font-weight: 800; }
+  label { display: block; font-size: 13px; color: #aaa; margin: 8px 0 2px; }
+  input { width: 100%; font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 2px solid rgba(255,255,255,.25); background: #0e130c; color: #fff; font-family: inherit; }
+  input[type="color"] { height: 44px; padding: 2px; cursor: pointer; }
+  input[type="checkbox"] { width: 22px; height: 22px; vertical-align: middle; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn { font-family: inherit; font-weight: 800; font-size: 17px; border: 0; cursor: pointer; padding: 9px 22px 11px; border-radius: 999px; background: #2d9c42; color: #fff; box-shadow: 0 4px 0 #14521f; margin-top: 12px; width: 100%; }
+  .btn:active { transform: translateY(3px); box-shadow: none; }
+  .btn.ghost { background: #444; box-shadow: 0 4px 0 #222; }
+  .btn.small { font-size: 14px; padding: 5px 14px 7px; width: auto; margin-top: 6px; margin-right: 6px; }
+  .btn.danger { background: #c23b3b; box-shadow: 0 4px 0 #7a1a1a; }
+  .item { background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.12); border-radius: 12px; padding: 8px 12px; margin: 8px 0; font-size: 15px; }
+  .item small { color: #aaa; }
+  .dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; vertical-align: -3px; margin-right: 6px; border: 2px solid rgba(255,255,255,.4); }
+  #gate { max-width: 360px; margin: 60px auto; text-align: center; }
+  .hidden { display: none !important; }
+  a { color: #7db4ff; }
+  .note { font-size: 13px; color: #aaa; }
+  .center { text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <img src="ride-for-life-logo.png" alt="logo">
+  <h1>RIDE FOR LIFE — Admin<small>Game control room</small></h1>
+</header>
+<div id="status">Connecting…</div>
+
+<div id="gate">
+  <div class="card">
+    <h2>🔒 Admin Login</h2>
+    <label>Passcode</label>
+    <input id="passInput" type="password" placeholder="Enter passcode">
+    <button class="btn" id="passBtn">Unlock</button>
+    <p class="note">Default: rideadmin321 (change ADMIN_CODE in admin.html)</p>
+  </div>
+</div>
+
+<div id="panel" class="hidden">
+  <div class="tabs">
+    <button class="tab sel" data-tab="dash">📊 Dashboard</button>
+    <button class="tab" data-tab="bikes">🏍️ Bikes</button>
+    <button class="tab" data-tab="events">🎪 Events</button>
+    <button class="tab" data-tab="boards">🪧 Boards</button>
+    <button class="tab" data-tab="notif">🔔 Notify</button>
+  </div>
+
+  <div id="tab-notif" class="hidden">
+    <div class="card">
+      <h2>🔔 Send Notification</h2>
+      <label>Title</label>
+      <input id="nTitle" maxlength="40" placeholder="Daily reward ready!">
+      <label>Body</label>
+      <input id="nBody" maxlength="80" placeholder="Claim your ৳100 bonus now!">
+      <label>Schedule (optional — empty = send now)</label>
+      <input id="nTime" type="datetime-local">
+      <button class="btn" id="nSend">🔔 Send / Schedule</button>
+      <p class="note">Notification jabe sudhu jader permission ache. Schedule hole oi time-e jabe.</p>
+    </div>
+    <div class="card">
+      <h2>📋 Sent Notifications</h2>
+      <div id="nList"><p class="note">Loading…</p></div>
+    </div>
+  </div>
+
+  <div id="tab-dash">
+    <div class="stats">
+      <div class="stat"><b id="stPlayers">–</b><small>👥 Total players</small></div>
+      <div class="stat"><b id="stScores">–</b><small>🏆 Scores submitted</small></div>
+      <div class="stat"><b id="stBikes">–</b><small>🏍️ Custom bikes</small></div>
+      <div class="stat"><b id="stEvents">–</b><small>🎪 Custom events</small></div>
+    </div>
+    <div class="card">
+      <h2>🌍 Global Top 5 (live)</h2>
+      <div id="topList"><p class="note">Loading…</p></div>
+    </div>
+    <div class="card center">
+      <p class="note">Game updates live — no reload needed.<br><a href="index.html">▶ Open game</a></p>
+    </div>
+  </div>
+
+  <div id="tab-bikes" class="hidden">
+    <div class="card">
+      <h2 id="bikeFormT">🏍️ Add Bike</h2>
+      <div class="row2">
+        <div><label>Name (English)</label><input id="bNameEn" maxlength="20" placeholder="Thunder"></div>
+        <div><label>Name (Bangla)</label><input id="bNameBn" maxlength="20" placeholder="থান্ডার"></div>
+      </div>
+      <div class="row2">
+        <div><label>Color</label><input id="bColor" type="color" value="#ff5722"></div>
+        <div><label>Min level to unlock (if price 0)</label><input id="bLevel" type="number" value="2" min="1" max="50"></div>
+      </div>
+      <label>Price ৳ (0 = unlock by level)</label>
+      <input id="bPrice" type="number" value="1500" min="0" step="50">
+      <div class="row2">
+        <div><label>Speed bonus</label><input id="bSpd" type="number" value="1" step="1"></div>
+        <div><label>Handling (0–1)</label><input id="bHnd" type="number" value="0.1" step="0.05" min="0" max="1"></div>
+      </div>
+      <div class="row2">
+        <div><label>Fuel use ×</label><input id="bFuel" type="number" value="1" step="0.05" min="0.5" max="2"></div>
+        <div><label>Crash damage %</label><input id="bDmg" type="number" value="18" step="1" min="5" max="40"></div>
+      </div>
+      <div class="row2">
+        <div><label>Tag (English)</label><input id="bTagEn" maxlength="24" placeholder="Balanced"></div>
+        <div><label>Tag (Bangla)</label><input id="bTagBn" maxlength="24" placeholder="ব্যালান্সড"></div>
+      </div>
+      <button class="btn" id="bikeSave">＋ Save Bike</button>
+      <button class="btn ghost hidden" id="bikeCancel">Cancel edit</button>
+    </div>
+    <div class="card">
+      <h2>🏍️ Bikes in game</h2>
+      <div id="bikeList"><p class="note">Loading…</p></div>
+    </div>
+  </div>
+
+  <div id="tab-events" class="hidden">
+    <div class="card">
+      <h2>🔴 Live Event Control</h2>
+      <p class="note">Jeta live korba game-e sudhu setai cholbe. Baki gulo 🔒 lock thakbe.</p>
+      <label>Live event</label>
+      <input id="liveSel" list="liveList" placeholder="puja / fest / night...">
+      <datalist id="liveList"></datalist>
+      <div id="liveNow" class="note" style="margin-top:6px">Live: —</div>
+      <button class="btn" id="liveSet">🔴 Set Live</button>
+      <button class="btn ghost" id="liveStop">Stop live (sob open)</button>
+    </div>
+    <div class="card">
+      <h2 id="evFormT">🎪 Add Event</h2>
+      <div class="row2">
+        <div><label>Icon (emoji)</label><input id="eIco" maxlength="4" value="⭐"></div>
+        <div><label>Night start?</label><br><input id="eNight" type="checkbox"></div>
+      </div>
+      <div class="row2">
+        <div><label>Name (English)</label><input id="eNameEn" maxlength="24" placeholder="Rain Rush"></div>
+        <div><label>Name (Bangla)</label><input id="eNameBn" maxlength="24" placeholder="বৃষ্টি রাশ"></div>
+      </div>
+      <div class="row2">
+        <div><label>Desc (English)</label><input id="eDescEn" maxlength="48" placeholder="Double coins in rain"></div>
+        <div><label>Desc (Bangla)</label><input id="eDescBn" maxlength="48" placeholder="বৃষ্টিতে দ্বিগুণ কয়েন"></div>
+      </div>
+      <div class="row2">
+        <div><label>Parcel quota (0 = normal)</label><input id="eQuota" type="number" value="0" min="0"></div>
+        <div><label>Quota reward ৳</label><input id="eReward" type="number" value="0" min="0"></div>
+      </div>
+      <div class="row2">
+        <div><label>Score ×</label><input id="eScoreX" type="number" value="1" step="0.5" min="1" max="5"></div>
+        <div><label>Coin ×</label><input id="eCoinX" type="number" value="1" step="1" min="1" max="5"></div>
+      </div>
+      <div class="row2">
+        <div><label>Fuel drain ×</label><input id="eFuelX" type="number" value="1" step="0.1" min="0.5" max="3"></div>
+        <div><label>Fuel pickup +</label><input id="eFuelPick" type="number" value="35" step="5" min="10" max="100"></div>
+      </div>
+      <div class="row2">
+        <div><label>Nitro chance (0–1)</label><input id="eNitroRate" type="number" value="0" step="0.01" min="0" max="1"></div>
+        <div><label>Nitro seconds</label><input id="eNitroDur" type="number" value="6" step="1" min="3" max="15"></div>
+      </div>
+      <label>Arrival bonus ×</label>
+      <input id="eBonusX" type="number" value="1" step="0.5" min="1" max="5">
+      <button class="btn" id="evSave">＋ Save Event</button>
+      <button class="btn ghost hidden" id="evCancel">Cancel edit</button>
+    </div>
+    <div class="card">
+      <h2>🎪 Events in game</h2>
+      <div id="evList"><p class="note">Loading…</p></div>
+    </div>
+  </div>
+
+  <div id="tab-boards" class="hidden">
+    <div class="card">
+      <h2>🪧 Add Billboard</h2>
+      <p class="note">2:1 image best (e.g. 1024×512). Upload sob phone-e cholbe. URL-er image hotlink allow korte hobe (imgur/postimages bhalo).</p>
+      <label>Image URL (https://…)</label>
+      <input id="bbUrl" placeholder="https://i.imgur.com/xxxx.jpg">
+      <label>…or upload from phone/PC</label>
+      <input id="bbFile" type="file" accept="image/*">
+      <div class="center"><img id="bbPrev" style="display:none;max-width:100%;border-radius:12px;margin-top:10px;border:2px solid rgba(255,255,255,.3);"></div>
+      <button class="btn" id="bbSave">＋ Save Billboard</button>
+    </div>
+    <div class="card">
+      <h2>🪧 Billboards in game</h2>
+      <div id="bbList"><p class="note">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+var ADMIN_CODE = 'rideadmin321'; // <-- change this passcode
+var db = null;
+var editBikeKey = null, editEvKey = null;
+function $(id) { return document.getElementById(id); }
+function num(id, fb) { var v = parseFloat($(id).value); return isNaN(v) ? fb : v; }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function setStatus(ok, txt) { var s = $('status'); s.textContent = txt; s.className = ok ? 'ok' : 'bad'; }
+try {
+  firebase.initializeApp({
+    apiKey: 'AIzaSyD1g7YybZmYrAXZaxtw39fJV9Zw76bsXUs',
+    authDomain: 'ride-for-life-df165.firebaseapp.com',
+    projectId: 'ride-for-life-df165',
+    storageBucket: 'ride-for-life-df165.firebasestorage.app',
+    messagingSenderId: '777091373257',
+    appId: '1:777091373257:web:3c767e63005d9de3aed518',
+    measurementId: 'G-24GQYCGMLS',
+    databaseURL: 'https://ride-for-life-df165-default-rtdb.asia-southeast1.firebasedatabase.app'
+  });
+  db = firebase.database();
+  setStatus(true, '● Connected to Firebase');
+} catch (e) {
+  setStatus(false, '● Firebase failed — check net connection');
+}
+function unlock() {
+  $('gate').classList.add('hidden');
+  $('panel').classList.remove('hidden');
+  startAll();
+}
+$('passBtn').addEventListener('click', function () {
+  if ($('passInput').value === ADMIN_CODE || sessionStorage.getItem('rfl_admin') === '1') {
+    sessionStorage.setItem('rfl_admin', '1');
+    unlock();
+  } else { alert('Wrong passcode!'); }
+});
+if (sessionStorage.getItem('rfl_admin') === '1') unlock();
+Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
+  b.addEventListener('click', function () {
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (x) { x.classList.remove('sel'); });
+    b.classList.add('sel');
+    var t = b.getAttribute('data-tab');
+    $('tab-dash').classList.toggle('hidden', t !== 'dash');
+    $('tab-bikes').classList.toggle('hidden', t !== 'bikes');
+    $('tab-events').classList.toggle('hidden', t !== 'events');
+    $('tab-boards').classList.toggle('hidden', t !== 'boards');
+    $('tab-notif').classList.toggle('hidden', t !== 'notif');
+  });
+});
+function hexToInt(h) { try { return parseInt(String(h).replace('#', '').slice(0, 6), 16) || 0xffffff; } catch (e) { return 0xffffff; } }
+function intToHex(n) { try { return '#' + ('000000' + ((+n || 0) >>> 0).toString(16)).slice(-6); } catch (e) { return '#ffffff'; } }
+function bikeObj() {
+  return {
+    name_en: $('bNameEn').value.trim() || 'Custom',
+    name_bn: $('bNameBn').value.trim() || $('bNameEn').value.trim() || 'কাস্টম',
+    color: hexToInt($('bColor').value),
+    spd: num('bSpd', 0), hnd: num('bHnd', 0), fuel: num('bFuel', 1),
+    dmg: num('bDmg', 20), level: Math.max(1, Math.round(num('bLevel', 2))),
+    price: Math.max(0, Math.round(num('bPrice', 500))),
+    tag_en: $('bTagEn').value.trim() || 'Custom',
+    tag_bn: $('bTagBn').value.trim() || 'কাস্টম'
+  };
+}
+function evObj() {
+  return {
+    ico: $('eIco').value.trim() || '⭐',
+    name_en: $('eNameEn').value.trim() || 'Custom Event',
+    name_bn: $('eNameBn').value.trim() || $('eNameEn').value.trim() || 'কাস্টম',
+    desc_en: $('eDescEn').value.trim(), desc_bn: $('eDescBn').value.trim(),
+    quota: num('eQuota', 0), reward: num('eReward', 0),
+    scoreX: num('eScoreX', 1), coinX: num('eCoinX', 1),
+    fuelX: num('eFuelX', 1), fuelPick: num('eFuelPick', 35),
+    nitroRate: num('eNitroRate', 0), nitroDur: num('eNitroDur', 6),
+    bonusX: num('eBonusX', 1), night: $('eNight').checked
+  };
+}
+$('bikeSave').addEventListener('click', function () {
+  if (!db) { alert('No Firebase connection!'); return; }
+  var done = function () { alert(editBikeKey ? 'Bike updated!' : 'Bike saved! Game updates live.'); resetBikeForm(); };
+  if (editBikeKey) db.ref('config/bikes/' + editBikeKey).set(bikeObj()).then(done);
+  else db.ref('config/bikes').push(bikeObj()).then(done);
+});
+$('bikeCancel').addEventListener('click', resetBikeForm);
+function resetBikeForm() {
+  editBikeKey = null;
+  $('bikeFormT').textContent = '🏍️ Add Bike';
+  $('bikeSave').textContent = '＋ Save Bike';
+  $('bikeCancel').classList.add('hidden');
+}
+$('evSave').addEventListener('click', function () {
+  if (!db) { alert('No Firebase connection!'); return; }
+  var done = function () { alert(editEvKey ? 'Event updated!' : 'Event saved! Game updates live.'); resetEvForm(); };
+  if (editEvKey) db.ref('config/events/' + editEvKey).set(evObj()).then(done);
+  else db.ref('config/events').push(evObj()).then(done);
+});
+$('evCancel').addEventListener('click', resetEvForm);
+var bbData = '';
+$('bbFile').addEventListener('change', function () {
+  var f = $('bbFile').files && $('bbFile').files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () {
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var mx = 1024, sc = Math.min(1, mx / img.width);
+        var cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * sc); cv.height = Math.round(img.height * sc);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        bbData = cv.toDataURL('image/jpeg', 0.72);
+        $('bbPrev').src = bbData; $('bbPrev').style.display = 'block';
+        $('bbUrl').value = '';
+      } catch (e) { alert('Image read failed!'); }
+    };
+    img.src = rd.result;
+  };
+  rd.readAsDataURL(f);
+});
+$('bbUrl').addEventListener('input', function () {
+  var u = $('bbUrl').value.trim();
+  if (u) { bbData = ''; $('bbPrev').src = u; $('bbPrev').style.display = 'block'; }
+  else { $('bbPrev').style.display = 'none'; }
+});
+$('bbSave').addEventListener('click', function () {
+  if (!db) { alert('No Firebase connection!'); return; }
+  var u = $('bbUrl').value.trim();
+  var img = u || bbData;
+  if (!img) { alert('URL daw ba file upload koro!'); return; }
+  db.ref('config/billboards').push({ img: img, at: Date.now() }).then(function () {
+    alert('Billboard saved! Game updates live.');
+    $('bbUrl').value = ''; $('bbFile').value = ''; bbData = '';
+    $('bbPrev').style.display = 'none';
+  });
+});
+function resetEvForm() {
+  editEvKey = null;
+  $('evFormT').textContent = '🎪 Add Event';
+  $('evSave').textContent = '＋ Save Event';
+  $('evCancel').classList.add('hidden');
+}
+function startAll() {
+  if (!db) return;
+  db.ref('players').on('value', function (s) {
+    var n = 0; s.forEach(function () { n++; });
+    $('stPlayers').textContent = n;
+  }, function () { $('stPlayers').textContent = '!rules'; });
+  db.ref('scores_by_player').on('value', function (s) {
+    var n = 0, arr = [];
+    s.forEach(function (c) { n++; arr.push(c.val()); });
+    $('stScores').textContent = n;
+    arr.sort(function (a, b) { return (b.s || 0) - (a.s || 0); });
+    var rows = arr.slice(0, 5).map(function (e, i) {
+      return '<tr><td>' + (i + 1) + '. ' + esc(e.n || 'Rider') + '</td><td class="r">' + (e.s || 0) + '</td></tr>';
+    }).join('');
+    $('topList').innerHTML = rows ? '<table class="top">' + rows + '</table>' : '<p class="note">No scores yet.</p>';
+  });
+  db.ref('config/bikes').on('value', function (snap) {
+    var html = '', n = 0;
+    snap.forEach(function (c) {
+      n++;
+      var b = c.val() || {};
+      html += '<div class="item"><span class="dot" style="background:' + intToHex(b.color) + '"></span><b>' + esc(b.name_en) + '</b> / ' + esc(b.name_bn) +
+        '<br><small>spd +' + b.spd + ' · hnd +' + b.hnd + ' · fuel ×' + b.fuel + ' · dmg ' + b.dmg + '% · lvl ' + b.level + ' · ৳' + (b.price || 0) + '</small><br>' +
+        '<button class="btn small" data-bedit="' + c.key + '">Edit</button>' +
+        '<button class="btn small danger" data-bike="' + c.key + '">Delete</button></div>';
+    });
+    $('stBikes').textContent = n;
+    $('bikeList').innerHTML = html || '<p class="note">No custom bikes yet.</p>';
+    bindAll();
+  });
+  db.ref('config/events').on('value', function (snap) {
+    var html = '', n = 0;
+    snap.forEach(function (c) {
+      n++;
+      var e = c.val() || {};
+      html += '<div class="item"><b>' + esc(e.ico) + ' ' + esc(e.name_en) + '</b> / ' + esc(e.name_bn) +
+        '<br><small>' + esc(e.desc_en) + (e.quota ? ' · quota ' + e.quota : '') + (e.scoreX > 1 ? ' · score ×' + e.scoreX : '') + (e.night ? ' · night' : '') + '</small><br>' +
+        '<button class="btn small" data-live="c_' + c.key + '">🔴 Live</button>' +
+        '<button class="btn small" data-eedit="' + c.key + '">Edit</button>' +
+        '<button class="btn small danger" data-ev="' + c.key + '">Delete</button></div>';
+    });
+    $('stEvents').textContent = n;
+    $('evList').innerHTML = html || '<p class="note">No custom events yet.</p>';
+    var dl = $('liveList');
+    if (dl) {
+      dl.innerHTML = '';
+      ['puja', 'fest', 'night', 'fuel', 'nitro', 'express'].forEach(function (id) {
+        var o = document.createElement('option'); o.value = id; dl.appendChild(o);
+      });
+      snap.forEach(function (c) { var o = document.createElement('option'); o.value = 'c_' + c.key; dl.appendChild(o); });
+    }
+    bindAll();
+  });
+  db.ref('config/activeEvent').on('value', function (s) {
+    var v = s.val() || '—';
+    $('liveNow').textContent = 'Live: ' + v + (v && v !== '—' ? ' (game-e sudhu etai cholbe)' : ' (sob open)');
+  });
+  db.ref('config/billboards').on('value', function (snap) {
+    var html = '', n = 0;
+    snap.forEach(function (c) {
+      n++;
+      var b = c.val() || {};
+      html += '<div class="item"><img src="' + esc(b.img) + '" style="max-width:100%;border-radius:8px;border:2px solid rgba(255,255,255,.3);"><br>' +
+        '<button class="btn small danger" data-bb="' + c.key + '">Delete</button></div>';
+    });
+    $('bbList').innerHTML = html || '<p class="note">No custom billboards yet.</p>';
+    bindAll();
+  });
+}
+$('liveSet').addEventListener('click', function () {
+  if (!db) { alert('No Firebase connection!'); return; }
+  var v = $('liveSel').value.trim();
+  if (!v) { alert('Event id daw — jemon: puja'); return; }
+  db.ref('config/activeEvent').set(v).then(function () { alert('🔴 Live: ' + v + ' — game updates live!'); });
+});
+$('liveStop').addEventListener('click', function () {
+  if (!db) return;
+  db.ref('config/activeEvent').remove().then(function () { alert('Live off — sob event open.'); });
+});
+$('nSend').addEventListener('click', function () {
+  if (!db) { alert('No Firebase connection!'); return; }
+  var title = $('nTitle').value.trim() || 'Ride For Life';
+  var body = $('nBody').value.trim() || 'Come play!';
+  var t = $('nTime').value;
+  var when = t ? new Date(t).getTime() : Date.now();
+  db.ref('notifications').push({ title: title, body: body, at: when, sent: false }).then(function () {
+    alert(when > Date.now() ? '🔔 Scheduled!' : '🔔 Sent!');
+    $('nTitle').value = ''; $('nBody').value = ''; $('nTime').value = '';
+  });
+});
+db.ref('notifications').on('value', function (snap) {
+  var html = '', n = 0;
+  snap.forEach(function (c) {
+    n++;
+    var v = c.val() || {};
+    var dt = new Date(v.at || 0);
+    html += '<div class="item"><b>' + esc(v.title) + '</b><br><small>' + esc(v.body) + ' · ' + dt.toLocaleString() + '</small><br>' +
+      '<button class="btn small danger" data-notif="' + c.key + '">Delete</button></div>';
+  });
+  $('nList').innerHTML = html || '<p class="note">No notifications yet.</p>';
+  Array.prototype.forEach.call(document.querySelectorAll('[data-notif]'), function (b) {
+    b.addEventListener('click', function () {
+      if (!confirm('Delete this notification?')) return;
+      db.ref('notifications/' + b.getAttribute('data-notif')).remove();
+    });
+  });
+});
+function bindAll() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bb]'), function (b) {
+    b.addEventListener('click', function () {
+      if (!confirm('Delete this billboard?')) return;
+      db.ref('config/billboards/' + b.getAttribute('data-bb')).remove();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bike]'), function (b) {
+    b.addEventListener('click', function () {
+      if (!confirm('Delete this bike?')) return;
+      db.ref('config/bikes/' + b.getAttribute('data-bike')).remove();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-ev]'), function (b) {
+    b.addEventListener('click', function () {
+      if (!confirm('Delete this event?')) return;
+      db.ref('config/events/' + b.getAttribute('data-ev')).remove();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bedit]'), function (b) {
+    b.addEventListener('click', function () {
+      db.ref('config/bikes/' + b.getAttribute('data-bedit')).once('value').then(function (s) {
+        var d = s.val() || {};
+        $('bNameEn').value = d.name_en || ''; $('bNameBn').value = d.name_bn || '';
+        $('bColor').value = intToHex(d.color); $('bLevel').value = d.level || 2; $('bPrice').value = d.price || 0;
+        $('bSpd').value = d.spd || 0; $('bHnd').value = d.hnd || 0;
+        $('bFuel').value = d.fuel || 1; $('bDmg').value = d.dmg || 20;
+        $('bTagEn').value = d.tag_en || ''; $('bTagBn').value = d.tag_bn || '';
+        editBikeKey = b.getAttribute('data-bedit');
+        $('bikeFormT').textContent = '🏍️ Edit Bike';
+        $('bikeSave').textContent = '✔ Update Bike';
+        $('bikeCancel').classList.remove('hidden');
+        window.scrollTo(0, 0);
+      });
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-live]'), function (b) {
+    b.addEventListener('click', function () {
+      var v = b.getAttribute('data-live');
+      db.ref('config/activeEvent').set(v).then(function () { alert('🔴 Live: ' + v); });
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-eedit]'), function (b) {
+    b.addEventListener('click', function () {
+      db.ref('config/events/' + b.getAttribute('data-eedit')).once('value').then(function (s) {
+        var d = s.val() || {};
+        $('eIco').value = d.ico || '⭐';
+        $('eNameEn').value = d.name_en || ''; $('eNameBn').value = d.name_bn || '';
+        $('eDescEn').value = d.desc_en || ''; $('eDescBn').value = d.desc_bn || '';
+        $('eQuota').value = d.quota || 0; $('eReward').value = d.reward || 0;
+        $('eScoreX').value = d.scoreX || 1; $('eCoinX').value = d.coinX || 1;
+        $('eFuelX').value = d.fuelX || 1; $('eFuelPick').value = d.fuelPick || 35;
+        $('eNitroRate').value = d.nitroRate || 0; $('eNitroDur').value = d.nitroDur || 6;
+        $('eBonusX').value = d.bonusX || 1; $('eNight').checked = !!d.night;
+        editEvKey = b.getAttribute('data-eedit');
+        $('evFormT').textContent = '🎪 Edit Event';
+        $('evSave').textContent = '✔ Update Event';
+        $('evCancel').classList.remove('hidden');
+        window.scrollTo(0, 0);
+      });
+    });
+  });
+}
+</script>
+</body>
+</html>
