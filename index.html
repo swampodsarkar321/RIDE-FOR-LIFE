@@ -2315,6 +2315,14 @@ function createTextTexture() {
   ctx.fillText(T('stead_tag'), 256, 110);
   var t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
 }
+function createStickerTexture(emoji) {
+  var c = document.createElement('canvas'); c.width = c.height = 128;
+  var ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 128, 128);
+  ctx.font = '80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, 64, 70);
+  var t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
+}
 function makeTruck() {
   var g = new THREE.Group();
   if (!steadTex) steadTex = createTextTexture();
@@ -2483,6 +2491,7 @@ function cloudSave() { // local + cloud — sob save ekhan diye
       leg: selLeg, unlock: unlockLeg, upS: upSpeed, upH: upHandle, upF: upFuel, upM: upMag, upN: upNitro,
       div: playerDiv, tp: tParcels, owned: ownedBikes,
       tst: tStars, tc: tCrash, tnm: nmTotal,
+      cst: selHelmet, csl: selLight, css: selSticker,
       board: getBoard(), at: now
     });
     try { // recovery code → uid mapping (notun phone-e ferot)
@@ -2670,6 +2679,9 @@ function cloudLoad() { // boot-e cloud theke notun data anle apply
         if (typeof r.tst === 'number') { tStars = r.tst; try { localStorage.setItem('rrStars', String(r.tst)); } catch (e) {} }
         if (typeof r.tc === 'number') { tCrash = r.tc; try { localStorage.setItem('rrCrash', String(r.tc)); } catch (e) {} }
         if (typeof r.tnm === 'number') { nmTotal = r.tnm; try { localStorage.setItem('rrNm', String(r.tnm)); } catch (e) {} }
+        if (typeof r.cst === 'number') { selHelmet = r.cst; try { localStorage.setItem('rrHelmet', String(r.cst)); } catch (e) {} }
+        if (typeof r.csl === 'number') { selLight = r.csl; try { localStorage.setItem('rrLight', String(r.csl)); } catch (e) {} }
+        if (typeof r.css === 'number') { selSticker = r.css; try { localStorage.setItem('rrSticker', String(r.css)); } catch (e) {} }
         if (r.owned && r.owned.length) { ownedBikes = r.owned; try { localStorage.setItem('rrOwned', JSON.stringify(r.owned)); } catch (e) {} }
         if (r.board && r.board.length) { try { localStorage.setItem('rrBoard', JSON.stringify(r.board.slice(0, 5))); } catch (e) {} }
         cloudSave();
@@ -4802,7 +4814,13 @@ try { selSticker = +localStorage.getItem('rrSticker') || 0; } catch (e) {}
 function applyCustomization() {
   try {
     helmetM.color.setHex(HELMET_COLS[selHelmet % HELMET_COLS.length]);
-    boxGreenM.color.setHex([0x0d8a4f, 0xdd2222, 0x2a9df4, 0xffc83d, 0x9b5de5, 0xf5f5f5][selSticker % 6]);
+    var stickerEmoji = STICKER_EMOJIS[selSticker % STICKER_EMOJIS.length];
+    var stickerTex = createStickerTexture(stickerEmoji);
+    var boxMesh = bikeG.children.find(function (m) { return m.isMesh && Math.abs(m.position.x) < 0.01 && Math.abs(m.position.y - 1.52) < 0.01 && Math.abs(m.position.z - 0.75) < 0.01; });
+    if (boxMesh && boxMesh.material) {
+      boxMesh.material.map = stickerTex;
+      boxMesh.material.needsUpdate = true;
+    }
     var hlMesh = bikeG.children.find(function (m) { return m.isMesh && Math.abs(m.position.x) < 0.01 && Math.abs(m.position.y - 1.0) < 0.01 && Math.abs(m.position.z + 1.28) < 0.01; });
     if (hlMesh && hlMesh.material && hlMesh.material.color) hlMesh.material.color.setHex(LIGHT_COLS[selLight % LIGHT_COLS.length]);
     var tlMesh = bikeG.children.find(function (m) { return m.isMesh && m.material === tailMat; });
