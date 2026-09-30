@@ -341,6 +341,13 @@
     display: none; pointer-events: none;
   }
   #loading.hidden { display: none; }
+  #splash {
+    position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    background: linear-gradient(160deg, #0d8a4f 0%, #12300f 60%, #0a1f08 100%);
+    transition: opacity .5s;
+  }
+  #splash.hide { opacity: 0; pointer-events: none; }
   @media (max-width: 480px) {
     h1 { font-size: 42px; }
     .pill b { font-size: 26px; }
@@ -621,7 +628,15 @@
 </div>
 
 
-<div id="loading" data-i18n="loading">Loading Ride For Life…</div>
+<div id="splash">
+  <div style="font-size:52px;margin-bottom:8px;">🏍️</div>
+  <div style="font-size:36px;font-weight:800;color:#fff;text-shadow:0 3px 0 #1a5c28,0 6px 0 rgba(0,0,0,.35);">RIDE FOR <span style="color:#ffc83d;">LIFE</span></div>
+  <div style="font-size:16px;color:#cfe6cf;margin-top:6px;letter-spacing:1px;">SAIRAH<span style="color:#ffc83d;">LABS</span></div>
+  <div id="splashBar" style="width:200px;height:6px;background:rgba(255,255,255,.15);border-radius:3px;margin:18px auto 0;overflow:hidden;"><u id="splashFill" style="display:block;height:100%;width:0%;background:linear-gradient(90deg,#2d9c42,#ffc83d);border-radius:3px;"></u></div>
+  <div id="splashTxt" style="font-size:13px;color:#cfe6cf;margin-top:8px;">Loading…</div>
+  <button class="btn" id="splashInstall" style="display:none;margin-top:14px;font-size:18px;padding:8px 24px 10px;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;">📲 Install App</button>
+</div>
+<div id="loading" data-i18n="loading" style="display:none;">Loading Ride For Life…</div>
 <div id="fpsBox">60 FPS</div>
 
 <div class="overlay hidden" id="nameOverlay">
@@ -4748,6 +4763,7 @@ window.addEventListener('beforeinstallprompt', function (e) {
   e.preventDefault();
   deferredPrompt = e;
   try { var ib = $('installBtn'); if (ib) ib.style.display = 'inline-block'; } catch (err) {}
+  try { var si = $('splashInstall'); if (si) si.style.display = 'inline-block'; } catch (err) {}
 });
 window.addEventListener('appinstalled', function () {
   deferredPrompt = null;
@@ -5176,8 +5192,13 @@ function buyUp(kind) {
 
 /* ---------- boot ---------- */
 function boot() {
+  loadProgress('Building textures…');
   buildTextures();
+  loadProgress('Loading audio…');
+  try { engineEnsureAudio(); } catch (e) {}
+  loadProgress('Preparing world…');
   try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {}
+  loadProgress('Almost ready…');
   OVER_T0 = ($('overTitle') || {}).textContent || ''; OVER_S0 = ($('overSub') || {}).textContent || '';
   var bb = $('brakeBtn');
   bb.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); btnBrake = true; bb.classList.add('held'); });
@@ -5257,6 +5278,7 @@ function boot() {
   });
   $('menuHowBtn').addEventListener('click', function (e) { e.stopPropagation(); showTut(null); });
   $('installBtn').addEventListener('click', function (e) { e.stopPropagation(); promptInstall(); });
+  $('splashInstall').addEventListener('click', function () { promptInstall(); });
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
   $('profRow').addEventListener('click', function () { renderProfile(); });
   $('invBtn').addEventListener('click', function () {
@@ -5299,11 +5321,23 @@ function boot() {
   });
   try { renderDaily(); } catch (e) {}
   state = 'menu'; speed = 9;
+  loadProgress('Done!');
+  try {
+    var sp = $('splash'); if (sp) { sp.classList.add('hide'); setTimeout(function () { sp.style.display = 'none'; }, 600); }
+  } catch (e) {}
   $('loading').classList.add('hidden');
   last = performance.now();
   requestAnimationFrame(frame);
 }
 var booted = false;
+var loadSteps = 0, loadTotal = 5;
+function loadProgress(txt) {
+  loadSteps++;
+  try {
+    var f = $('splashFill'); if (f) f.style.width = Math.min(100, loadSteps / loadTotal * 100) + '%';
+    var t = $('splashTxt'); if (t && txt) t.textContent = txt;
+  } catch (e) {}
+}
 function go() { if (booted) return; booted = true; boot(); }
 try {
   if (document.fonts && document.fonts.load) {
