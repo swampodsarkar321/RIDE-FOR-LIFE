@@ -2519,6 +2519,21 @@ function checkDailyNotify() { // app khullei daily reward ready thakle notificat
     }
   } catch (e) {}
 }
+function checkAdminNotif() { // admin pathano notification check
+  try {
+    if (!fbReady || !FBDB || notifyPerm() !== 'granted') return;
+    var now = Date.now();
+    FBDB.ref('notifications').orderByChild('at').once('value').then(function (snap) {
+      snap.forEach(function (c) {
+        var v = c.val() || {};
+        if (v.at && v.at <= now && !v.sent) {
+          pushNotify(v.title || 'Ride For Life', v.body || 'Come play!');
+          c.ref.update({ sent: true }).catch(function () {});
+        }
+      });
+    }).catch(function () {});
+  } catch (e) {}
+}
 var DAILY_PAY = [100, 150, 200, 250, 300, 400, 500];
 function dayStr(d) { d = d || new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function dailyState() {
@@ -5233,6 +5248,8 @@ function boot() {
   try { var recNote = recoverRun(); if (recNote) $('menuBest').textContent += recNote; } catch (e) {}
   try { checkRewards(); } catch (e) {}
   try { checkDailyNotify(); } catch (e) {}
+  try { checkAdminNotif(); } catch (e) {}
+  setInterval(function () { try { checkAdminNotif(); } catch (e) {} }, 30000); // 30s por por check
   try { askNotify(); } catch (e) {}
   try { fetchWarWeek(); } catch (e) {} // weekly auto-prize check
   applyLang();
