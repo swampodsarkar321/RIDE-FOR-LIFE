@@ -2822,7 +2822,8 @@ var missionLevel = 1, missionTarget = 10, missionGot = 0;
 var combo = 0, comboT = 0, lastComboShown = -1;
 /* level/xp/garage */
 var xp = 0, riderLevel = 1, bankCoins = 0, upSpeed = 0, upHandle = 0, bagLevel = 0;
-var playerName = '', selBike = 0, playerDiv = '', tParcels = 0;
+var playerName = '', selBike = 0, playerDiv = '', tParcels = 0, tStars = 0;
+try { tStars = +localStorage.getItem('rrStars') || 0; } catch (e) {}
 var BIKE_PRICE = [0, 1000, 2000, 3000, 4500, 7000]; // joto valo ability toto dam (0 = free)
 var ownedBikes = [0]; // new user: normal bike free
 var DIVS = [
@@ -3037,9 +3038,10 @@ var engOsc = null, engGain = null, timeScale = 1, slowT = 0;
 var obstacles = [], pickups = [], gates = [];
 var carried = 0, tutStep = 0, bagWarnT = -99;
 /* delivery orders */
-var orderNo = 1, orderNeed = 4, orderReward = 160, eventT = 30, orderSecs = 0;
+var orderNo = 1, orderNeed = 4, orderReward = 160, eventT = 30, orderSecs = 0, orderCrash = false, orderT0 = 0;
 function newOrder(loud) {
-  orderSecs = 0;
+  orderSecs = 0; orderCrash = false;
+  try { orderT0 = Date.now(); } catch (e) {}
   var EP1 = evP();
   if (EP1.quota) { orderNeed = EP1.quota; orderReward = EP1.reward || EP1.quota * 60; }
   else { orderNeed = Math.min(bagCap(), 3 + ((Math.random() * 4) | 0)); orderReward = orderNeed * 40 + ((Math.random() * 3) | 0) * 20; }
@@ -3494,6 +3496,7 @@ function die() {
   sliding = false;
   crashBurst(player.position.x, py + 1); // dhulo + tukro chitke
   if (carried > 0) { carried = Math.floor(carried / 2); } // crash-e ordhek parcel nosto (baki ordhek beche jay)
+  orderCrash = true; nmStreak = 0; // rating katbe + near-miss streak reset
   if (hp <= 0) { hp = 0; finalDead = true; toast(elHint, T('crash_dead'), 2000); }
   else { finalDead = false; invT = 2.5; toast(elHint, F('crash_hit', hp), 2000); }
 }
@@ -3845,10 +3848,20 @@ function update(dt) {
             xMult = xSec < 45 ? 2 : xSec < 90 ? 1.5 : xSec < 150 ? 1.2 : 1;
             pay2 = Math.round(orderReward * xMult);
           }
-          bankCoins += pay2;
+          // customer rating: crash -2, deri (>90s) -1; star onujayi tip
+          var oSecs = 0; try { oSecs = Math.round((Date.now() - orderT0) / 1000); } catch (e) {}
+          var stars = 5;
+          if (orderCrash) stars -= 2;
+          if (oSecs > 90) stars -= 1;
+          if (stars < 1) stars = 1;
+          var tip = Math.round(pay2 * ([0, 0, 0.15, 0.3, 0.5][stars - 1] || 0));
+          var starTxt = '★★★★★'.slice(0, stars) + '☆☆☆☆☆'.slice(0, 5 - stars);
+          tStars += stars;
+          try { localStorage.setItem('rrStars', String(tStars)); } catch (e) {}
+          bankCoins += pay2 + tip;
           try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
-          if (evP().quota) toast(elLoc, F('exp_done', xMult, carried, xSec, pay2), 3600);
-          else toast(elLoc, F('order_done', orderNo, carried, orderReward), 3200);
+          if (evP().quota) toast(elLoc, F('exp_done', xMult, carried, xSec, pay2) + '<br>' + starTxt + (tip > 0 ? ' +৳' + tip : ''), 3600);
+          else toast(elLoc, F('order_done', orderNo, carried, orderReward) + '<br>' + starTxt + (tip > 0 ? ' +৳' + tip : ''), 3200);
           orderNo++; newOrder(false);
           setTimeout(function () { newOrder(true); }, 2500);
         } else {
