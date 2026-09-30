@@ -4278,8 +4278,8 @@ function startGame(keepScore) {
   else toast(elLoc, F('leg_go', legName(leg()), leg().len, legReal(leg()), dropName(leg())), 3200);
   if (eventMode) toast(elHint, evName(eventMode) + ' — ' + evDesc(eventMode), 2500);
 }
-function pauseGame() { if (state === 'play') { state = 'pause'; document.body.dataset.ui = 'pause'; $('pause').classList.remove('hidden'); try { radioTick(); } catch (e) {} } }
-function resumeGame() { if (state === 'pause') { state = 'play'; document.body.dataset.ui = 'play'; $('pause').classList.add('hidden'); last = performance.now(); } }
+function pauseGame() { if (state === 'play') { state = 'pause'; document.body.dataset.ui = 'pause'; $('pause').classList.remove('hidden'); try { engineStop(); } catch (e) {} try { radioTick(); } catch (e) {} } }
+function resumeGame() { if (state === 'pause') { state = 'play'; document.body.dataset.ui = 'play'; $('pause').classList.add('hidden'); last = performance.now(); try { engineStart(); } catch (e) {} try { radioTick(); } catch (e) {} } }
 function die() {
   if (state !== 'play' || invT > 0) return;
   hp -= bikeStat().dmg; // bike damage — morbena, damage hobe
