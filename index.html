@@ -3038,10 +3038,23 @@ var engOsc = null, engGain = null, timeScale = 1, slowT = 0;
 var obstacles = [], pickups = [], gates = [];
 var carried = 0, tutStep = 0, bagWarnT = -99;
 /* delivery orders */
-var orderNo = 1, orderNeed = 4, orderReward = 160, eventT = 30, orderSecs = 0, orderCrash = false, orderT0 = 0;
+var orderNo = 1, orderNeed = 4, orderReward = 160, eventT = 30, orderSecs = 0, orderCrash = false, orderT0 = 0, spType = null;
+function spName() {
+  if (spType === 'fragile') return lang === 'bn' ? '🍷 ভঙ্গুর পার্সেল' : '🍷 Fragile parcel';
+  if (spType === 'hot') return lang === 'bn' ? '🍔 গরম খাবার' : '🍔 Hot food';
+  if (spType === 'med') return lang === 'bn' ? '🚨 জরুরি ওষুধ (ডবল পে!)' : '🚨 Emergency meds (double pay!)';
+  return '';
+}
 function newOrder(loud) {
   orderSecs = 0; orderCrash = false;
   try { orderT0 = Date.now(); } catch (e) {}
+  spType = null; // 30% special parcel
+  try {
+    var sr = Math.random();
+    if (sr < 0.10) spType = 'fragile';
+    else if (sr < 0.20) spType = 'hot';
+    else if (sr < 0.30) spType = 'med';
+  } catch (e) {}
   var EP1 = evP();
   if (EP1.quota) { orderNeed = EP1.quota; orderReward = EP1.reward || EP1.quota * 60; }
   else { orderNeed = Math.min(bagCap(), 3 + ((Math.random() * 4) | 0)); orderReward = orderNeed * 40 + ((Math.random() * 3) | 0) * 20; }
@@ -3813,7 +3826,7 @@ function update(dt) {
           score += take * 10; xp += take * 5;
           sfx.power(); pop('📦 +' + take, player.position.x, py + 2.7, 0, '#7dff9a');
           sparks(player.position.x, py + 1, -0.5, 12);
-          toast(elHint, F('picked', take), 2200);
+          toast(elHint, F('picked', take) + (spType ? '<br>' + spName() : ''), 2200);
           if (missionGot >= missionTarget) {
             var bonus = missionTarget * 20;
             score += bonus; xp += 100;
@@ -3850,6 +3863,10 @@ function update(dt) {
             xMult = xSec < 45 ? 2 : xSec < 90 ? 1.5 : xSec < 150 ? 1.2 : 1;
             pay2 = Math.round(orderReward * xMult);
           }
+          // special parcel rules
+          var spNote = '';
+          if (spType === 'med') { pay2 = Math.round(pay2 * 2); spNote = '🚨'; } // emergency: double pay
+          if (spType === 'fragile' && orderCrash) { pay2 = Math.round(pay2 / 2); spNote = '🍷💔'; } // crash-e vege geche
           // customer rating: crash -2, deri (>90s) -1; star onujayi tip
           var oSecs = 0; try { oSecs = Math.round((Date.now() - orderT0) / 1000); } catch (e) {}
           var stars = 5;
@@ -3857,13 +3874,17 @@ function update(dt) {
           if (oSecs > 90) stars -= 1;
           if (stars < 1) stars = 1;
           var tip = Math.round(pay2 * ([0, 0, 0.15, 0.3, 0.5][stars - 1] || 0));
+          if (spType === 'hot') { // grom khabar thanda: 60s+ tip shesh, 40s+ ordhek
+            if (oSecs > 60) tip = 0; else if (oSecs > 40) tip = Math.round(tip / 2);
+            spNote = oSecs > 60 ? '🍔❄️' : '🍔🔥';
+          }
           var starTxt = '★★★★★'.slice(0, stars) + '☆☆☆☆☆'.slice(0, 5 - stars);
           tStars += stars;
           try { localStorage.setItem('rrStars', String(tStars)); } catch (e) {}
           bankCoins += pay2 + tip;
           try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
-          if (evP().quota) toast(elLoc, F('exp_done', xMult, carried, xSec, pay2) + '<br>' + starTxt + (tip > 0 ? ' +৳' + tip : ''), 3600);
-          else toast(elLoc, F('order_done', orderNo, carried, orderReward) + '<br>' + starTxt + (tip > 0 ? ' +৳' + tip : ''), 3200);
+          if (evP().quota) toast(elLoc, F('exp_done', xMult, carried, xSec, pay2) + '<br>' + starTxt + (tip > 0 ? ' +৳' + tip : '') + (spNote ? ' ' + spNote : ''), 3600);
+          else toast(elLoc, F('order_done', orderNo, carried, orderReward) + '<br>' + starTxt + (tip > 0 ? ' +৳' + tip : '') + (spNote ? ' ' + spNote : ''), 3200);
           orderNo++; newOrder(false);
           setTimeout(function () { newOrder(true); }, 2500);
         } else {
