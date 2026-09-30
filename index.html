@@ -3249,7 +3249,8 @@ en: {
   lock_first: '🔒 Finish {0} first',
   sel_map: '📍 {0} selected! Click again to start the ride',
   dest_lock: '🔒 {0} (Finish previous first)',
-  dest_go: '📍 {0} · {1}m',
+  dest_go: '📍 {0} - {1}m',
+  map_picked: '📍 {0} — press START RIDE ▶',
   running: '▶ Running',
   loc_start: 'Start', loc_mid: 'Halfway', loc_mid_s: 'Halfway there!', loc_near: 'Near destination', loc_near_s: 'Almost there!',
   welcome: 'Welcome ',
@@ -3345,7 +3346,8 @@ bn: {
   lock_first: '🔒 আগে {0} শেষ করো',
   sel_map: '📍 {0} সিলেক্ট! আবার ক্লিক করলে দৌড় শুরু হবে',
   dest_lock: '🔒 {0} (আগেরটা শেষ করো)',
-  dest_go: '📍 {0} · {1}মি',
+  dest_go: '📍 {0} - {1}মি',
+  map_picked: '📍 {0} — START RIDE চাপো ▶',
   running: '▶ চলছে',
   loc_start: 'যাত্রা শুরু', loc_mid: 'মাঝপথ', loc_mid_s: 'অর্ধেক পথ!', loc_near: 'গন্তব্য কাছে', loc_near_s: 'আর একটু!',
   welcome: 'স্বাগতম ',
@@ -5368,11 +5370,7 @@ function renderDest() {
       html += '<button class="' + cls + '" data-leg="' + i + '"><span>' + (THEME_ICON[g.theme] || '📍') + ' ' + legName(g) + ' <small style="color:var(--panel-soft)">' + themeName(g.theme) + ' · 📦 ' + dropName(g) + '</small></span>' +
         '<span class="km">' + legReal(g) + ' · ~' + legTime(g.len) + '</span><span class="st">' + st + '</span></button>';
     }
-    for (var li = 0; li < LOCKED_DIVS.length; li++) {
-      var ld = LOCKED_DIVS[li];
-      var ldn = lang === 'bn' ? ld.bn : ld.en;
-      html += '<div class="legRow lock"><span>🗺️ ' + ldn + ' <small style="color:var(--gold)">Coming Soon</small></span><span class="st">🔒</span></div>';
-    }
+    html += '<div class="legRow lock"><span>🔒 ' + (lang === 'bn' ? 'আরও ৭ বিভাগ' : '7 more divisions') + ' <small style="color:var(--gold)">' + (lang === 'bn' ? 'শীঘ্রই আসছে' : 'Coming Soon') + '</small></span><span class="st">🔒</span></div>';
     rm.innerHTML = html;
     Array.prototype.forEach.call(rm.querySelectorAll('.legRow[data-leg]'), function (b) {
       b.addEventListener('click', function (e) {
@@ -5397,6 +5395,7 @@ function cycleDest(dirn) {
   if (selLeg > unlockLeg) selLeg = dirn > 0 ? 0 : unlockLeg; // lock পার হওয়া যাবে না
   try { localStorage.setItem('rrLeg', String(selLeg)); } catch (e) {}
   sfx.move(); renderDest();
+  try { toast(elHint, F('map_picked', legName(LEGS[selLeg])), 1800); } catch (e) {}
 }
 function getBoard() {
   try { return JSON.parse(localStorage.getItem('rrBoard') || '[]'); } catch (e) { return []; }
