@@ -442,6 +442,7 @@
         <button class="mrow" data-page="pageBoard"><span data-i18n="m_board">🏆 My Best Runs</span><span class="mval"></span><span class="chev">›</span></button>
       </div>
       <button class="btn" id="menuSettingsBtn" style="background:#2d7a4f;box-shadow:0 5px 0 #14521f;font-size:22px;margin-top:10px;" data-i18n="menu_settings">⚙️ Settings</button>
+      <button class="btn" id="menuHowBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;font-size:22px;margin-top:10px;">❓ How to</button>
       <button class="btn" id="playBtn" data-i18n="play">▶ Start Ride</button>
       <div class="best" id="menuBest"></div>
     </div>
@@ -516,6 +517,7 @@
       <div class="setRow"><span class="lbl"><span class="ico">📳</span><span data-i18n="set_vib">Vibration</span><span class="sub" data-i18n="set_vib_sub">Phone vibrates on crash</span></span><button class="tgl on" id="setVib">On</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">📊</span><span data-i18n="set_fps">Show FPS</span><span class="sub" data-i18n="set_fps_sub">Developer mode</span></span><button class="tgl" id="setFps">Off</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🌐</span><span data-i18n="set_lang">Language</span><span class="sub" data-i18n="set_lang_sub">English / বাংলা</span></span><button class="tgl on" id="setLang">English</button></div>
+      <div class="setRow"><span class="lbl"><span class="ico">🔑</span><span id="setCodeLbl">Recovery code</span><span class="sub" id="setCodeSub">Notun phone-e progress ferot · tap to copy</span></span><button class="tgl on" id="setCode">------</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🗑️</span><span data-i18n="set_reset">Erase Progress</span><span class="sub" data-i18n="set_reset_sub">All save data will be deleted</span></span><button class="tgl danger" id="setReset">Erase</button></div>
     </div>
     <button class="btn" id="settingsClose" data-i18n="set_close">Close</button>
@@ -528,6 +530,21 @@
     <div class="bn" data-i18n="pause_sub">Take a breather</div>
     <p class="tag" data-i18n="pause_tag">The bullock cart will wait. Catch your breath.</p>
     <button class="btn" id="resumeBtn" data-i18n="resume">Resume</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="tutOverlay">
+  <div class="card">
+    <div class="emblem">🏍️</div>
+    <h1 style="font-size:36px" id="tutTitle">How to ride</h1>
+    <div class="keys" id="tutKeys" style="grid-template-columns:1fr 1fr;">
+      <div class="key"><b>⬅️ ➡️</b><span id="tutLr">Swipe = lane change</span></div>
+      <div class="key"><b>⬆️</b><span id="tutUp">Swipe up = jump</span></div>
+      <div class="key"><b>⬇️</b><span id="tutDn">Swipe down = slide</span></div>
+      <div class="key"><b>🛑</b><span id="tutBr">Hold red button = brake</span></div>
+    </div>
+    <p class="tag" id="tutKeys2">PC: ← → lane · ↑ jump · ↓ / S brake</p>
+    <button class="btn" id="tutBtn">Got it! ▶</button>
   </div>
 </div>
 
@@ -544,12 +561,18 @@
     <div class="bn" data-i18n="name_div">Your division?</div>
     <div id="divGrid"></div>
     <button class="btn" id="nameBtn" data-i18n="name_go">Start</button>
+    <div class="bn" style="margin-top:14px;opacity:.8">🔑 <span id="codeLbl">Have a recovery code?</span></div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <input id="codeInput" maxlength="6" placeholder="ABC123" style="text-transform:uppercase;">
+      <button class="btn" id="codeBtn" style="font-size:18px;padding:8px 20px 10px;white-space:nowrap;">Restore</button>
+    </div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
 <script>
 (function () {
 'use strict';
@@ -2272,8 +2295,10 @@ try {
       } catch (e) { return 'web' + Math.random().toString(36).slice(2, 8); }
     })();
     fbReady = true;
+    try { if (typeof firebase.analytics === 'function') { window._fa = firebase.analytics(); } } catch (e) {}
   }
 } catch (e) { fbReady = false; }
+function logEv(n, p) { try { if (window._fa) window._fa.logEvent(n, p || {}); } catch (e) {} }
 function cloudSave() { // local + cloud — sob save ekhan diye
   try {
     var now = Date.now();
@@ -2302,7 +2327,64 @@ function cloudSave() { // local + cloud — sob save ekhan diye
       div: playerDiv, tp: tParcels, owned: ownedBikes,
       board: getBoard(), at: now
     });
+    try { // recovery code → uid mapping (notun phone-e ferot)
+      var rc = myCode();
+      if (rc && rc !== '------') FBDB.ref('codes/' + rc).set({ u: fbUid, at: now }).catch(function () {});
+    } catch (e) {}
   } catch (e) {}
+}
+function myCode() { // 6-char recovery code, uid theke stable
+  try {
+    var c = localStorage.getItem('rrCode');
+    if (!c) {
+      c = String(fbUid || 'x').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
+      while (c.length < 6) c += 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)];
+      c = c.slice(0, 6);
+      localStorage.setItem('rrCode', c);
+    }
+    return c;
+  } catch (e) { return '------'; }
+}
+var lastMidSave = 0;
+function midRunSave(force) { // run-er majhe tab close/call ele progress bachao
+  try {
+    if (state !== 'play') return;
+    var now = Date.now();
+    if (!force && now - lastMidSave < 15000) return;
+    lastMidSave = now;
+    try {
+      localStorage.setItem('rrRun', JSON.stringify({
+        s: Math.floor(score), c: coinCount, k: carried, p: parcelCount,
+        d: Math.floor(dist), b: bankCoins, x: Math.floor(xp), at: now
+      }));
+    } catch (e) {}
+    cloudSave();
+  } catch (e) {}
+}
+function recoverRun() { // boot-e ager ochomapto run-er earning ferot
+  var note = '';
+  try {
+    var raw = localStorage.getItem('rrRun');
+    localStorage.removeItem('rrRun');
+    if (!raw) return '';
+    var r = JSON.parse(raw);
+    if (!r || !r.at || Date.now() - r.at > 24 * 3600 * 1000) return '';
+    var back = (r.c || 0) + Math.floor((r.k || 0) * 15); // tips full + hate thaka parcel ordhek dam
+    if (back > 0) {
+      bankCoins += back;
+      try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
+    }
+    if (r.x > 0) {
+      xp += r.x;
+      while (xp >= xpNeed()) { xp -= xpNeed(); riderLevel++; }
+      try { localStorage.setItem('rrXp', String(Math.floor(xp))); localStorage.setItem('rrLevel', String(riderLevel)); } catch (e) {}
+    }
+    if (back > 0) {
+      cloudSave();
+      note = lang === 'bn' ? ' · হঠাৎ বন্ধ রান থেকে ৳' + back + ' ফেরত' : ' · ৳' + back + ' back from last run';
+    }
+  } catch (e) {}
+  return note;
 }
 function cloudLoad() { // boot-e cloud theke notun data anle apply
   if (!fbReady || !FBDB || !fbUid) return;
@@ -2364,6 +2446,16 @@ function refreshWorldBoards() { // over screen-e world + division (10s throttle)
       if (!arr.length || !$('overBoard')) return;
       $('overBoard').innerHTML += '<h3>🌍 World Best</h3>' + worldRows(arr, true);
     });
+    try { // nijer rank: "tumi #143"
+      FBDB.ref('scores_by_player').orderByChild('s').once('value').then(function (snap) {
+        if (!$('overBoard') || state !== 'over') return;
+        var tot = 0, rank = 1, mine = -1;
+        snap.forEach(function (c) { tot++; var v = c.val() || {}; if (c.key === fbUid) mine = v.s || 0; });
+        if (mine < 0) mine = best;
+        snap.forEach(function (c) { var v = c.val() || {}; if ((v.s || 0) > mine) rank++; });
+        if (tot > 0) $('overBoard').innerHTML = '<div class="best">🏅 ' + (lang === 'bn' ? 'তুমি #' + rank + ' (' + tot + ' জন)' : 'You are #' + rank + ' of ' + tot) + '</div>' + $('overBoard').innerHTML;
+      }).catch(function () {});
+    } catch (e) {}
     if (playerDiv) FBDB.ref('scores_by_player').orderByChild('div').equalTo(playerDiv).limitToLast(100).once('value').then(function (snap) {
       var arr = [];
       snap.forEach(function (c) { arr.push(c.val()); });
@@ -3269,7 +3361,23 @@ function spawnCheckpoint(z) {
   gates.push({ mesh: mesh, kind: 'check', lane: -1, z: z, done: false });
 }
 function fmtBest() { return best > 0 ? F('best', best) : ''; }
+var tutPending = null;
+function showTut(ks) {
+  tutPending = (typeof ks === 'undefined' ? null : ks);
+  try {
+    var bn = lang === 'bn';
+    $('tutTitle').textContent = bn ? 'কীভাবে চালাবে' : 'How to ride';
+    $('tutLr').textContent = bn ? 'সোয়াইপ = লেন বদলাও' : 'Swipe = lane change';
+    $('tutUp').textContent = bn ? 'উপরে সোয়াইপ = লাফ' : 'Swipe up = jump';
+    $('tutDn').textContent = bn ? 'নিচে সোয়াইপ = স্লাইড' : 'Swipe down = slide';
+    $('tutBr').textContent = bn ? 'লাল বোতাম ধরো = ব্রেক' : 'Hold red button = brake';
+    $('tutKeys2').textContent = bn ? 'PC: ← → লেন · ↑ লাফ · ↓ / S ব্রেক' : 'PC: ← → lane · ↑ jump · ↓ / S brake';
+    $('tutBtn').textContent = bn ? 'বুঝেছি! ▶' : 'Got it! ▶';
+    $('tutOverlay').classList.remove('hidden');
+  } catch (e) {}
+}
 function startGame(keepScore) {
+  try { if (!localStorage.getItem('rrTut')) { showTut(keepScore); return; } } catch (e) {}
   if (state === 'menu') { justFinished = -1; carryScore = 0; }
   var emergency = '';
   if (hpStore <= 0) { // bike full smashed: repair na kore ride noy
@@ -3315,6 +3423,7 @@ function startGame(keepScore) {
   $('pMag').classList.remove('on'); $('pDbl').classList.remove('on');
   applyBikeColor();
   state = 'play'; document.body.dataset.ui = 'play';
+  try { logEv('run_start', { leg: selLeg, ev: eventMode || 'none' }); } catch (e) {}
   if (emergency) toast(elHint, emergency, 2800);
   if (keepScore && score > 0) toast(elLoc, F('leg_keep', legName(leg()), Math.floor(score), leg().len), 3200);
   else toast(elLoc, F('leg_go', legName(leg()), leg().len, legReal(leg())), 3200);
@@ -3334,7 +3443,7 @@ function die() {
   sfx.crash();
   sliding = false;
   crashBurst(player.position.x, py + 1); // dhulo + tukro chitke
-  if (carried > 0) { carried = Math.floor(carried / 2); } // crash-e sob parcel nosto
+  if (carried > 0) { carried = Math.floor(carried / 2); } // crash-e ordhek parcel nosto (baki ordhek beche jay)
   if (hp <= 0) { hp = 0; finalDead = true; toast(elHint, T('crash_dead'), 2000); }
   else { finalDead = false; invT = 2.5; toast(elHint, F('crash_hit', hp), 2000); }
 }
@@ -3350,6 +3459,7 @@ function endRun() {
   if (isBest) { best = s; try { localStorage.setItem('rangpurRushBest', String(best)); } catch (e) {} }
   // bank + xp save
   bankCoins += coinCount;
+  try { localStorage.removeItem('rrRun'); } catch (e) {} // run sesh — snapshot ar lagbe na
   var lvUp = false;
   while (xp >= xpNeed()) { xp -= xpNeed(); riderLevel++; lvUp = true; }
   try {
@@ -3360,6 +3470,7 @@ function endRun() {
   } catch (e) {}
   cloudSave();
   try { submitScore(s, parcelCount); } catch (e) {}
+  try { logEv('run_end', { score: s, parcels: parcelCount, reason: endReason }); } catch (e) {}
   if (lvUp) toast(elLoc, F('lvl_up', riderLevel), 3200);
   // leaderboard top-5 (nam soho)
   var lb = getBoard();
@@ -3444,11 +3555,20 @@ function renderSettings() {
   if (vib) { vib.textContent = vibOn ? T('on') : T('off'); vib.classList.toggle('on', vibOn); }
   if (fps) { fps.textContent = showFps ? T('on') : T('off'); fps.classList.toggle('on', showFps); }
   if (lg) { lg.textContent = lang === 'bn' ? 'বাংলা' : 'English'; lg.classList.toggle('on', true); }
+  var scb = $('setCode');
+  if (scb) { try { scb.textContent = myCode(); } catch (e) {} }
 }
 function bindSetting(id, fn) { var el = $(id); if (el) el.addEventListener('click', function (e) { e.stopPropagation(); fn(); renderSettings(); }); }
 bindSetting('setSfx', function () { sfxOn = !sfxOn; try { if (!sfxOn) engineStop(); else if (state === 'play' && !muted) engineStart(); } catch (e) {} });
 bindSetting('setMusic', function () { musicOn = !musicOn; });
 bindSetting('setLang', function () { setLang(lang === 'bn' ? 'en' : 'bn'); });
+bindSetting('setCode', function () {
+  try {
+    var c = myCode();
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c).catch(function () {});
+    toast(elHint, (lang === 'bn' ? '🔑 কোড কপি: ' : '🔑 Code copied: ') + c, 2000);
+  } catch (e) {}
+});
 function applyQuality(q) {
   quality = q;
   renderer.setPixelRatio(q === 'high' ? Math.min(window.devicePixelRatio || 1, LOW ? 1.5 : 2) : 1);
@@ -3482,7 +3602,8 @@ bindSetting('setReset', function () {
   toast(elHint, T('reset_done'), 2000);
   setTimeout(function () { location.reload(); }, 800);
 });
-document.addEventListener('visibilitychange', function () { if (document.hidden) pauseGame(); });
+document.addEventListener('visibilitychange', function () { if (document.hidden) { try { midRunSave(true); } catch (e) {} pauseGame(); } });
+window.addEventListener('pagehide', function () { try { midRunSave(true); } catch (e) {} });
 window.addEventListener('blur', pauseGame);
 
 /* ---------- main update ---------- */
@@ -4122,6 +4243,7 @@ function frame(now) {
   time += dt * timeScale;
   update(dt * timeScale);
   autoQuality(dt);
+  try { if (state === 'play') midRunSave(false); } catch (e) {} // 15s por por autosave
   renderer.render(scene, camera);
   if (showFps) {
     fpsAcc += dt; fpsN++;
@@ -4280,7 +4402,7 @@ function renderBoard() {
   }
   refreshWorldBoards();
 }
-function upCost(kind) { return kind === 's' ? 50 + upSpeed * 80 : 50 + upHandle * 80; }
+function upCost(kind) { var L = kind === 's' ? upSpeed : upHandle; return 50 + L * 80 + L * L * 6; } // progressive: late level-e grind bare
 function renderGarage() {
   var g = $('garage'); if (!g) return;
   if ($('menuBestV')) $('menuBestV').textContent = best;
@@ -4346,6 +4468,7 @@ function buyUp(kind) {
   if (bankCoins < c) { toast(elHint, T('buy_fail'), 1800); return; }
   bankCoins -= c;
   if (kind === 's') upSpeed++; else upHandle++;
+  try { logEv('upgrade', { kind: kind, lvl: kind === 's' ? upSpeed : upHandle }); } catch (e) {}
   try {
     localStorage.setItem('rrBank', String(bankCoins));
     localStorage.setItem('rrUpS', String(upSpeed));
@@ -4367,6 +4490,7 @@ function boot() {
   try { makeFlyBirds(); } catch (e) {}
   $('menuBest').textContent = fmtBest() + (playerName ? ' · ' + playerName : '');
   updateMenuBest();
+  try { var recNote = recoverRun(); if (recNote) $('menuBest').textContent += recNote; } catch (e) {}
   applyLang();
   applyBikeColor(); renderGarage(); renderBoard(); renderDest();
   cloudLoad(); loadGameConfig();
@@ -4392,6 +4516,24 @@ function boot() {
   });
   $('nameBtn').addEventListener('click', saveName);
   $('nameInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveName(); e.stopPropagation(); }, true);
+  $('codeBtn').addEventListener('click', function () {
+    var c = ($('codeInput').value || '').trim().toUpperCase();
+    if (!c || c.length < 6) { toast(elHint, lang === 'bn' ? '🔑 ৬ অক্ষরের কোড দাও' : '🔑 Enter 6-char code', 1800); return; }
+    if (!fbReady || !FBDB) { toast(elHint, lang === 'bn' ? 'নেট নেই, পরে চেষ্টা করো' : 'No connection', 1800); return; }
+    FBDB.ref('codes/' + c).once('value').then(function (snap) {
+      var r = snap.val();
+      if (!r || !r.u) { toast(elHint, lang === 'bn' ? '🔑 কোড পাওয়া যায়নি' : '🔑 Code not found', 2000); return; }
+      try { localStorage.setItem('rrUid', r.u); localStorage.removeItem('rrCode'); } catch (e) {}
+      location.reload();
+    }).catch(function () { toast(elHint, '🔑 ?', 1800); });
+  });
+  $('tutBtn').addEventListener('click', function () {
+    try { localStorage.setItem('rrTut', '1'); } catch (e) {}
+    $('tutOverlay').classList.add('hidden');
+    try { logEv('tutorial_done', {}); } catch (e) {}
+    if (tutPending !== null && tutPending !== undefined) { var k = tutPending; tutPending = null; startGame(k); }
+  });
+  $('menuHowBtn').addEventListener('click', function (e) { e.stopPropagation(); showTut(null); });
   state = 'menu'; speed = 9;
   $('loading').classList.add('hidden');
   last = performance.now();
