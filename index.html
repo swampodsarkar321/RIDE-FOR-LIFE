@@ -1226,7 +1226,7 @@ function makeEgret(x, y, z, parent) {
 var BLD_COLS = [0xe8dcc0, 0xd6c49a];
 
 /* ---------- SteadFast billboard (roadside, image-style) ---------- */
-var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [];
+var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [], boardBag = [], boardBagStamp = '';
 function syncAdminBoards(list) { // admin panel theke image billboard — live
   try {
     var seen = {};
@@ -1249,14 +1249,20 @@ function syncAdminBoards(list) { // admin panel theke image billboard — live
     });
     for (var j = ADMIN_BOARDS.length - 1; j >= 0; j--) if (!seen[ADMIN_BOARDS[j].img]) ADMIN_BOARDS.splice(j, 1);
     while (ADMIN_BOARDS.length > 12) ADMIN_BOARDS.shift();
+    try { boardBag = []; boardBagStamp = ''; } catch (e) {} // config bodlale shuffle abar notun kore
   } catch (e) {}
 }
-function pickBoardMat() {
+function pickBoardMat() { // shuffled bag: sob image ghuriye, repeat chara
   try {
     if (!billboardMat) billboardMat = new THREE.MeshBasicMaterial({ map: makeBillboardTexture() });
-    var pool = [billboardMat];
-    for (var i = 0; i < ADMIN_BOARDS.length; i++) if (ADMIN_BOARDS[i].ready) pool.push(ADMIN_BOARDS[i].mat);
-    return pool[(Math.random() * pool.length) | 0];
+    var stamp = ADMIN_BOARDS.length + ':' + ADMIN_BOARDS.filter(function (b) { return b.ready; }).length;
+    if (!boardBag.length || stamp !== boardBagStamp) {
+      boardBagStamp = stamp;
+      boardBag = [billboardMat];
+      for (var i = 0; i < ADMIN_BOARDS.length; i++) if (ADMIN_BOARDS[i].ready) boardBag.push(ADMIN_BOARDS[i].mat);
+      for (var j = boardBag.length - 1; j > 0; j--) { var k = (Math.random() * (j + 1)) | 0; var t = boardBag[j]; boardBag[j] = boardBag[k]; boardBag[k] = t; }
+    }
+    return boardBag.pop();
   } catch (e) { return billboardMat; }
 }
 function makeBillboardTexture() {
