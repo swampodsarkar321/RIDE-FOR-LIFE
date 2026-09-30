@@ -263,7 +263,25 @@
   .lbrow .nm small { display: block; font-size: 12px; color: var(--panel-soft); font-weight: 500; }
   .lbrow .sc { color: var(--gold); font-size: 17px; white-space: nowrap; }
   .lbrow.me { border-color: var(--gold); background: rgba(255,200,61,.12); }
-  #nameOverlay .card { background: var(--panel); }
+  #nameOverlay { overflow-y: auto; place-items: start center; z-index: 50; }
+  #nameOverlay .card {
+    background: var(--panel);
+    max-height: 94vh; max-height: 94dvh; overflow-y: auto; overscroll-behavior: contain;
+    touch-action: pan-y; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+    margin: auto; padding: 18px 20px 20px;
+  }
+  #nameOverlay .emblem { font-size: 30px; margin-bottom: 2px; }
+  #nameOverlay h1 { margin: 2px 0 4px; }
+  #nameOverlay .bn { margin-top: 6px; }
+  @media (max-height: 700px) {
+    #nameOverlay { padding: 10px; }
+    #nameOverlay .card { padding: 12px 14px 14px; border-radius: 18px; }
+    #nameOverlay .emblem { font-size: 24px; margin-bottom: 0; }
+    #nameOverlay h1 { font-size: 28px !important; margin: 0 0 2px; }
+    #nameOverlay .bn { font-size: 18px; margin-top: 4px; }
+    #nameInput { margin: 8px 0 10px; font-size: 19px; }
+    #divGrid { margin: 6px 0 10px; }
+  }
   #nameInput {
     font-family: inherit; font-size: 22px; font-weight: 700; text-align: center;
     border-radius: 12px; border: 2px solid var(--gold); padding: 8px 12px; width: 100%;
@@ -641,11 +659,11 @@
 <div id="fpsBox">60 FPS</div>
 
 <div class="overlay hidden" id="nameOverlay">
-  <div class="card">
+  <div class="card" id="nameCard">
     <div class="emblem">🏍️</div>
-    <h1 style="font-size:40px" data-i18n="name_t">Your name?</h1>
-    <div class="bn" data-i18n="name_sub">Give once, stays forever</div>
-    <input id="nameInput" maxlength="14" data-i18n-ph="name_ph" placeholder="e.g. Sakib">
+    <h1 style="font-size:32px" data-i18n="name_t">Your name?</h1>
+    <div class="bn" style="margin-top:2px;" data-i18n="name_sub">Give once, stays forever</div>
+    <input id="nameInput" maxlength="14" data-i18n-ph="name_ph" placeholder="e.g. Sakib" enterkeyhint="next" autocomplete="nickname">
     <div class="bn" data-i18n="name_div">Your division?</div>
     <div id="divGrid"></div>
     <div class="bn" style="margin-top:10px;">🎭 Avatar</div>
@@ -5441,7 +5459,7 @@ function boot() {
   selDivIdx = playerDiv ? divIndex(playerDiv) : -1;
   if (playerName) { try { $('nameInput').value = playerName; } catch (e) {} }
   renderDivGrid();
-  if (!playerName || !playerDiv) $('nameOverlay').classList.remove('hidden');
+  if (!playerName || !playerDiv) { $('nameOverlay').classList.remove('hidden'); try { $('nameOverlay').scrollTop = 0; var nc = $('nameCard'); if (nc) nc.scrollTop = 0; } catch (e) {} }
   $('bikeL').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(-1); });
   $('bikeR').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(1); });
   $('bikeBuy').addEventListener('click', function (e) { e.stopPropagation(); buyBike(); });
@@ -5457,6 +5475,20 @@ function boot() {
   });
   $('nameBtn').addEventListener('click', saveName);
   $('nameInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveName(); e.stopPropagation(); }, true);
+  // keyboard khulle input jate upore uthe ase + card scroll hoy
+  ['nameInput', 'codeInput'].forEach(function (id) {
+    var inp = $(id);
+    if (inp && !inp._kbBound) {
+      inp._kbBound = true;
+      inp.addEventListener('focus', function () {
+        try {
+          var ov = $('nameOverlay');
+          if (ov) ov.scrollTop = 0;
+          setTimeout(function () { try { inp.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }, 300);
+        } catch (e) {}
+      });
+    }
+  });
   $('codeBtn').addEventListener('click', function () {
     var c = ($('codeInput').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (!c || c.length < 6) { toast(elHint, lang === 'bn' ? '🔑 ৬ অক্ষরের কোড দাও' : '🔑 Enter 6-char code', 1800); return; }
