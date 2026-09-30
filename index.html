@@ -65,19 +65,19 @@
   .icon-btn:focus-visible, .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
   .loc {
-    position: absolute; top: calc(env(safe-area-inset-top, 0px) + 96px); left: 50%;
+    position: absolute; top: calc(env(safe-area-inset-top, 0px) + 96px); left: 50%; z-index: 60;
     transform: translate(-50%, -12px); opacity: 0; transition: opacity .35s, transform .35s;
     background: var(--leaf); border: 3px solid #fff; border-radius: 16px; padding: 4px 22px 6px; text-align: center;
-    line-height: 1.05; white-space: nowrap;
+    line-height: 1.05; white-space: nowrap; pointer-events: none;
   }
   .loc.show { opacity: 1; transform: translate(-50%, 0); }
   .loc b { display: block; font-size: 28px; font-weight: 800; }
   .loc small { font-size: 14px; color: var(--panel-soft); }
 
   .hint {
-    position: absolute; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 156px); transform: translate(-50%, 0); opacity: 0; transition: opacity .25s;
+    position: absolute; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 156px); transform: translate(-50%, 0); opacity: 0; transition: opacity .25s; z-index: 60;
     background: var(--gold); color: #3a2600; font-weight: 800; font-size: 20px; padding: 5px 18px 7px; border-radius: 999px;
-    white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
   }
   .hint.show { opacity: 1; }
   #combo { top: calc(env(safe-area-inset-top, 0px) + 204px); }
@@ -2069,11 +2069,11 @@ function radioPlayFile() {
     return true;
   } catch (e) { return false; }
 }
-function radioTick() { // mp3 on/off decide kore (menu + drive dujagatei)
+function radioTick() { // STRICT: sudhu drive (play) cholle bajbe — menu/pause/over-e off
   try {
     var el = radioEnsureEl(); if (!el) return;
     var st = radioStation();
-    var should = musicOn && !muted && st.tracks.length > 0 && !radioBad[st.tracks[radioTrack % st.tracks.length]];
+    var should = state === 'play' && musicOn && !muted && st.tracks.length > 0 && !radioBad[st.tracks[radioTrack % st.tracks.length]];
     if (should) {
       if (el.paused) radioPlayFile();
     } else if (!el.paused) el.pause();
@@ -4294,7 +4294,7 @@ function startGame(keepScore) {
   else toast(elLoc, F('leg_go', legName(leg()), leg().len, legReal(leg()), dropName(leg())), 3200);
   if (eventMode) toast(elHint, evName(eventMode) + ' — ' + evDesc(eventMode), 2500);
 }
-function pauseGame() { if (state === 'play') { state = 'pause'; document.body.dataset.ui = 'pause'; $('pause').classList.remove('hidden'); } }
+function pauseGame() { if (state === 'play') { state = 'pause'; document.body.dataset.ui = 'pause'; $('pause').classList.remove('hidden'); try { radioTick(); } catch (e) {} } }
 function resumeGame() { if (state === 'pause') { state = 'play'; document.body.dataset.ui = 'play'; $('pause').classList.add('hidden'); last = performance.now(); } }
 function die() {
   if (state !== 'play' || invT > 0) return;
@@ -4370,7 +4370,7 @@ function endRun() {
   eventMode = null; scoreXK = 1;
   try { renderEvents(); } catch (e) {}
 }
-function showOver() { state = 'over'; document.body.dataset.ui = 'over'; $('over').classList.remove('hidden'); var _nb = $('nextBtn'); (_nb && _nb.style.display !== 'none' ? _nb : $('againBtn')).focus({ preventScroll: true }); }
+function showOver() { state = 'over'; document.body.dataset.ui = 'over'; $('over').classList.remove('hidden'); try { radioTick(); } catch (e) {} var _nb = $('nextBtn'); (_nb && _nb.style.display !== 'none' ? _nb : $('againBtn')).focus({ preventScroll: true }); }
 
 $('playBtn').addEventListener('click', function () { eventMode = null; renderEvents(); startGame(false); });
 $('againBtn').addEventListener('click', function () {
