@@ -1795,14 +1795,14 @@ var SKIN = 0xc98b5e;
 var bikeG = new THREE.Group(); pivot.add(bikeG);
 /* glossy standard mats + env reflection — body/chrome/visor/helmet/fabric */
 var bikePaintM = 0x0f0f0f, bikeTankM = 0x0f0f0f, bikeChromeM = 0xcccccc, visorM = 0x0e1c30,
-    helmetM = 0x00b341, jacketM = 0xc23b3b, clothM = 0x0d0d0d, boxGreenM = 0x0d8a4f;
+    helmetM = 0x00b341, jacketM = 0x1c1c1c, clothM = 0x0d0d0d, boxGreenM = 0x0d8a4f;
 try {
   bikePaintM = new THREE.MeshStandardMaterial({ color: 0x0f0f0f, metalness: 0.6, roughness: 0.32, envMap: SKYCUBE, envMapIntensity: 1.0 });
   bikeTankM = new THREE.MeshStandardMaterial({ color: 0x141414, metalness: 0.7, roughness: 0.25, envMap: SKYCUBE, envMapIntensity: 1.2 });
   bikeChromeM = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.95, roughness: 0.15, envMap: SKYCUBE, envMapIntensity: 1.4 });
   visorM = new THREE.MeshStandardMaterial({ color: 0x0e1c30, metalness: 0.9, roughness: 0.08, envMap: SKYCUBE, envMapIntensity: 1.8 });
   helmetM = new THREE.MeshStandardMaterial({ color: 0x00b341, metalness: 0.35, roughness: 0.22, envMap: SKYCUBE, envMapIntensity: 1.1 });
-  jacketM = new THREE.MeshStandardMaterial({ color: 0xc23b3b, metalness: 0.05, roughness: 0.85 });
+  jacketM = new THREE.MeshStandardMaterial({ color: 0x232323, metalness: 0.05, roughness: 0.85 });
   clothM = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, metalness: 0.05, roughness: 0.9 });
   boxGreenM = new THREE.MeshStandardMaterial({ color: 0x0d8a4f, metalness: 0.3, roughness: 0.4, envMap: SKYCUBE, envMapIntensity: 0.8 });
 } catch (e) {}
@@ -2658,7 +2658,7 @@ function createTextTexture() {
 function createStickerTexture(emoji) {
   var c = document.createElement('canvas'); c.width = c.height = 128;
   var ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, 128, 128); // transparent bg — sobuj box dekha jabe
+  ctx.fillStyle = '#0d8a4f'; ctx.fillRect(0, 0, 128, 128); // box-green bg — solid thakbe
   ctx.font = '80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(emoji, 64, 70);
   var t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
@@ -5353,8 +5353,9 @@ function applyCustomization() {
     var stickerTex = createStickerTexture(stickerEmoji);
     var boxMesh = bikeG.children.find(function (m) { return m.isMesh && Math.abs(m.position.x) < 0.01 && Math.abs(m.position.y - 1.52) < 0.01 && Math.abs(m.position.z - 0.75) < 0.01; });
     if (boxMesh && boxMesh.material) {
+      boxMesh.material.color.setHex(0xffffff); // texture-r sobuj exact asbe
       boxMesh.material.map = stickerTex;
-      boxMesh.material.transparent = true;
+      boxMesh.material.transparent = false;
       boxMesh.material.needsUpdate = true;
     }
     var hlMesh = bikeG.children.find(function (m) { return m.isMesh && Math.abs(m.position.x) < 0.01 && Math.abs(m.position.y - 1.0) < 0.01 && Math.abs(m.position.z + 1.28) < 0.01; });
