@@ -440,6 +440,7 @@
         <button class="mrow" data-page="pageGarage"><span data-i18n="m_garage">🔧 Garage</span><span class="mval" id="mGarVal">100%</span><span class="chev">›</span></button>
         <button class="mrow" data-page="pageEvents"><span data-i18n="m_events">🎪 Events</span><span class="mval" id="mEvVal"></span><span class="chev">›</span></button>
         <button class="mrow" data-page="pageBoard"><span data-i18n="m_board">🏆 My Best Runs</span><span class="mval"></span><span class="chev">›</span></button>
+        <button class="mrow" id="dailyRow" data-page="pageMain"><span>🎁 Daily Reward</span><span class="mval" id="mDailyVal"></span><span class="chev">›</span></button>
       </div>
       <button class="btn" id="menuSettingsBtn" style="background:#2d7a4f;box-shadow:0 5px 0 #14521f;font-size:22px;margin-top:10px;" data-i18n="menu_settings">⚙️ Settings</button>
       <button class="btn" id="menuHowBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;font-size:22px;margin-top:10px;">❓ How to</button>
@@ -545,6 +546,17 @@
     </div>
     <p class="tag" id="tutKeys2">PC: ← → lane · ↑ jump · ↓ / S brake</p>
     <button class="btn" id="tutBtn">Got it! ▶</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="dailyOverlay">
+  <div class="card">
+    <div class="emblem">🎁</div>
+    <h1 style="font-size:36px" id="dailyTitle">Daily Reward</h1>
+    <div class="bn" id="dailySub">Roj eso, streak barao!</div>
+    <div id="dailyStrip" style="display:flex;gap:6px;justify-content:center;margin:14px 0;flex-wrap:wrap;"></div>
+    <button class="btn" id="dailyClaim">Claim ৳100</button>
+    <div style="margin-top:10px;"><button class="backBtn" id="dailyClose">‹ Close</button></div>
   </div>
 </div>
 
@@ -2331,6 +2343,44 @@ function cloudSave() { // local + cloud — sob save ekhan diye
       var rc = myCode();
       if (rc && rc !== '------') FBDB.ref('codes/' + rc).set({ u: fbUid, at: now }).catch(function () {});
     } catch (e) {}
+  } catch (e) {}
+}
+/* ---------- daily login reward + streak ---------- */
+var DAILY_PAY = [100, 150, 200, 250, 300, 400, 500];
+function dayStr(d) { d = d || new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function dailyState() {
+  try { return JSON.parse(localStorage.getItem('rrDaily') || '{"last":"","streak":0}'); }
+  catch (e) { return { last: '', streak: 0 }; }
+}
+function dailyInfo() { // {claimable, streak(payable), pay}
+  var st = dailyState(), t = dayStr(), y = dayStr(new Date(Date.now() - 86400000));
+  if (st.last === t) return { claimable: false, streak: st.streak, pay: 0 };
+  var ns = (st.last === y) ? st.streak + 1 : 1;
+  return { claimable: true, streak: ns, pay: DAILY_PAY[Math.min(ns, 7) - 1] };
+}
+function renderDaily() {
+  try {
+    var info = dailyInfo(), bn = lang === 'bn';
+    $('dailyTitle').textContent = bn ? '🎁 দৈনিক পুরস্কার' : 'Daily Reward';
+    $('dailySub').textContent = bn ? 'রোজ এসো, স্ট্রিক বাড়াও!' : 'Come daily, grow streak!';
+    var h = '', cur = info.claimable ? info.streak : info.streak + 1;
+    for (var d = 1; d <= 7; d++) {
+      var got = d < cur || (!info.claimable && d <= info.streak);
+      var isToday = info.claimable && d === Math.min(cur, 7);
+      h += '<div style="min-width:38px;padding:6px 4px;border-radius:10px;font-size:13px;font-weight:800;'
+        + (got ? 'background:linear-gradient(135deg,#2d9c42,#1a6b2a);border:2px solid #7fe0a0;color:#fff;'
+          : isToday ? 'background:rgba(255,200,61,.2);border:2px dashed var(--gold);color:var(--gold);'
+          : 'background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);color:#fff;')
+        + '">' + (bn ? 'দিন ' : 'D') + d + '<br>৳' + DAILY_PAY[d - 1] + '</div>';
+    }
+    $('dailyStrip').innerHTML = h;
+    var cb = $('dailyClaim');
+    if (info.claimable) {
+      cb.style.display = 'inline-block';
+      cb.textContent = (bn ? 'নাও ৳' : 'Claim ৳') + info.pay + ' 🔥' + info.streak;
+    } else cb.style.display = 'none';
+    var mv = $('mDailyVal');
+    if (mv) mv.textContent = info.claimable ? '❗' : info.streak + '🔥';
   } catch (e) {}
 }
 function myCode() { // 6-char recovery code, uid theke stable
@@ -4534,6 +4584,21 @@ function boot() {
     if (tutPending !== null && tutPending !== undefined) { var k = tutPending; tutPending = null; startGame(k); }
   });
   $('menuHowBtn').addEventListener('click', function (e) { e.stopPropagation(); showTut(null); });
+  $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
+  $('dailyClose').addEventListener('click', function () { $('dailyOverlay').classList.add('hidden'); });
+  $('dailyClaim').addEventListener('click', function () {
+    var info = dailyInfo();
+    if (!info.claimable) return;
+    bankCoins += info.pay;
+    try {
+      localStorage.setItem('rrBank', String(bankCoins));
+      localStorage.setItem('rrDaily', JSON.stringify({ last: dayStr(), streak: info.streak }));
+    } catch (e) {}
+    cloudSave(); renderDaily(); updateMenuBest();
+    try { logEv('daily_claim', { streak: info.streak }); } catch (e) {}
+    sfx.coin();
+  });
+  try { renderDaily(); } catch (e) {}
   state = 'menu'; speed = 9;
   $('loading').classList.add('hidden');
   last = performance.now();
