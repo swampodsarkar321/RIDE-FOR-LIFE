@@ -440,6 +440,7 @@
         <button class="mrow" data-page="pageGarage"><span data-i18n="m_garage">🔧 Garage</span><span class="mval" id="mGarVal">100%</span><span class="chev">›</span></button>
         <button class="mrow" data-page="pageEvents"><span data-i18n="m_events">🎪 Events</span><span class="mval" id="mEvVal"></span><span class="chev">›</span></button>
         <button class="mrow" data-page="pageBoard"><span data-i18n="m_board">🏆 My Best Runs</span><span class="mval"></span><span class="chev">›</span></button>
+        <button class="mrow" data-page="pageProfile" id="profRow"><span data-i18n="m_profile">👤 Profile</span><span class="mval" id="mProfVal"></span><span class="chev">›</span></button>
         <button class="mrow" id="dailyRow" data-page="pageMain"><span>🎁 Daily Reward</span><span class="mval" id="mDailyVal"></span><span class="chev">›</span></button>
       </div>
       <button class="btn" id="menuSettingsBtn" style="background:#2d7a4f;box-shadow:0 5px 0 #14521f;font-size:22px;margin-top:10px;" data-i18n="menu_settings">⚙️ Settings</button>
@@ -479,6 +480,28 @@
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
       <div class="sec" data-i18n="sec_board">🏆 My Best Runs</div>
       <div class="board" id="lbList"></div>
+    </div>
+    <div class="mpage" id="pageProfile">
+      <button class="backBtn" data-back data-i18n="back">‹ Back</button>
+      <div class="sec" data-i18n="sec_profile">👤 Profile</div>
+      <div class="board" style="text-align:center;">
+        <div style="font-size:44px;">🏍️</div>
+        <div id="profName" style="font-size:24px;font-weight:800;"></div>
+        <div id="profDiv" style="color:var(--gold);font-weight:700;"></div>
+        <div class="best" id="profRank" style="margin:8px 0;"></div>
+        <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin:8px 0;">
+          <div class="stat"><small>🏍️ Lvl</small><b id="profLvl">1</b></div>
+          <div class="stat"><small>🏆 Best</small><b id="profBest">0</b></div>
+          <div class="stat"><small>৳ Bank</small><b id="profBank">0</b></div>
+          <div class="stat"><small>📦 Parcels</small><b id="profParcel">0</b></div>
+          <div class="stat"><small>⭐ Stars</small><b id="profStars">0</b></div>
+          <div class="stat"><small>🔥 Streak</small><b id="profStreak">0</b></div>
+        </div>
+        <div style="font-size:13px;color:var(--panel-soft);">XP <span id="profXpTxt"></span></div>
+        <div class="speedo-bar" style="width:100%;margin:2px 0 8px;"><u id="profXpFill"></u></div>
+        <h3 style="margin:6px 0;color:var(--gold);">🏅 Achievements</h3>
+        <div id="profAch" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+      </div>
     </div>
     <div class="mpage" id="pageEvents">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
@@ -3008,6 +3031,8 @@ STR.en.lb_glob = 'Global'; STR.bn.lb_glob = 'গ্লোবাল';
 STR.en.lb_loading = 'Loading…'; STR.bn.lb_loading = 'লোড হচ্ছে…';
 STR.en.lb_empty = 'No scores yet — play a run!'; STR.bn.lb_empty = 'এখনো স্কোর নেই — দৌড়াও!';
 STR.en.m_events = '🎪 Events'; STR.bn.m_events = '🎪 ইভেন্টস';
+STR.en.m_profile = '👤 Profile'; STR.bn.m_profile = '👤 প্রোফাইল';
+STR.en.sec_profile = '👤 Profile'; STR.bn.sec_profile = '👤 প্রোফাইল';
 STR.en.sec_events = '🎪 Special Events'; STR.bn.sec_events = '🎪 স্পেশাল ইভেন্ট';
 STR.en.gar_head = '🏆 Level {0} · Points {1}/{2} · Bank ৳{3}'; STR.bn.gar_head = '🏆 ধাপ {0} · পয়েন্ট {1}/{2} · ব্যাংক ৳{3}';
 STR.en.up_bike = 'Bike'; STR.bn.up_bike = 'বাইক';
@@ -3642,7 +3667,7 @@ function endRun() {
       ab2.textContent = T('again');
     }
   }
-  renderBoard(); renderGarage(); renderDest();
+  renderBoard(); renderGarage(); renderDest(); renderProfile();
   eventMode = null; scoreXK = 1;
   try { renderEvents(); } catch (e) {}
 }
@@ -3887,7 +3912,7 @@ function update(dt) {
       toast(elLoc, F('fuel_empty'), 3000);
       sfx.crash();
       endRun(); state = 'over'; document.body.dataset.ui = 'over'; $('over').classList.remove('hidden');
-      renderBoard(); renderGarage(); renderDest();
+      renderBoard(); renderGarage(); renderDest(); renderProfile();
     }
     // bridge detection
     var c0 = curveAt(0), c1 = curveAt(-20);
@@ -3925,7 +3950,7 @@ function update(dt) {
       try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
       hpStore = hp; try { localStorage.setItem('rrHp', String(hp)); } catch (e) {}
       endRun(); state = 'over'; document.body.dataset.ui = 'over'; $('over').classList.remove('hidden');
-      renderBoard(); renderGarage(); renderDest();
+      renderBoard(); renderGarage(); renderDest(); renderProfile();
     }
   } else if (state === 'menu') {
     speed += (9 - speed) * Math.min(1, dt * 2);
@@ -4748,6 +4773,52 @@ function renderBoard() {
   refreshWorldBoards();
 }
 function upLvl(kind) { return kind === 's' ? upSpeed : kind === 'h' ? upHandle : kind === 'f' ? upFuel : kind === 'm' ? upMag : upNitro; }
+/* ---------- profile: nam/level/score/rank/badge ---------- */
+var myRankCache = null, myRankFetching = false;
+function fetchMyRank() {
+  if (myRankCache || myRankFetching || !fbReady || !FBDB) return;
+  myRankFetching = true;
+  try {
+    FBDB.ref('scores_by_player').orderByChild('s').once('value').then(function (snap) {
+      var tot = 0, rank = 1, mine = -1;
+      snap.forEach(function (c) { tot++; var v = c.val() || {}; if (c.key === fbUid) mine = v.s || 0; });
+      if (mine < 0) mine = best;
+      snap.forEach(function (c) { var v = c.val() || {}; if ((v.s || 0) > mine) rank++; });
+      myRankCache = tot ? { rank: rank, tot: tot } : null;
+      myRankFetching = false;
+      renderProfile();
+      var mv = $('mProfVal'); if (mv && myRankCache) mv.textContent = '#' + myRankCache.rank;
+    }, function () { myRankFetching = false; });
+  } catch (e) { myRankFetching = false; }
+}
+function renderProfile() {
+  try {
+    var bn = lang === 'bn';
+    if ($('profName')) $('profName').textContent = playerName || (bn ? 'রাইডার' : 'Rider');
+    if ($('profDiv')) $('profDiv').textContent = '📍 ' + (playerDiv ? divName(playerDiv) : '');
+    if ($('profLvl')) $('profLvl').textContent = riderLevel;
+    if ($('profBest')) $('profBest').textContent = best;
+    if ($('profBank')) $('profBank').textContent = '৳' + bankCoins;
+    if ($('profParcel')) $('profParcel').textContent = tParcels;
+    if ($('profStars')) $('profStars').textContent = tStars;
+    if ($('profStreak')) $('profStreak').textContent = maxStreak() + '🔥';
+    if ($('profXpFill')) $('profXpFill').style.width = Math.min(100, xp / xpNeed() * 100) + '%';
+    if ($('profXpTxt')) $('profXpTxt').textContent = Math.floor(xp) + '/' + xpNeed();
+    var mv = $('mProfVal'); if (mv && myRankCache) mv.textContent = '#' + myRankCache.rank;
+    var rk = $('profRank');
+    if (rk) {
+      if (myRankCache) rk.textContent = '🏅 #' + myRankCache.rank + ' / ' + myRankCache.tot;
+      else { rk.textContent = bn ? 'র‍্যাংক আসছে…' : 'Loading rank…'; fetchMyRank(); }
+    }
+    var pa = $('profAch');
+    if (pa) pa.innerHTML = achList().map(function (a) {
+      return '<div style="padding:8px 6px;border-radius:10px;font-size:13px;font-weight:800;text-align:center;'
+        + (a.got ? 'background:linear-gradient(135deg,#2d9c42,#1a6b2a);border:2px solid #7fe0a0;color:#fff;'
+          : 'background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);color:#888;')
+        + '">' + (a.got ? a.ico : '🔒') + '<br>' + a.t + '</div>';
+    }).join('');
+  } catch (e) {}
+}
 function upCost(kind) { var L = upLvl(kind); if (L >= UMAX) return 0; return 50 + L * 80 + L * L * 6; } // progressive: late level-e grind bare
 function renderGarage() {
   var g = $('garage'); if (!g) return;
@@ -4908,7 +4979,7 @@ function boot() {
   });
   $('menuHowBtn').addEventListener('click', function (e) { e.stopPropagation(); showTut(null); });
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
-  $('dailyClose').addEventListener('click', function () { $('dailyOverlay').classList.add('hidden'); });
+  $('profRow').addEventListener('click', function () { renderProfile(); });  $('dailyClose').addEventListener('click', function () { $('dailyOverlay').classList.add('hidden'); });
   $('dailyClaim').addEventListener('click', function () {
     var info = dailyInfo();
     if (!info.claimable) return;
