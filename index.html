@@ -4851,7 +4851,7 @@ function boot() {
   $('nameBtn').addEventListener('click', saveName);
   $('nameInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveName(); e.stopPropagation(); }, true);
   $('codeBtn').addEventListener('click', function () {
-    var c = ($('codeInput').value || '').trim().toUpperCase();
+    var c = ($('codeInput').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (!c || c.length < 6) { toast(elHint, lang === 'bn' ? '🔑 ৬ অক্ষরের কোড দাও' : '🔑 Enter 6-char code', 1800); return; }
     if (!fbReady || !FBDB) { toast(elHint, lang === 'bn' ? 'নেট নেই, পরে চেষ্টা করো' : 'No connection', 1800); return; }
     FBDB.ref('codes/' + c).once('value').then(function (snap) {
