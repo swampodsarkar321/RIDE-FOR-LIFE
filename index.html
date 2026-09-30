@@ -536,13 +536,23 @@
   .mx.mini .ico { width: 40px; height: 40px; font-size: 20px; }
   .mx.mini .tx b { font-size: 16px; }
   .mx.mini .chev { font-size: 22px; }
-  /* PC / wide: 2-column cards */
-  @media (min-width: 700px) {
+  .mx-grid > * { min-width: 0; }
+  .mx { min-width: 0; }
+  /* PC / wide: 2-column cards (sudhu boro screen-e) */
+  @media (min-width: 900px) {
     #pageMain { max-width: 720px; }
     .mx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
     .mx-grid #startCard { grid-column: 1 / -1; }
     .mx-grid .mx-duo { grid-column: 1 / -1; }
     .mm-logo { width: min(220px, 30vw); }
+  }
+  /* soru screen: uporer bar wrap hobe, chapbe na */
+  @media (max-width: 560px) {
+    .mm-top { flex-wrap: wrap; }
+    .mm-prof { flex: 1 1 100%; }
+    .mm-coins { flex: 1 1 100%; flex-direction: row; align-items: center; justify-content: space-between; }
+    .mm-cur { font-size: 15px; }
+    .mm-gear { width: 36px; height: 36px; }
   }
   /* short screens: compact fit, no overflow */
   @media (max-height: 800px) {
