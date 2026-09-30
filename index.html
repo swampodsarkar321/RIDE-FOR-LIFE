@@ -559,14 +559,14 @@ var pick = function (a) { return a[(Math.random() * a.length) | 0]; };
 var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
 
 if (typeof THREE === 'undefined') {
-  $('loading').innerHTML = T('gl_fail');
+  $('loading').textContent = 'Could not load 3D engine. Please check internet and reload.';
   return;
 }
 var LOW = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.hardwareConcurrency || 8) <= 4;
 var renderer;
 try { renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' }); }
 catch (e) {
-  $('loading').innerHTML = T('gl_nowebgl');
+  $('loading').textContent = 'WebGL not supported on this device/browser.';
   return;
 }
 renderer.setPixelRatio(LOW ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 2));
