@@ -439,6 +439,96 @@
   .stCard.sel .eq i { animation: eqB 0.7s ease-in-out infinite alternate; }
   .stCard.sel .eq i:nth-child(2) { animation-delay: .15s; } .stCard.sel .eq i:nth-child(3) { animation-delay: .3s; } .stCard.sel .eq i:nth-child(4) { animation-delay: .45s; }
   @keyframes eqB { from { height: 20%; } to { height: 100%; } }
+  /* ===== main menu (mockup style, 3D bg kept) ===== */
+  #pageMain { max-width: 430px; margin: 0 auto; }
+  .mm-top { display: flex; gap: 8px; align-items: stretch; justify-content: space-between; margin: 2px 0 8px; }
+  .mm-prof {
+    pointer-events: auto; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
+    font-family: inherit; color: #fff; text-align: left; cursor: pointer;
+    background: linear-gradient(135deg, rgba(10,20,40,.82), rgba(10,20,40,.55));
+    border: 2px solid rgba(255,200,61,.35); border-radius: 18px; padding: 6px 12px 6px 6px;
+  }
+  .mm-prof:active { transform: scale(.98); }
+  .mm-ava { width: 52px; height: 52px; border-radius: 50%; border: 3px solid var(--gold); background: #fff; object-fit: cover; flex-shrink: 0; }
+  .mm-prof .who { flex: 1; min-width: 0; }
+  .mm-prof .who b { display: block; font-size: 19px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mm-prof .who small { display: block; font-size: 12.5px; color: var(--panel-soft); }
+  .mm-xpbar { height: 7px; border-radius: 4px; background: rgba(255,255,255,.18); overflow: hidden; margin-top: 3px; }
+  .mm-xpbar u { display: block; height: 100%; width: 0%; background: linear-gradient(90deg,#37e05a,#b6ff5a); border-radius: 4px; }
+  .mm-xp { font-size: 11px; color: var(--panel-soft); white-space: nowrap; }
+  .mm-coins { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .mm-cur {
+    pointer-events: auto; display: flex; align-items: center; gap: 6px;
+    font-family: inherit; font-weight: 800; font-size: 17px; color: #fff;
+    background: rgba(8,14,28,.8); border: 2px solid rgba(255,255,255,.2); border-radius: 999px; padding: 3px 6px 3px 10px;
+  }
+  .mm-cur .plus { background: #22b14c; border-radius: 8px; width: 26px; height: 26px; display: grid; place-items: center; font-size: 18px; color: #fff; }
+  .mm-gear {
+    pointer-events: auto; background: rgba(8,14,28,.8); color: #fff; border: 2px solid rgba(255,255,255,.2);
+    border-radius: 12px; width: 40px; height: 40px; font-size: 20px; cursor: pointer; font-family: inherit;
+  }
+  .mm-divbadge {
+    align-self: flex-end; display: flex; align-items: center; gap: 8px; margin: -2px 0 6px;
+    background: linear-gradient(135deg, rgba(8,14,28,.9), rgba(8,14,28,.55));
+    border-radius: 4px 18px 18px 4px; border-left: 5px solid var(--gold); padding: 5px 14px 5px 10px;
+    color: #fff; font-weight: 800; font-size: 19px; letter-spacing: .5px; text-shadow: 0 2px 6px rgba(0,0,0,.7);
+  }
+  .mm-divbadge small { display: block; font-size: 11px; letter-spacing: 3px; color: var(--gold); }
+  .mm-logo { width: min(300px, 72vw); display: block; margin: 0 auto 2px; filter: drop-shadow(0 6px 18px rgba(0,0,0,.6)); }
+  .mm-tag { text-align: center; color: #fff; font-size: 16px; font-weight: 700; font-style: italic; text-shadow: 0 2px 6px rgba(0,0,0,.8); margin-bottom: 8px; }
+  .mx {
+    pointer-events: auto; display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box;
+    font-family: inherit; color: #fff; text-align: left; cursor: pointer;
+    border-radius: 20px; padding: 9px 14px 9px 9px; margin: 8px 0;
+    background: rgba(8,14,28,.72); backdrop-filter: blur(2px);
+  }
+  .mx:active { transform: scale(.98); }
+  .mx .ico {
+    width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; flex-shrink: 0;
+    background: rgba(255,255,255,.12);
+  }
+  .mx .tx { flex: 1; min-width: 0; }
+  .mx .tx b { display: block; font-size: 21px; }
+  .mx .tx small { display: block; font-size: 13.5px; color: rgba(255,255,255,.75); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mx .chev { font-size: 30px; font-weight: 800; opacity: .9; }
+  .mx.gold { border: 2px solid #ffc83d; box-shadow: 0 0 16px rgba(255,200,61,.35), inset 0 0 24px rgba(255,200,61,.08); }
+  .mx.gold .ico { background: linear-gradient(135deg,#ffcf3d,#ff9d00); box-shadow: 0 0 12px rgba(255,200,61,.6); }
+  .mx.blue { border: 2px solid #4da3ff; box-shadow: 0 0 14px rgba(77,163,255,.3); }
+  .mx.blue .ico { background: linear-gradient(135deg,#3d8bff,#174a9e); }
+  .mx.purple { border: 2px solid #b45cff; box-shadow: 0 0 14px rgba(180,92,255,.3); }
+  .mx.purple .ico { background: linear-gradient(135deg,#a44dff,#5b1a9e); }
+  .mx.green { border: 2px solid #37e05a; box-shadow: 0 0 14px rgba(55,224,90,.3); }
+  .mx.green .ico { background: linear-gradient(135deg,#1faa53,#0d5c2a); }
+  .mx.red { border: 2px solid #ff5a5a; box-shadow: 0 0 14px rgba(255,90,90,.3); }
+  .mx.red .ico { background: linear-gradient(135deg,#e03434,#7a1212); }
+  .mx.teal { border: 2px solid #2fd6c8; box-shadow: 0 0 14px rgba(47,214,200,.3); }
+  .mx.teal .ico { background: linear-gradient(135deg,#1899a5,#0b4a56); }
+  .mx.gray { border: 2px solid #9aa4b2; box-shadow: 0 0 12px rgba(154,164,178,.25); }
+  .mx.gray .ico { background: linear-gradient(135deg,#6b7686,#333c48); }
+  .mm-bottom { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; }
+  .mm-daily {
+    pointer-events: auto; display: flex; align-items: center; gap: 8px; font-family: inherit; color: #fff; text-align: left; cursor: pointer;
+    background: rgba(8,14,28,.8); border: 2px solid rgba(255,200,61,.5); border-radius: 16px; padding: 8px 10px; font-size: 14px; font-weight: 800;
+  }
+  .mm-daily small { display: block; font-size: 11.5px; color: var(--panel-soft); font-weight: 500; }
+  .mm-daily .chev { color: var(--gold); font-size: 20px; }
+  #playBtn {
+    flex: 1; font-size: 30px; padding: 10px 10px 12px; margin-top: 0;
+    background: linear-gradient(135deg,#3fe063,#1a8a35);
+    box-shadow: 0 6px 0 #0d5c22, 0 10px 30px rgba(0,0,0,.5);
+    animation: playPulse 1.2s ease-in-out infinite; white-space: nowrap;
+  }
+  .mm-chip {
+    display: flex; align-items: center; gap: 6px; background: rgba(8,14,28,.8);
+    border: 2px solid rgba(255,255,255,.18); border-radius: 16px; padding: 8px 10px;
+    color: #fff; font-size: 12.5px; font-weight: 700; line-height: 1.3; white-space: nowrap;
+  }
+  .mm-foot { text-align: center; color: rgba(255,255,255,.75); font-style: italic; font-size: 14px; margin: 10px 0 4px; text-shadow: 0 2px 4px rgba(0,0,0,.8); }
+  @media (max-width: 380px) {
+    .mx .tx b { font-size: 18px; } .mx .ico { width: 44px; height: 44px; font-size: 22px; }
+    #playBtn { font-size: 24px; }
+    .mm-divbadge { font-size: 16px; }
+  }
   @media (max-width: 480px) {
     .hud-top { gap: 6px; }
     .pill { min-width: 0; padding: 3px 10px 5px; }
@@ -489,22 +579,44 @@
 <div class="overlay" id="menu">
   <div class="card" id="menuCard">
     <div class="mpage on" id="pageMain">
-      <img id="menuLogo" src="ride-for-life-logo.png" alt="Ride For Life">
-      <div class="menuList">
-        <button class="mrow" data-page="pageDest"><span data-i18n="m_dest">🗺️ Destination</span><span class="mval" id="mDestVal">Rangpur</span><span class="chev">›</span></button>
-        <button class="mrow" data-page="pageGarage"><span data-i18n="m_garage">🔧 Garage</span><span class="mval" id="mGarVal">100%</span><span class="chev">›</span></button>
-        <button class="mrow" data-page="pageEvents"><span data-i18n="m_events">🎪 Events</span><span class="mval" id="mEvVal"></span><span class="chev">›</span></button>
-        <button class="mrow" data-page="pageBoard"><span data-i18n="m_board">🏆 My Best Runs</span><span class="mval"></span><span class="chev">›</span></button>
-        <button class="mrow" data-page="pageProfile" id="profRow"><span data-i18n="m_profile">👤 Profile</span><span class="mval" id="mProfVal"></span><span class="chev">›</span></button>
-        <button class="mrow" id="dailyRow" data-page="pageMain"><span>🎁 Daily Reward</span><span class="mval" id="mDailyVal"></span><span class="chev">›</span></button>
-        <button class="mrow" id="missionRow" data-page="pageMission"><span>🎯 Daily Mission</span><span class="mval" id="mMissionVal"></span><span class="chev">›</span></button>
-        <button class="mrow" data-page="pageRadio"><span>📻 Radio FM</span><span class="mval" id="mRadioVal">🇧🇩</span><span class="chev">›</span></button>
+      <div class="mm-top">
+        <button class="mm-prof" id="profRow" data-page="pageProfile">
+          <img class="mm-ava" id="hdAvatar" alt="rider" src="ride-for-life-logo.png">
+          <span class="who"><b id="hdName">Rider</b><small id="hdLvl">Rider Level 1</small>
+            <span class="mm-xpbar"><u id="hdXpFill"></u></span></span>
+          <span class="mm-xp" id="hdXpTxt">0/100 XP</span>
+        </button>
+        <div class="mm-coins">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="mm-gear" id="menuHowBtn" aria-label="How to">❓</button>
+            <button class="mm-gear" id="menuSettingsBtn" aria-label="Settings">⚙️</button>
+          </div>
+          <button class="mm-cur" id="coinRow">🪙 <span id="hdCoins">0</span><span class="plus" id="coinPlus">+</span></button>
+          <button class="mm-cur" id="gemRow">💎 <span id="hdGems">0</span><span class="plus">+</span></button>
+        </div>
       </div>
-      <button class="btn" id="menuSettingsBtn" style="background:#2d7a4f;box-shadow:0 5px 0 #14521f;font-size:22px;margin-top:10px;" data-i18n="menu_settings">⚙️ Settings</button>
-      <button class="btn" id="menuHowBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;font-size:22px;margin-top:10px;">❓ How to</button>
-      <button class="btn" id="installBtn" style="display:none;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;font-size:22px;margin-top:10px;">📲 Install App</button>
-      <button class="btn" id="playBtn" data-i18n="play">▶ Start Ride</button>
-      <div class="best" id="menuBest"></div>
+      <div class="mm-divbadge">📍<span><span data-i18n="mm_div">RANGPUR</span><small data-i18n="mm_divs">DIVISION</small></span></div>
+      <img class="mm-logo" id="menuLogo" src="ride-for-life-logo.png" alt="Ride For Life">
+      <div class="mm-tag" data-i18n="mm_tag">Deliver More Than Just Packages</div>
+      <button class="mx gold" id="startCard"><span class="ico">📍</span><span class="tx"><b data-i18n="mm_start">Start Ride</b><small data-i18n="mm_start_s">Take Your Delivery Mission</small></span><span class="chev">›</span></button>
+      <button class="mx blue" data-page="pageDest"><span class="ico">🗺️</span><span class="tx"><b data-i18n="mm_map">Map</b><small data-i18n="mm_map_s">Explore Rangpur &amp; Nearby Areas</small></span><span class="chev">›</span></button>
+      <button class="mx purple" id="missionRow" data-page="pageMission"><span class="ico">💼</span><span class="tx"><b data-i18n="mm_jobs">Delivery Jobs</b><small data-i18n="mm_jobs_s">Accept &amp; Deliver Packages</small></span><span class="chev">›</span></button>
+      <button class="mx green" data-page="pageGarage"><span class="ico">🛠️</span><span class="tx"><b data-i18n="mm_garage">Garage</b><small data-i18n="mm_garage_s">Upgrade Your Bike &amp; Gear</small></span><span class="chev">›</span></button>
+      <button class="mx red" data-page="pageBoard"><span class="ico">📊</span><span class="tx"><b data-i18n="mm_rides">My Rides</b><small data-i18n="mm_rides_s">Stats, Earnings &amp; Progress</small></span><span class="chev">›</span></button>
+      <button class="mx teal" id="achRow" data-page="pageProfile"><span class="ico">🏆</span><span class="tx"><b data-i18n="mm_ach">Achievements</b><small data-i18n="mm_ach_s">Complete Challenges</small></span><span class="chev">›</span></button>
+      <button class="mx gray" id="settingsCard"><span class="ico">⚙️</span><span class="tx"><b data-i18n="mm_set">Settings</b><small data-i18n="mm_set_s">Game Options &amp; Controls</small></span><span class="chev">›</span></button>
+      <div style="display:flex;gap:8px;margin-top:2px;">
+        <button class="mx teal" style="flex:1;margin:4px 0;" data-page="pageEvents"><span class="ico" style="width:40px;height:40px;font-size:20px;">🎪</span><span class="tx"><b style="font-size:16px;" data-i18n="mm_events">Events</b></span><span class="chev" style="font-size:22px;">›</span></button>
+        <button class="mx gold" style="flex:1;margin:4px 0;" data-page="pageRadio"><span class="ico" style="width:40px;height:40px;font-size:20px;">📻</span><span class="tx"><b style="font-size:16px;" data-i18n="mm_radio">Radio</b></span><span class="chev" style="font-size:22px;">›</span></button>
+      </div>
+      <div class="mm-bottom">
+        <button class="mm-daily" id="dailyRow" data-page="pageMain"><span style="font-size:26px;">🎁</span><span><span data-i18n="mm_daily">Daily Reward</span><small data-i18n="mm_daily_s">Login &amp; Get Bonus</small></span><span class="chev">›</span></button>
+        <button class="btn" id="playBtn">▶ <span data-i18n="mm_go">START RIDE</span></button>
+        <div class="mm-chip"><span style="font-size:20px;">⭐</span><span>🇧🇩 <span data-i18n="mm_div2">Rangpur Division</span><br><small style="color:var(--panel-soft)" data-i18n="mm_journey">8 Districts • 1 Journey</small></span></div>
+      </div>
+      <button class="btn" id="installBtn" style="display:none;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;font-size:20px;margin-top:10px;">📲 Install App</button>
+      <div class="mm-foot" id="mmFoot">Rangpur • Day 1 • Ride Begins</div>
+      <div class="best" id="menuBest" style="display:none;"></div>
     </div>
     <div class="mpage" id="pageDest">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
@@ -3009,6 +3121,17 @@ en: {
   stat_best: '🏆 Best', stat_level: '🏍️ Level', stat_bank: '৳ Bank',
   m_dest: '🗺️ Destination', m_bike: '🏍️ Bike', m_garage: '🔧 Garage', m_board: '🏆 My Best Runs',
   menu_settings: '⚙️ Settings', play: '▶ Start Ride', back: '‹ Back',
+  mm_div: 'RANGPUR', mm_divs: 'DIVISION', mm_tag: 'Deliver More Than Just Packages',
+  mm_start: 'Start Ride', mm_start_s: 'Take Your Delivery Mission',
+  mm_map: 'Map', mm_map_s: 'Explore Rangpur & Nearby Areas',
+  mm_jobs: 'Delivery Jobs', mm_jobs_s: 'Accept & Deliver Packages',
+  mm_garage: 'Garage', mm_garage_s: 'Upgrade Your Bike & Gear',
+  mm_rides: 'My Rides', mm_rides_s: 'Stats, Earnings & Progress',
+  mm_ach: 'Achievements', mm_ach_s: 'Complete Challenges',
+  mm_set: 'Settings', mm_set_s: 'Game Options & Controls',
+  mm_events: 'Events', mm_radio: 'Radio', mm_daily: 'Daily Reward', mm_daily_s: 'Login & Get Bonus',
+  mm_go: 'START RIDE', mm_div2: 'Rangpur Division', mm_journey: '8 Districts • 1 Journey',
+  mm_lvl: 'Rider Level {0}', mm_gemsoon: '💎 Gems coming soon!',
   sec_dest: '🗺️ Where to deliver?', sec_bike: '🏍️ Choose a bike', sec_garage: '🔧 Garage', sec_board: '🏆 My Best Runs',
   newbest: 'New Record!', over_s_score: 'Score', over_s_parcel: 'Parcels 📦', over_s_tips: 'Tips ৳',
   again: 'Ride Again', again_this: '↻ This Map Again', again_ride: '↻ Ride Again',
@@ -3096,6 +3219,17 @@ bn: {
   stat_best: '🏆 সেরা', stat_level: '🏍️ ধাপ', stat_bank: '৳ ব্যাংক',
   m_dest: '🗺️ গন্তব্য', m_bike: '🏍️ বাইক', m_garage: '🔧 গ্যারেজ', m_board: '🏆 আমার সেরা রান',
   menu_settings: '⚙️ সেটিংস', play: '▶ দৌড় শুরু', back: '‹ ফিরে যাও',
+  mm_div: 'রংপুর', mm_divs: 'বিভাগ', mm_tag: 'শুধু পার্সেল নয়, আরও বেশি ডেলিভারি',
+  mm_start: 'দৌড় শুরু', mm_start_s: 'ডেলিভারি মিশন নাও',
+  mm_map: 'ম্যাপ', mm_map_s: 'রংপুর ও আশপাশ ঘুরে দেখো',
+  mm_jobs: 'ডেলিভারি কাজ', mm_jobs_s: 'প্যাকেজ নাও ও পৌঁছে দাও',
+  mm_garage: 'গ্যারেজ', mm_garage_s: 'বাইক ও গিয়ার আপগ্রেড করো',
+  mm_rides: 'আমার রাইড', mm_rides_s: 'পরিসংখ্যান, আয় ও অগ্রগতি',
+  mm_ach: 'অর্জন', mm_ach_s: 'চ্যালেঞ্জ শেষ করো',
+  mm_set: 'সেটিংস', mm_set_s: 'গেম অপশন ও কন্ট্রোল',
+  mm_events: 'ইভেন্ট', mm_radio: 'রেডিও', mm_daily: 'দৈনিক পুরস্কার', mm_daily_s: 'লগইন করে বোনাস নাও',
+  mm_go: 'দৌড় শুরু', mm_div2: 'রংপুর বিভাগ', mm_journey: '৮ জেলা • ১ যাত্রা',
+  mm_lvl: 'রাইডার লেভেল {0}', mm_gemsoon: '💎 জেমস শীঘ্রই আসছে!',
   sec_dest: '🗺️ কোথায় ডেলিভারি দেবে?', sec_bike: '🏍️ বাইক বেছে নাও', sec_garage: '🔧 গ্যারেজ', sec_board: '🏆 আমার সেরা রান',
   newbest: 'নতুন রেকর্ড!', over_s_score: 'স্কোর', over_s_parcel: 'পার্সেল 📦', over_s_tips: 'টিপস ৳',
   again: 'আবার দৌড়াও', again_this: '↻ এই ম্যাপ আবার', again_ride: '↻ আবার দৌড়াও',
@@ -3228,6 +3362,7 @@ function applyLang() {
     try { renderDest(); } catch (e) {}
     try { renderBikeSel(); } catch (e) {}
     try { $('menuBest').textContent = fmtBest() + (playerName ? ' · ' + playerName : ''); } catch (e) {}
+    try { updateMenuHeader(); } catch (e) {}
     try { renderDivGrid(); } catch (e) {}
     try { renderEvents(); } catch (e) {}
     try { $('overBest').textContent = fmtBest(); } catch (e) {}
@@ -5501,6 +5636,7 @@ function renderProfile() {
         + '">' + (a.got ? a.ico : '🔒') + '<br>' + a.t + '</div>';
     }).join('');
   } catch (e) {}
+  try { updateMenuHeader(); } catch (e) {}
 }
 function upCost(kind) { var L = upLvl(kind); if (L >= UMAX) return 0; return 50 + L * 80 + L * L * 6; } // progressive: late level-e grind bare
 function renderGarage() {
@@ -5557,7 +5693,22 @@ function renderDivGrid() {
     b.addEventListener('click', function (e) { e.stopPropagation(); selDivIdx = +b.getAttribute('data-div'); renderDivGrid(); try { sfx.move(); } catch (err) {} });
   });
 }
-function updateMenuBest() { try { $('menuBest').textContent = fmtBest() + (playerName ? ' · ' + playerName : '') + (playerDiv ? ' · ' + divName(playerDiv) : ''); } catch (e) {} }
+function updateMenuBest() { try { $('menuBest').textContent = fmtBest() + (playerName ? ' · ' + playerName : '') + (playerDiv ? ' · ' + divName(playerDiv) : ''); } catch (e) {} try { updateMenuHeader(); } catch (e) {} }
+function updateMenuHeader() {
+  try {
+    var bn = lang === 'bn';
+    var av = $('hdAvatar');
+    if (av) { av.src = getAvatar(); av.onerror = function () { av.onerror = null; av.src = 'ride-for-life-logo.png'; }; }
+    if ($('hdName')) $('hdName').textContent = playerName || (bn ? 'রাইডার' : 'Rider');
+    if ($('hdLvl')) $('hdLvl').textContent = F('mm_lvl', riderLevel);
+    var need = 0; try { need = xpNeed(); } catch (e) { need = 100; }
+    if ($('hdXpFill')) $('hdXpFill').style.width = Math.min(100, xp / need * 100) + '%';
+    if ($('hdXpTxt')) $('hdXpTxt').textContent = Math.floor(xp) + '/' + need + ' XP';
+    if ($('hdCoins')) $('hdCoins').textContent = bankCoins;
+    var day = 1; try { day = dailyInfo().streak || 1; } catch (e) {}
+    if ($('mmFoot')) $('mmFoot').textContent = (bn ? 'রংপুর' : 'Rangpur') + ' • ' + (bn ? 'দিন ' : 'Day ') + day + ' • ' + (bn ? 'দৌড় শুরু' : 'Ride Begins');
+  } catch (e) {}
+}
 function saveName() {
   var v = ($('nameInput').value || '').trim().slice(0, 14);
   if (!v) { toast(elHint, T('need_name'), 1800); return; }
@@ -5649,7 +5800,7 @@ function boot() {
   $('bikeBuy').addEventListener('click', function (e) { e.stopPropagation(); buyBike(); });
   $('destL').addEventListener('click', function (e) { e.stopPropagation(); cycleDest(-1); });
   $('destR').addEventListener('click', function (e) { e.stopPropagation(); cycleDest(1); });
-  Array.prototype.forEach.call(document.querySelectorAll('#menu .mrow[data-page]'), function (btn) {
+  Array.prototype.forEach.call(document.querySelectorAll('#menu [data-page]'), function (btn) {
     btn.addEventListener('click', function (e) {
       e.stopPropagation(); sfx.move(); showPage(btn.getAttribute('data-page'));
     });
@@ -5698,6 +5849,11 @@ function boot() {
   $('splashInstall').addEventListener('click', function () { promptInstall(); });
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
   $('profRow').addEventListener('click', function () { renderProfile(); });
+  $('achRow').addEventListener('click', function () { renderProfile(); });
+  $('startCard').addEventListener('click', function () { eventMode = null; renderEvents(); startGame(false); });
+  $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
+  $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
+  $('coinPlus').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
   // radio FM: HUD pill tap = next station · prothom touch-e audio unlock
   (function () {
     var rp = $('radioPill');
