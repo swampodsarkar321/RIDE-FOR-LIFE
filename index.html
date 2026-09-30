@@ -1226,7 +1226,39 @@ function makeEgret(x, y, z, parent) {
 var BLD_COLS = [0xe8dcc0, 0xd6c49a];
 
 /* ---------- SteadFast billboard (roadside, image-style) ---------- */
-var billboardMat = null;
+var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [];
+function syncAdminBoards(list) { // admin panel theke image billboard — live
+  try {
+    var seen = {};
+    Object.keys(list || {}).forEach(function (k) {
+      var b = list[k]; if (!b || !b.img) return;
+      var img = String(b.img).slice(0, 300000);
+      if (!img) return;
+      seen[img] = true;
+      for (var i = 0; i < ADMIN_BOARDS.length; i++) if (ADMIN_BOARDS[i].img === img) return;
+      (function (url) {
+        var rec = { img: url, mat: new THREE.MeshBasicMaterial({ color: 0xffffff }), ready: false, failed: false };
+        ADMIN_BOARDS.push(rec);
+        try {
+          if (!boardLoader) { boardLoader = new THREE.TextureLoader(); try { boardLoader.setCrossOrigin('anonymous'); } catch (e2) {} }
+          boardLoader.load(url, function (tex) {
+            try { tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4; rec.mat.map = tex; rec.mat.needsUpdate = true; rec.ready = true; } catch (e2) {}
+          }, undefined, function () { rec.failed = true; });
+        } catch (e2) { rec.failed = true; }
+      })(img);
+    });
+    for (var j = ADMIN_BOARDS.length - 1; j >= 0; j--) if (!seen[ADMIN_BOARDS[j].img]) ADMIN_BOARDS.splice(j, 1);
+    while (ADMIN_BOARDS.length > 12) ADMIN_BOARDS.shift();
+  } catch (e) {}
+}
+function pickBoardMat() {
+  try {
+    if (!billboardMat) billboardMat = new THREE.MeshBasicMaterial({ map: makeBillboardTexture() });
+    var pool = [billboardMat];
+    for (var i = 0; i < ADMIN_BOARDS.length; i++) if (ADMIN_BOARDS[i].ready) pool.push(ADMIN_BOARDS[i].mat);
+    return pool[(Math.random() * pool.length) | 0];
+  } catch (e) { return billboardMat; }
+}
 function makeBillboardTexture() {
   var c = document.createElement('canvas'); c.width = 1024; c.height = 512;
   var g = c.getContext('2d');
@@ -1251,12 +1283,11 @@ function makeBillboardTexture() {
   var t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
 }
 function makeBillboard(side, z, parent) {
-  if (!billboardMat) billboardMat = new THREE.MeshBasicMaterial({ map: makeBillboardTexture() });
   var g = new THREE.Group(); g.position.set(side * 9.5, 0, z);
   var x = side * 9.5;
   cyl(0.18, 5.5, 0.18, 0x2a3a55, x, 2.75, z, parent); // pole
   box(0.5, 0.5, 0.5, 0x2a3a55, x, 5.4, z, parent);
-  var board = new THREE.Mesh(PG(7.5, 3.75), billboardMat);
+  var board = new THREE.Mesh(PG(7.5, 3.75), pickBoardMat());
   board.position.set(x, 7.4, z);
   board.rotation.y = 0; // traffic-er dike mukh — drive korar somoy clear pora jay
   parent.add(board);
@@ -2900,6 +2931,7 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
           ADMIN_EVENTS.push({ id: 'c_' + k, ico: e.ico || '⭐', en: [e.name_en || 'Custom', e.desc_en || ''], bn: [e.name_bn || e.name_en || 'কাস্টম', e.desc_bn || e.desc_en || ''],
             p: { night: !!e.night, coinX: +e.coinX || 1, fuelX: +e.fuelX || 1, fuelPick: +e.fuelPick || 35, nitroRate: +e.nitroRate || 0, nitroDur: +e.nitroDur || 6, quota: +e.quota || 0, reward: +e.reward || 0, bonusX: +e.bonusX || 1, scoreX: +e.scoreX || 1 } });
         });
+        try { syncAdminBoards(cfg.billboards); } catch (e2) {}
         if (!bikeUnlocked(selBike)) selBike = firstOwned();
         if (eventMode && eventMode.charAt(0) === 'c' && !evP().quota && evP().scoreX === 1 && !evP().night && (evP().coinX || 1) === 1) { var still = false; for (var q = 0; q < ADMIN_EVENTS.length; q++) if (ADMIN_EVENTS[q].id === eventMode) still = true; if (!still) eventMode = null; }
         // live event lock: admin jeta live korbe setai cholbe
