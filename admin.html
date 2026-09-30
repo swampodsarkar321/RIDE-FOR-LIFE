@@ -77,6 +77,14 @@
     <button class="tab" data-tab="events">🎪 Events</button>
     <button class="tab" data-tab="boards">🪧 Boards</button>
     <button class="tab" data-tab="notif">🔔 Notify</button>
+    <button class="tab" data-tab="players">👥 Players</button>
+  </div>
+
+  <div id="tab-players" class="hidden">
+    <div class="card">
+      <h2>👥 All Players</h2>
+      <div id="playerList"><p class="note">Loading…</p></div>
+    </div>
   </div>
 
   <div id="tab-notif" class="hidden">
@@ -266,6 +274,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
     $('tab-events').classList.toggle('hidden', t !== 'events');
     $('tab-boards').classList.toggle('hidden', t !== 'boards');
     $('tab-notif').classList.toggle('hidden', t !== 'notif');
+    $('tab-players').classList.toggle('hidden', t !== 'players');
   });
 });
 function hexToInt(h) { try { return parseInt(String(h).replace('#', '').slice(0, 6), 16) || 0xffffff; } catch (e) { return 0xffffff; } }
@@ -377,6 +386,14 @@ function startAll() {
   db.ref('players').on('value', function (s) {
     var n = 0; s.forEach(function () { n++; });
     $('stPlayers').textContent = n;
+    var html = '';
+    s.forEach(function (c) {
+      n++;
+      var p = c.val() || {};
+      html += '<div class="item"><b>' + esc(p.name || 'Rider') + '</b> <small>· ' + esc(p.div || '') + '</small>' +
+        '<br><small>🏆 ' + (p.best || 0) + ' · 📦 ' + (p.tp || 0) + ' · 🏍️ Lvl ' + (p.level || 1) + ' · ৳' + (p.bank || 0) + '</small></div>';
+    });
+    $('playerList').innerHTML = html || '<p class="note">No players yet.</p>';
   }, function () { $('stPlayers').textContent = '!rules'; });
   db.ref('scores_by_player').on('value', function (s) {
     var n = 0, arr = [];
