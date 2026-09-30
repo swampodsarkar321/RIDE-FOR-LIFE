@@ -640,7 +640,6 @@
         <div class="mm-coins">
           <div style="display:flex;gap:6px;align-items:center;">
             <button class="mm-gear" id="menuHowBtn" aria-label="How to">❓</button>
-            <button class="mm-gear" id="menuSettingsBtn" aria-label="Settings">⚙️</button>
           </div>
           <button class="mm-cur" id="coinRow">🪙 <span id="hdCoins">0</span><span class="plus" id="coinPlus">+</span></button>
           <button class="mm-cur" id="gemRow">💎 <span id="hdGems">0</span><span class="plus">+</span></button>
@@ -652,10 +651,9 @@
       <div class="mx-grid">
       <button class="mx gold" id="startCard"><span class="ico">📍</span><span class="tx"><b data-i18n="mm_start">Start Ride</b><small data-i18n="mm_start_s">Take Your Delivery Mission</small></span><span class="chev">›</span></button>
       <button class="mx blue" data-page="pageDest"><span class="ico">🗺️</span><span class="tx"><b data-i18n="mm_map">Map</b><small data-i18n="mm_map_s">Explore Rangpur &amp; Nearby Areas</small></span><span class="chev">›</span></button>
-      <button class="mx purple" id="missionRow" data-page="pageMission"><span class="ico">💼</span><span class="tx"><b data-i18n="mm_jobs">Delivery Jobs</b><small data-i18n="mm_jobs_s">Accept &amp; Deliver Packages</small></span><span class="chev">›</span></button>
+      <button class="mx purple" id="missionRow" data-page="pageMission"><span class="ico">🎯</span><span class="tx"><b data-i18n="mm_jobs">Daily Mission</b><small data-i18n="mm_jobs_s">Complete Today's Challenge</small></span><span class="chev">›</span></button>
       <button class="mx green" data-page="pageGarage"><span class="ico">🛠️</span><span class="tx"><b data-i18n="mm_garage">Garage</b><small data-i18n="mm_garage_s">Upgrade Your Bike &amp; Gear</small></span><span class="chev">›</span></button>
       <button class="mx red" data-page="pageBoard"><span class="ico">📊</span><span class="tx"><b data-i18n="mm_rides">My Rides</b><small data-i18n="mm_rides_s">Stats, Earnings &amp; Progress</small></span><span class="chev">›</span></button>
-      <button class="mx teal" id="achRow" data-page="pageProfile"><span class="ico">🏆</span><span class="tx"><b data-i18n="mm_ach">Achievements</b><small data-i18n="mm_ach_s">Complete Challenges</small></span><span class="chev">›</span></button>
       <button class="mx gray" id="settingsCard"><span class="ico">⚙️</span><span class="tx"><b data-i18n="mm_set">Settings</b><small data-i18n="mm_set_s">Game Options &amp; Controls</small></span><span class="chev">›</span></button>
       <div class="mx-duo">
         <button class="mx teal mini" data-page="pageEvents"><span class="ico">🎪</span><span class="tx"><b data-i18n="mm_events">Events</b></span><span class="chev">›</span></button>
@@ -3177,7 +3175,7 @@ en: {
   mm_div: 'RANGPUR', mm_divs: 'DIVISION', mm_tag: 'Deliver More Than Just Packages',
   mm_start: 'Start Ride', mm_start_s: 'Take Your Delivery Mission',
   mm_map: 'Map', mm_map_s: 'Explore Rangpur & Nearby Areas',
-  mm_jobs: 'Delivery Jobs', mm_jobs_s: 'Accept & Deliver Packages',
+  mm_jobs: 'Daily Mission', mm_jobs_s: "Complete Today's Challenge",
   mm_garage: 'Garage', mm_garage_s: 'Upgrade Your Bike & Gear',
   mm_rides: 'My Rides', mm_rides_s: 'Stats, Earnings & Progress',
   mm_ach: 'Achievements', mm_ach_s: 'Complete Challenges',
@@ -3275,7 +3273,7 @@ bn: {
   mm_div: 'রংপুর', mm_divs: 'বিভাগ', mm_tag: 'শুধু পার্সেল নয়, আরও বেশি ডেলিভারি',
   mm_start: 'দৌড় শুরু', mm_start_s: 'ডেলিভারি মিশন নাও',
   mm_map: 'ম্যাপ', mm_map_s: 'রংপুর ও আশপাশ ঘুরে দেখো',
-  mm_jobs: 'ডেলিভারি কাজ', mm_jobs_s: 'প্যাকেজ নাও ও পৌঁছে দাও',
+  mm_jobs: 'ডেইলি মিশন', mm_jobs_s: 'আজকের চ্যালেঞ্জ শেষ করো',
   mm_garage: 'গ্যারেজ', mm_garage_s: 'বাইক ও গিয়ার আপগ্রেড করো',
   mm_rides: 'আমার রাইড', mm_rides_s: 'পরিসংখ্যান, আয় ও অগ্রগতি',
   mm_ach: 'অর্জন', mm_ach_s: 'চ্যালেঞ্জ শেষ করো',
@@ -4484,7 +4482,7 @@ $('settingsBtn').addEventListener('click', function (e) {
   $('settings').classList.remove('hidden');
   renderSettings();
 });
-$('menuSettingsBtn').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
+try { var _msb = $('menuSettingsBtn'); if (_msb) _msb.addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); }); } catch (e) {}
 $('settingsClose').addEventListener('click', function () {
   $('settings').classList.add('hidden');
   if (state === 'pause') $('pause').classList.remove('hidden');
@@ -5902,7 +5900,6 @@ function boot() {
   $('splashInstall').addEventListener('click', function () { promptInstall(); });
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
   $('profRow').addEventListener('click', function () { renderProfile(); });
-  $('achRow').addEventListener('click', function () { renderProfile(); });
   $('startCard').addEventListener('click', function () { eventMode = null; renderEvents(); startGame(false); });
   $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
   $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
