@@ -505,7 +505,9 @@
   .mx.teal .ico { background: linear-gradient(135deg,#1899a5,#0b4a56); }
   .mx.gray { border: 2px solid #9aa4b2; box-shadow: 0 0 12px rgba(154,164,178,.25); }
   .mx.gray .ico { background: linear-gradient(135deg,#6b7686,#333c48); }
-  .mm-bottom { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; }
+  .mm-bottom { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; flex-wrap: wrap; }
+  .mm-bottom #playBtn { flex: 2; min-width: 170px; }
+  .mm-bottom .mm-daily, .mm-bottom .mm-chip { flex: 1; min-width: 128px; }
   .mm-daily {
     pointer-events: auto; display: flex; align-items: center; gap: 8px; font-family: inherit; color: #fff; text-align: left; cursor: pointer;
     background: rgba(8,14,28,.8); border: 2px solid rgba(255,200,61,.5); border-radius: 16px; padding: 8px 10px; font-size: 14px; font-weight: 800;
@@ -528,6 +530,45 @@
     .mx .tx b { font-size: 18px; } .mx .ico { width: 44px; height: 44px; font-size: 22px; }
     #playBtn { font-size: 24px; }
     .mm-divbadge { font-size: 16px; }
+  }
+  .mx-duo { display: flex; gap: 8px; margin-top: 2px; }
+  .mx-duo .mx { flex: 1; margin: 4px 0; }
+  .mx.mini .ico { width: 40px; height: 40px; font-size: 20px; }
+  .mx.mini .tx b { font-size: 16px; }
+  .mx.mini .chev { font-size: 22px; }
+  /* PC / wide: 2-column cards */
+  @media (min-width: 700px) {
+    #pageMain { max-width: 720px; }
+    .mx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+    .mx-grid #startCard { grid-column: 1 / -1; }
+    .mx-grid .mx-duo { grid-column: 1 / -1; }
+    .mm-logo { width: min(220px, 30vw); }
+  }
+  /* short screens: compact fit, no overflow */
+  @media (max-height: 800px) {
+    .mm-logo { width: min(170px, 40vw); }
+    .mm-tag { display: none; }
+    .mm-top { margin-bottom: 5px; }
+    .mx { padding: 6px 12px 6px 6px; margin: 5px 0; border-radius: 16px; }
+    .mx .ico { width: 40px; height: 40px; font-size: 20px; }
+    .mx .tx b { font-size: 17px; } .mx .tx small { font-size: 12px; }
+    .mx .chev { font-size: 24px; }
+    .mx.mini .ico { width: 32px; height: 32px; font-size: 17px; }
+    .mx.mini .tx b { font-size: 14px; }
+    .mm-ava { width: 42px; height: 42px; }
+    .mm-prof .who b { font-size: 16px; }
+    .mm-divbadge { font-size: 15px; padding: 3px 10px; margin-bottom: 4px; }
+    .mm-bottom { margin-top: 6px; }
+    #playBtn { font-size: 24px; padding: 8px 8px 10px; }
+    .mm-foot { display: none; }
+  }
+  @media (max-height: 620px) {
+    .mm-logo { width: 130px; }
+    .mx { padding: 4px 10px 4px 4px; margin: 3px 0; }
+    .mx .ico { width: 34px; height: 34px; font-size: 18px; }
+    .mx .tx b { font-size: 15px; } .mx .tx small { display: none; }
+    .mm-daily small, .mm-chip small { display: none; }
+    #playBtn { font-size: 20px; }
   }
   @media (max-width: 480px) {
     .hud-top { gap: 6px; }
@@ -598,6 +639,7 @@
       <div class="mm-divbadge">📍<span><span data-i18n="mm_div">RANGPUR</span><small data-i18n="mm_divs">DIVISION</small></span></div>
       <img class="mm-logo" id="menuLogo" src="ride-for-life-logo.png" alt="Ride For Life">
       <div class="mm-tag" data-i18n="mm_tag">Deliver More Than Just Packages</div>
+      <div class="mx-grid">
       <button class="mx gold" id="startCard"><span class="ico">📍</span><span class="tx"><b data-i18n="mm_start">Start Ride</b><small data-i18n="mm_start_s">Take Your Delivery Mission</small></span><span class="chev">›</span></button>
       <button class="mx blue" data-page="pageDest"><span class="ico">🗺️</span><span class="tx"><b data-i18n="mm_map">Map</b><small data-i18n="mm_map_s">Explore Rangpur &amp; Nearby Areas</small></span><span class="chev">›</span></button>
       <button class="mx purple" id="missionRow" data-page="pageMission"><span class="ico">💼</span><span class="tx"><b data-i18n="mm_jobs">Delivery Jobs</b><small data-i18n="mm_jobs_s">Accept &amp; Deliver Packages</small></span><span class="chev">›</span></button>
@@ -605,9 +647,10 @@
       <button class="mx red" data-page="pageBoard"><span class="ico">📊</span><span class="tx"><b data-i18n="mm_rides">My Rides</b><small data-i18n="mm_rides_s">Stats, Earnings &amp; Progress</small></span><span class="chev">›</span></button>
       <button class="mx teal" id="achRow" data-page="pageProfile"><span class="ico">🏆</span><span class="tx"><b data-i18n="mm_ach">Achievements</b><small data-i18n="mm_ach_s">Complete Challenges</small></span><span class="chev">›</span></button>
       <button class="mx gray" id="settingsCard"><span class="ico">⚙️</span><span class="tx"><b data-i18n="mm_set">Settings</b><small data-i18n="mm_set_s">Game Options &amp; Controls</small></span><span class="chev">›</span></button>
-      <div style="display:flex;gap:8px;margin-top:2px;">
-        <button class="mx teal" style="flex:1;margin:4px 0;" data-page="pageEvents"><span class="ico" style="width:40px;height:40px;font-size:20px;">🎪</span><span class="tx"><b style="font-size:16px;" data-i18n="mm_events">Events</b></span><span class="chev" style="font-size:22px;">›</span></button>
-        <button class="mx gold" style="flex:1;margin:4px 0;" data-page="pageRadio"><span class="ico" style="width:40px;height:40px;font-size:20px;">📻</span><span class="tx"><b style="font-size:16px;" data-i18n="mm_radio">Radio</b></span><span class="chev" style="font-size:22px;">›</span></button>
+      <div class="mx-duo">
+        <button class="mx teal mini" data-page="pageEvents"><span class="ico">🎪</span><span class="tx"><b data-i18n="mm_events">Events</b></span><span class="chev">›</span></button>
+        <button class="mx gold mini" data-page="pageRadio"><span class="ico">📻</span><span class="tx"><b data-i18n="mm_radio">Radio</b></span><span class="chev">›</span></button>
+      </div>
       </div>
       <div class="mm-bottom">
         <button class="mm-daily" id="dailyRow" data-page="pageMain"><span style="font-size:26px;">🎁</span><span><span data-i18n="mm_daily">Daily Reward</span><small data-i18n="mm_daily_s">Login &amp; Get Bonus</small></span><span class="chev">›</span></button>
