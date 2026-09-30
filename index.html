@@ -1513,22 +1513,8 @@ function makeEgret(x, y, z, parent) {
 var BLD_COLS = [0xe8dcc0, 0xd6c49a];
 
 /* ---------- SteadFast billboard (roadside, image-style) ---------- */
-var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [], boardBag = [], boardBagStamp = '', billboardsOn = true, AVATAR_BOARDS = [];
+var billboardMat = null, boardLoader = null, ADMIN_BOARDS = [], boardBag = [], boardBagStamp = '', billboardsOn = true;
 try { billboardsOn = localStorage.getItem('rrBbOn') !== '0'; } catch (e) {}
-function initAvatarBoards() { // avatar billboard: player-er moto face image
-  if (AVATAR_BOARDS.length) return;
-  for (var i = 0; i < 8; i++) {
-    var avUrl = avatarUrl(i * 7);
-    var rec = { img: avUrl, mat: new THREE.MeshBasicMaterial({ color: 0x2d7a4f }), ready: false, failed: false };
-    AVATAR_BOARDS.push(rec);
-    try {
-      if (!boardLoader) { boardLoader = new THREE.TextureLoader(); try { boardLoader.setCrossOrigin('anonymous'); } catch (e2) {} }
-      boardLoader.load(avUrl, function (tex) {
-        try { tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4; rec.mat.map = tex; rec.mat.needsUpdate = true; rec.ready = true; } catch (e2) {}
-      }, undefined, function () { rec.failed = true; });
-    } catch (e2) { rec.failed = true; }
-  }
-}
 function syncAdminBoards(list) { // admin panel theke image billboard — live
   try {
     var seen = {};
@@ -1554,16 +1540,14 @@ function syncAdminBoards(list) { // admin panel theke image billboard — live
     try { boardBag = []; boardBagStamp = ''; } catch (e) {} // config bodlale shuffle abar notun kore
   } catch (e) {}
 }
-function pickBoardMat() { // shuffled bag: sob image ghuriye, repeat chara
+function pickBoardMat() { // shuffled bag: sudhu admin image + default, repeat chara
   try {
     if (!billboardMat) billboardMat = new THREE.MeshBasicMaterial({ map: makeBillboardTexture() });
-    initAvatarBoards();
-    var stamp = ADMIN_BOARDS.length + AVATAR_BOARDS.length + ':' + ADMIN_BOARDS.filter(function (b) { return b.ready; }).length + AVATAR_BOARDS.filter(function (b) { return b.ready; }).length;
+    var stamp = ADMIN_BOARDS.length + ':' + ADMIN_BOARDS.filter(function (b) { return b.ready; }).length;
     if (!boardBag.length || stamp !== boardBagStamp) {
       boardBagStamp = stamp;
       boardBag = [billboardMat];
       for (var i = 0; i < ADMIN_BOARDS.length; i++) if (ADMIN_BOARDS[i].ready) boardBag.push(ADMIN_BOARDS[i].mat);
-      for (var j = 0; j < AVATAR_BOARDS.length; j++) if (AVATAR_BOARDS[j].ready) boardBag.push(AVATAR_BOARDS[j].mat);
       for (var k = boardBag.length - 1; k > 0; k--) { var m = (Math.random() * (k + 1)) | 0; var t = boardBag[k]; boardBag[k] = boardBag[m]; boardBag[m] = t; }
     }
     return boardBag.pop();
@@ -5010,7 +4994,7 @@ function update(dt) {
       if (!firstPh && state === 'play') toast(elHint, F('phase', ph.ico, phN), 1800);
     }
   } catch (e) {}
-  scene.fog.color.setRGB(0.85 - nightK * 0.72, 0.93 - nightK * 0.8, 0.82 - nightK * 0.62);
+  scene.fog.color.setRGB(0.85 - nightK * 0.80, 0.93 - nightK * 0.88, 0.82 - nightK * 0.70);
   var toen2 = 'Noon'; try { toen2 = timePhase(dayT).en; } catch (e) {}
   if (toen2 === 'Morning') { // sokal: norom golapi-sonali alo
     sunLight.intensity = 1.0; sunLight.color.setRGB(1, 0.87, 0.75);
@@ -5025,12 +5009,12 @@ function update(dt) {
     sunLight.intensity = 0.78; sunLight.color.setRGB(1, 0.55, 0.28);
     if (typeof hemi !== 'undefined') { hemi.intensity = 0.62; try { hemi.color.setHex(0xffd9b0); } catch (e) {} }
     scene.fog.color.setRGB(0.98, 0.62, 0.42);
-  } else if (toen2 === 'Midnight') { // modhyorat: sobcheye ondhokar
-    sunLight.intensity = 0.22; sunLight.color.setRGB(0.55, 0.68, 1);
-    if (typeof hemi !== 'undefined') { hemi.intensity = 0.3; try { hemi.color.setHex(0x8fa8ff); } catch (e) {} }
-  } else { // raat: chander nil alo
-    sunLight.intensity = 0.32; sunLight.color.setRGB(0.72, 0.8, 1);
-    if (typeof hemi !== 'undefined') { hemi.intensity = 0.35; try { hemi.color.setHex(0x8fa8ff); } catch (e) {} }
+  } else if (toen2 === 'Midnight') { // modhyorat: rasta chara sob ondhokar
+    sunLight.intensity = 0.08; sunLight.color.setRGB(0.55, 0.68, 1);
+    if (typeof hemi !== 'undefined') { hemi.intensity = 0.12; try { hemi.color.setHex(0x8fa8ff); } catch (e) {} }
+  } else { // raat: chander halka nil alo, pase ondhokar
+    sunLight.intensity = 0.14; sunLight.color.setRGB(0.72, 0.8, 1);
+    if (typeof hemi !== 'undefined') { hemi.intensity = 0.16; try { hemi.color.setHex(0x8fa8ff); } catch (e) {} }
   }
   if (typeof hlBeam !== 'undefined') hlBeam.material.opacity = clamp(nightK * 1.4, 0, 1) * 0.4; // sondha thekei headlight
   try { // raater alo: lamp, janala, garir light
@@ -5144,7 +5128,7 @@ function update(dt) {
   spGeo.attributes.position.needsUpdate = true;
   headSpot.position.set(player.position.x, 1.2, -0.6);
   headTgt.position.set(player.position.x, 0, -22);
-  headSpot.intensity = nightK * 1.7 * (weather === 'fog' ? 1.3 : 1);
+    headSpot.intensity = nightK * 2.1 * (weather === 'fog' ? 1.3 : 1); // ghono ondhokare rasta porar jonno joralo headlight
   if (roadMat) {
     fxWet += (((weather === 'rain' || weather === 'heavy') ? 0.68 : 1) - fxWet) * Math.min(1, dt * 0.8);
     roadMat.color.setScalar(fxWet);
@@ -5260,7 +5244,7 @@ function update(dt) {
     elSpeedo.textContent = kmh; lastKmhShown = kmh;
     if (elSpeedoFill) elSpeedoFill.style.width = clamp(kmh / 180 * 100, 0, 100) + '%';
   }
-  var ndT = clamp(nightK * 0.55 + (toen2 === 'Midnight' ? 0.25 : (toen2 === 'Night' ? 0.1 : 0)), 0, 0.85);
+  var ndT = clamp(nightK * 0.75 + (toen2 === 'Midnight' ? 0.3 : (toen2 === 'Night' ? 0.12 : 0)), 0, 0.92);
   if (elNight && Math.abs(ndT - lastNightShown) > 0.02) { elNight.style.opacity = ndT.toFixed(2); lastNightShown = ndT; }
   var mTxt = missionGot + '/' + missionTarget;
   if (elMission.textContent !== mTxt) elMission.textContent = mTxt;
@@ -6114,7 +6098,6 @@ function boot() {
   });
   try { renderDaily(); } catch (e) {}
   renderAvatarPicker();
-  initAvatarBoards();
   state = 'menu'; speed = 9;
   loadProgress('Done!');
   try {
