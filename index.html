@@ -250,13 +250,19 @@
   }
   .board h3 { margin: 0 0 4px; font-size: 17px; color: var(--gold); text-align: center; }
   .board .me { color: var(--gold); font-weight: 800; }
-  .lbtabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 6px; }
+  .lbtabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap; }
   .lbtab {
-    font-family: inherit; font-weight: 800; font-size: 14px; color: #fff;
+    font-family: inherit; font-weight: 800; font-size: 13px; color: #fff;
     background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.25);
-    border-radius: 999px; padding: 3px 14px 5px; cursor: pointer;
+    border-radius: 999px; padding: 3px 12px 5px; cursor: pointer;
   }
   .lbtab.sel { background: linear-gradient(135deg, #2d9c42, #1a6b2a); border-color: #7fe0a0; }
+  .lbrow { display: flex; align-items: center; gap: 8px; padding: 7px 10px; margin: 5px 0; background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.12); border-radius: 12px; font-size: 15px; font-weight: 700; }
+  .lbrow .rk { min-width: 30px; text-align: center; font-size: 17px; }
+  .lbrow .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lbrow .nm small { display: block; font-size: 12px; color: var(--panel-soft); font-weight: 500; }
+  .lbrow .sc { color: var(--gold); font-size: 17px; white-space: nowrap; }
+  .lbrow.me { border-color: var(--gold); background: rgba(255,200,61,.12); }
   #nameOverlay .card { background: var(--panel); }
   #nameInput {
     font-family: inherit; font-size: 22px; font-weight: 700; text-align: center;
@@ -2563,7 +2569,9 @@ function submitScore(s, pc) { // proti player 1 entry — sudhu highest score th
 }
 function worldRows(arr, showDiv) {
   return arr.map(function (e, i) {
-    return '<div><b>' + (i + 1) + '.</b> ' + (e.n || T('rider')) + ' — ' + e.s + ' <small>(' + e.p + '📦' + (showDiv && (e.dv || e.div) ? ' · ' + divName(e.dv || e.div) : '') + ')</small></div>';
+    var me = (playerName && e.n === playerName) ? ' me' : '';
+    var sub = e.p + '📦' + (showDiv && (e.dv || e.div) ? ' · ' + divName(e.dv || e.div) : '');
+    return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm">' + (e.n || T('rider')) + '<small>' + sub + '</small></span><span class="sc">' + e.s + '</span></div>';
   }).join('');
 }
 function refreshWorldBoards() { // over screen-e world + division (10s throttle)
@@ -4752,7 +4760,9 @@ function fetchWarWeek() {
 }
 function renderBoard() {
   var html = '';
-  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">⚔️</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">📅</button></div>';
+  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">' + (lang === 'bn' ? '⚔️ যুদ্ধ' : '⚔️ War') + '</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">' + (lang === 'bn' ? '📅 সপ্তাহ' : '📅 Week') + '</button></div>';
+  if (myRankCache) html += '<div class="best">🏅 #' + myRankCache.rank + ' / ' + myRankCache.tot + '</div>';
+  else { try { fetchMyRank(); } catch (e) {} }
   if (lbTab === 'div') {
     if (!playerDiv) html += T('need_div');
     else if (divCache) html += divCache.length ? worldRows(divCache, false) : T('lb_empty');
@@ -4767,8 +4777,8 @@ function renderBoard() {
   if (lbTab === 'war' && warCache) {
     html += '<h3>⚔️ Division War</h3>';
     html += warCache.map(function (w, i) {
-      var me = playerDiv && w.id === playerDiv ? ' class="me"' : '';
-      return '<div' + me + '><b>' + (i + 1) + '.</b> ' + divName(w.id) + ' — ' + w.s + ' <small>(' + w.n + (lang === 'bn' ? ' জন)' : ' riders)') + '</small></div>';
+      var me = playerDiv && w.id === playerDiv ? ' me' : '';
+      return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm">' + divName(w.id) + '<small>' + w.n + (lang === 'bn' ? ' জন' : ' riders') + '</small></span><span class="sc">' + w.s + '</span></div>';
     }).join('') || T('lb_empty');
   }
   if (lbTab === 'week' && weekCache) {
@@ -4819,6 +4829,7 @@ function fetchMyRank() {
       myRankCache = tot ? { rank: rank, tot: tot } : null;
       myRankFetching = false;
       renderProfile();
+      try { renderBoard(); } catch (e) {}
       var mv = $('mProfVal'); if (mv && myRankCache) mv.textContent = '#' + myRankCache.rank;
     }, function () { myRankFetching = false; });
   } catch (e) { myRankFetching = false; }
