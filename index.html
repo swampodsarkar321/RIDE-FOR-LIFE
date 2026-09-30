@@ -2363,6 +2363,9 @@ function cloudSave() { // local + cloud — sob save ekhan diye
       localStorage.setItem('rrBank', String(bankCoins));
       localStorage.setItem('rrUpS', String(upSpeed));
       localStorage.setItem('rrUpH', String(upHandle));
+      localStorage.setItem('rrUpF', String(upFuel));
+      localStorage.setItem('rrUpM', String(upMag));
+      localStorage.setItem('rrUpN', String(upNitro));
       localStorage.setItem('rrLevel', String(riderLevel));
       localStorage.setItem('rrXp', String(Math.floor(xp)));
       localStorage.setItem('rrBike', String(selBike));
@@ -2383,7 +2386,7 @@ function cloudSave() { // local + cloud — sob save ekhan diye
     FBDB.ref('players/' + fbUid).set({
       name: playerName || '', best: best, bank: bankCoins, level: riderLevel,
       xp: Math.floor(xp), bike: selBike, bag: bagLevel, hp: hpStore,
-      leg: selLeg, unlock: unlockLeg, upS: upSpeed, upH: upHandle,
+      leg: selLeg, unlock: unlockLeg, upS: upSpeed, upH: upHandle, upF: upFuel, upM: upMag, upN: upNitro,
       div: playerDiv, tp: tParcels, owned: ownedBikes,
       tst: tStars, tc: tCrash, tnm: nmTotal,
       board: getBoard(), at: now
@@ -2504,6 +2507,9 @@ function cloudLoad() { // boot-e cloud theke notun data anle apply
         if (typeof r.unlock === 'number') unlockLeg = r.unlock;
         if (typeof r.upS === 'number') upSpeed = r.upS;
         if (typeof r.upH === 'number') upHandle = r.upH;
+        if (typeof r.upF === 'number') upFuel = Math.min(UMAX, r.upF);
+        if (typeof r.upM === 'number') upMag = Math.min(UMAX, r.upM);
+        if (typeof r.upN === 'number') upNitro = Math.min(UMAX, r.upN);
         if (typeof r.name === 'string' && r.name) { playerName = r.name; try { localStorage.setItem('rrName', r.name); } catch (e) {} }
         if (typeof r.div === 'string' && r.div) { playerDiv = r.div; try { localStorage.setItem('rrDiv', r.div); } catch (e) {} }
         if (typeof r.tp === 'number') { tParcels = r.tp; try { localStorage.setItem('rrTParcels', String(r.tp)); } catch (e) {} }
@@ -2875,7 +2881,11 @@ var nitroT = 0, NITRO_MAX = 6; // nitro boost timer
 var missionLevel = 1, missionTarget = 10, missionGot = 0;
 var combo = 0, comboT = 0, lastComboShown = -1, nmStreak = 0;
 /* level/xp/garage */
-var xp = 0, riderLevel = 1, bankCoins = 0, upSpeed = 0, upHandle = 0, bagLevel = 0;
+var xp = 0, riderLevel = 1, bankCoins = 0, upSpeed = 0, upHandle = 0, bagLevel = 0, upFuel = 0, upMag = 0, upNitro = 0;
+var UMAX = 8; // skill max level
+function fuelEff() { return Math.max(0.55, 1 - 0.06 * upFuel); } // kom tel khoroch
+function magDur() { return 8 + 2 * upMag; } // magnet koto sec
+function magRange() { return 22 + 3 * upMag; } // koto dur theke tane
 var playerName = '', selBike = 0, playerDiv = '', tParcels = 0, tStars = 0, tCrash = 0, nmTotal = 0, runCrash = 0, pendingClean = false;
 try { tStars = +localStorage.getItem('rrStars') || 0; } catch (e) {}
 try { tCrash = +localStorage.getItem('rrCrash') || 0; } catch (e) {}
@@ -3008,6 +3018,12 @@ STR.en.up_speed = 'Speed'; STR.bn.up_speed = 'গতি';
 STR.en.up_speed_sub = 'Higher top speed'; STR.bn.up_speed_sub = 'বেশি সর্বোচ্চ গতি';
 STR.en.up_ctrl = 'Control'; STR.bn.up_ctrl = 'নিয়ন্ত্রণ';
 STR.en.up_ctrl_sub = 'Easier turning'; STR.bn.up_ctrl_sub = 'সহজে মোড়';
+STR.en.up_fuel = 'Fuel'; STR.bn.up_fuel = 'জ্বালানি';
+STR.en.up_fuel_sub = 'Less fuel use'; STR.bn.up_fuel_sub = 'কম তেল খরচ';
+STR.en.up_mag = 'Magnet'; STR.bn.up_mag = 'চুম্বক';
+STR.en.up_mag_sub = 'Longer + wider pull'; STR.bn.up_mag_sub = 'বেশি সময় + দূর থেকে টানে';
+STR.en.up_nitro = 'Nitro'; STR.bn.up_nitro = 'নাইট্রো';
+STR.en.up_nitro_sub = 'Longer boost'; STR.bn.up_nitro_sub = 'বেশি সময় বুস্ট';
 STR.en.need_repair = '🔧 Bike smashed! Repair in garage first!'; STR.bn.need_repair = '🔧 বাইক ভাঙা! আগে গ্যারেজে মেরামত করো!';
 STR.en.buynow = 'BUY ৳{0}'; STR.bn.buynow = 'কিনো ৳{0}';
 STR.en.exp_done = '<b>⚡ Express x{0}!</b><small>{1} parcels in {2}s · ৳{3}</small>'; STR.bn.exp_done = '<b>⚡ এক্সপ্রেস x{0}!</b><small>{1} পার্সেল {2}সে-তে · ৳{3}</small>';
@@ -3040,6 +3056,9 @@ try {
   bankCoins = +localStorage.getItem('rrBank') || 0;
   upSpeed = +localStorage.getItem('rrUpS') || 0;
   upHandle = +localStorage.getItem('rrUpH') || 0;
+  upFuel = +localStorage.getItem('rrUpF') || 0;
+  upMag = +localStorage.getItem('rrUpM') || 0;
+  upNitro = +localStorage.getItem('rrUpN') || 0;
   riderLevel = +localStorage.getItem('rrLevel') || 1;
   xp = +localStorage.getItem('rrXp') || 0;
   playerName = localStorage.getItem('rrName') || '';
@@ -3532,7 +3551,7 @@ function startGame(keepScore) {
   try { groundMat.color.setHex(GROUND_TINT[legTheme()] || 0x6b9450); } catch (e) {}
   magnetT = 0; doubleT = 0; nitroT = 0; crashT = 0; shake = 0; hints = { banner: 0, low: 0, jam: 0, goat: 0, gate: 0 }; lastLocIdx = -1;
   var EP0 = evP();
-  NITRO_MAX = EP0.nitroDur || 6;
+  NITRO_MAX = (EP0.nitroDur || 6) + upNitro;
   fuelDrainK = EP0.fuelX || 1;
   fuelPickAmt = EP0.fuelPick || 35;
   scoreXK = EP0.scoreX || 1;
@@ -3860,7 +3879,7 @@ function update(dt) {
     if (brakeT > 0) brakeT -= dt;
     if (isBrake) target = Math.min(target, 11.5);
     speed += (target - speed) * Math.min(1, dt * (isBrake ? 4 : 2.5));
-    fuel -= dt * (0.7 + speed * 0.02) * 1.3 * bst.fuel * fuelDrainK; // tel ektu taratari sesh — pickup must
+    fuel -= dt * (0.7 + speed * 0.02) * 1.3 * bst.fuel * fuelEff() * fuelDrainK; // tel ektu taratari sesh — pickup must
     if (fuel <= 30 && !fuelWarned) { fuelWarned = true; sfx.fuelLow(); toast(elHint, T('fuel_low'), 2500); }
     if (fuel <= 12 && fuel > 0) { fuelCritT -= dt; if (fuelCritT <= 0) { fuelCritT = 2; sfx.fuelLow(); toast(elHint, T('fuel_crit'), 1800); } }
     if (fuel <= 0 && !fuelOut) {
@@ -4069,7 +4088,7 @@ function update(dt) {
   var px = player.position.x, ph = sliding ? 0.9 : 2.0;
   for (i = pickups.length - 1; i >= 0; i--) {
     var p = pickups[i]; p.z += mv;
-    if (magnetT > 0 && (p.type === 'coin' || p.type === 'parcel') && p.z > -22 && p.z < 4) {
+    if (magnetT > 0 && (p.type === 'coin' || p.type === 'parcel') && p.z > -magRange() && p.z < 4) {
       var k = Math.min(1, dt * 9);
       p.x += (px - p.x) * k; p.y += (Math.max(0.8, py + 0.9) - p.y) * k;
     }
@@ -4106,7 +4125,7 @@ function update(dt) {
         fuel = Math.min(100, fuel + fuelPickAmt); fuelWarned = fuel <= 30; fuelCritT = 0;
         sfx.deliver(); toast(elHint, F('fuel_fill', Math.round(fuel)), 1500);
       }
-      else if (p.type === 'paddy') { magnetT = 8; sfx.power(); toast(elHint, T('mag_pick'), 1800); }
+      else if (p.type === 'paddy') { magnetT = magDur(); sfx.power(); toast(elHint, T('mag_pick'), 1800); }
       else if (p.type === 'nitro') { nitroT = NITRO_MAX; sfx.power(); pop(lang === 'bn' ? '🚀 নাইট্রো!' : '🚀 Nitro!', px, py + 2.7, 0, '#7db4ff'); toast(elHint, T('nitro_pick'), 1800); }
       else { doubleT = 10; sfx.power(); toast(elHint, T('mango_pick'), 1800); }
       if (p.type !== 'coin' && p.type !== 'parcel') sparks(p.x + curveAt(p.z), p.y, p.z, 14);
@@ -4130,7 +4149,7 @@ function update(dt) {
   if (comboT > 0) { comboT -= dt; if (comboT <= 0) combo = 0; }
   var pm = elPMag, pd = elPDbl, pn = elPNitro;
   pm.classList.toggle('on', magnetT > 0); pd.classList.toggle('on', doubleT > 0); pn.classList.toggle('on', nitroT > 0);
-  if (magnetT > 0) elPMagU.style.width = (magnetT / 8 * 100) + '%';
+  if (magnetT > 0) elPMagU.style.width = Math.min(100, magnetT / magDur() * 100) + '%';
   if (doubleT > 0) elPDblU.style.width = Math.min(100, doubleT / 10 * 100) + '%';
   if (nitroT > 0) elPNitroU.style.width = (nitroT / NITRO_MAX * 100) + '%';
   var cbMult = Math.min(5, 1 + ((combo / 3) | 0));
@@ -4728,7 +4747,8 @@ function renderBoard() {
   }
   refreshWorldBoards();
 }
-function upCost(kind) { var L = kind === 's' ? upSpeed : upHandle; return 50 + L * 80 + L * L * 6; } // progressive: late level-e grind bare
+function upLvl(kind) { return kind === 's' ? upSpeed : kind === 'h' ? upHandle : kind === 'f' ? upFuel : kind === 'm' ? upMag : upNitro; }
+function upCost(kind) { var L = upLvl(kind); if (L >= UMAX) return 0; return 50 + L * 80 + L * L * 6; } // progressive: late level-e grind bare
 function renderGarage() {
   var g = $('garage'); if (!g) return;
   if ($('menuBestV')) $('menuBestV').textContent = best;
@@ -4738,11 +4758,17 @@ function renderGarage() {
     '<div class="setList" style="margin:0">' +
     '<div class="setRow"><span class="lbl"><span class="ico">🏍️</span>' + T('up_bike') + ' ' + hpStore + '%<span class="sub">' + T('up_cond') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upR">' + T('gar_repair') + repairCost() + '</button></div>' +
     '<div class="setRow"><span class="lbl"><span class="ico">🎒</span>' + T('up_bag') + ' ' + F('gar_pcs', bagCap()) + '<span class="sub">' + T('up_bag_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upB">' + (bagLevel >= 2 ? T('gar_max') : T('gar_bigger') + BAG_COST[bagLevel + 1]) + '</button></div>' +
-    '<div class="setRow"><span class="lbl"><span class="ico">⚡</span>' + T('up_speed') + ' · Lvl ' + upSpeed + '<span class="sub">' + T('up_speed_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upS">' + T('gar_up') + upCost('s') + '</button></div>' +
-    '<div class="setRow"><span class="lbl"><span class="ico">🎯</span>' + T('up_ctrl') + ' · Lvl ' + upHandle + '<span class="sub">' + T('up_ctrl_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upH">' + T('gar_up') + upCost('h') + '</button></div>' +
+    '<div class="setRow"><span class="lbl"><span class="ico">⚡</span>' + T('up_speed') + ' · Lvl ' + upSpeed + '<span class="sub">' + T('up_speed_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upS">' + (upSpeed >= UMAX ? T('gar_max') : T('gar_up') + upCost('s')) + '</button></div>' +
+    '<div class="setRow"><span class="lbl"><span class="ico">🎯</span>' + T('up_ctrl') + ' · Lvl ' + upHandle + '<span class="sub">' + T('up_ctrl_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upH">' + (upHandle >= UMAX ? T('gar_max') : T('gar_up') + upCost('h')) + '</button></div>' +
+    '<div class="setRow"><span class="lbl"><span class="ico">⛽</span>' + T('up_fuel') + ' · Lvl ' + upFuel + '<span class="sub">' + T('up_fuel_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upF">' + (upFuel >= UMAX ? T('gar_max') : T('gar_up') + upCost('f')) + '</button></div>' +
+    '<div class="setRow"><span class="lbl"><span class="ico">🌾</span>' + T('up_mag') + ' · Lvl ' + upMag + '<span class="sub">' + T('up_mag_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upM">' + (upMag >= UMAX ? T('gar_max') : T('gar_up') + upCost('m')) + '</button></div>' +
+    '<div class="setRow"><span class="lbl"><span class="ico">🚀</span>' + T('up_nitro') + ' · Lvl ' + upNitro + '<span class="sub">' + T('up_nitro_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upN">' + (upNitro >= UMAX ? T('gar_max') : T('gar_up') + upCost('n')) + '</button></div>' +
     '</div>';
   $('upS').addEventListener('click', function (e) { e.stopPropagation(); buyUp('s'); });
   $('upH').addEventListener('click', function (e) { e.stopPropagation(); buyUp('h'); });
+  $('upF').addEventListener('click', function (e) { e.stopPropagation(); buyUp('f'); });
+  $('upM').addEventListener('click', function (e) { e.stopPropagation(); buyUp('m'); });
+  $('upN').addEventListener('click', function (e) { e.stopPropagation(); buyUp('n'); });
   $('upR').addEventListener('click', function (e) { e.stopPropagation(); buyRepair(); });
   $('upB').addEventListener('click', function (e) { e.stopPropagation(); buyBag(); });
 }
@@ -4790,15 +4816,20 @@ function saveName() {
   sfx.power(); renderBoard();
 }
 function buyUp(kind) {
+  if (upLvl(kind) >= UMAX) return;
   var c = upCost(kind);
   if (bankCoins < c) { toast(elHint, T('buy_fail'), 1800); return; }
   bankCoins -= c;
-  if (kind === 's') upSpeed++; else upHandle++;
-  try { logEv('upgrade', { kind: kind, lvl: kind === 's' ? upSpeed : upHandle }); } catch (e) {}
+  if (kind === 's') upSpeed++; else if (kind === 'h') upHandle++;
+  else if (kind === 'f') upFuel++; else if (kind === 'm') upMag++; else upNitro++;
+  try { logEv('upgrade', { kind: kind, lvl: upLvl(kind) }); } catch (e) {}
   try {
     localStorage.setItem('rrBank', String(bankCoins));
     localStorage.setItem('rrUpS', String(upSpeed));
     localStorage.setItem('rrUpH', String(upHandle));
+    localStorage.setItem('rrUpF', String(upFuel));
+    localStorage.setItem('rrUpM', String(upMag));
+    localStorage.setItem('rrUpN', String(upNitro));
   } catch (e) {}
   sfx.power(); renderGarage(); cloudSave();
 }
