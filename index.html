@@ -2819,7 +2819,7 @@ var magnetT = 0, doubleT = 0, runT = 0, crashT = 0, shake = 0;
 var nitroT = 0, NITRO_MAX = 6; // nitro boost timer
 /* mission/combo/nearmiss */
 var missionLevel = 1, missionTarget = 10, missionGot = 0;
-var combo = 0, comboT = 0, lastComboShown = -1;
+var combo = 0, comboT = 0, lastComboShown = -1, nmStreak = 0;
 /* level/xp/garage */
 var xp = 0, riderLevel = 1, bankCoins = 0, upSpeed = 0, upHandle = 0, bagLevel = 0;
 var playerName = '', selBike = 0, playerDiv = '', tParcels = 0, tStars = 0;
@@ -3453,7 +3453,7 @@ function startGame(keepScore) {
   dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0;
   if (keepScore && carryScore > 0) { score = carryScore; } else { score = 0; }
   carryScore = 0;
-  combo = 0; comboT = 0; missionGot = 0; timeScale = 1; slowT = 0; carried = 0; tutStep = 0;
+  combo = 0; comboT = 0; missionGot = 0; timeScale = 1; slowT = 0; carried = 0; tutStep = 0; nmStreak = 0;
   crashOn = false; if (crashPts) crashPts.visible = false;
   pivot.rotation.set(0, 0, 0); bikeG.rotation.set(0, 0, 0);
   setLegLocs(); arrived = false;
@@ -3779,13 +3779,15 @@ function update(dt) {
   for (i = obstacles.length - 1; i >= 0; i--) {
     var o = obstacles[i]; o.z += mv; o.mesh.position.z = o.z;
     o.mesh.position.x = o.x + curveAt(o.z);
-    // near-miss: gari gaye laglo na kintu gaa ghese gelo
+    // near-miss: gari gaye laglo na kintu gaa ghese gelo — streak-e bonus bare
     if (state === 'play' && !o.passed && !o.banner && o.z > o.hd + 0.4) {
       o.passed = true;
       var dx = Math.abs(player.position.x - o.x);
       if (dx > o.hw + 0.18 && dx < o.hw + 1.1) {
-        score += 20 * (doubleT > 0 ? 2 * scoreXK : scoreXK);
-        pop('😱 +20', player.position.x, py + 2.9, 0, '#ff9d66'); sfx.move();
+        nmStreak++;
+        var nmPts = Math.round((20 + Math.min(nmStreak, 10) * 5) * (doubleT > 0 ? 2 * scoreXK : scoreXK));
+        score += nmPts;
+        pop('😱 +' + nmPts + (nmStreak > 1 ? ' x' + nmStreak : ''), player.position.x, py + 2.9, 0, '#ff9d66'); sfx.move();
       }
     }
     if (o.z > 22) { scene.remove(o.mesh); obstacles.splice(i, 1); }
