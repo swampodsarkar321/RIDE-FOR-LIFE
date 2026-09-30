@@ -500,6 +500,12 @@
         </div>
         <div style="font-size:13px;color:var(--panel-soft);">XP <span id="profXpTxt"></span></div>
         <div class="speedo-bar" style="width:100%;margin:2px 0 8px;"><u id="profXpFill"></u></div>
+        <div class="best">🔑 <span id="invMyTxt">My code:</span> <b id="invMyCode">------</b></div>
+        <div style="display:flex;gap:8px;margin:8px 0;">
+          <input id="invInput" maxlength="6" placeholder="FRIEND CODE" style="flex:1;min-width:0;font-family:inherit;font-size:18px;font-weight:700;text-align:center;border-radius:12px;border:2px solid var(--gold);padding:6px 8px;box-sizing:border-box;text-transform:uppercase;">
+          <button class="backBtn" id="invBtn" style="margin:0;white-space:nowrap;">🎁 Invite</button>
+        </div>
+        <div class="best" id="invMsg" style="min-height:18px;"></div>
         <h3 style="margin:6px 0;color:var(--gold);">🏅 Achievements</h3>
         <div id="profAch" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
       </div>
@@ -2464,6 +2470,24 @@ function renderDaily() {
     } else cb.style.display = 'none';
     var mv = $('mDailyVal');
     if (mv) mv.textContent = info.claimable ? '❗' : info.streak + '🔥';
+  } catch (e) {}
+}
+/* ---------- invite rewards queue ---------- */
+function checkRewards() { // bondhur gift ele bank-e dhukbe
+  if (!fbReady || !FBDB || !fbUid) return;
+  try {
+    FBDB.ref('rewards/' + fbUid).once('value').then(function (snap) {
+      var tot = 0, n = 0;
+      snap.forEach(function (c) { var v = c.val() || {}; tot += Math.min(500, +v.amt || 0); n++; });
+      if (n > 0) {
+        bankCoins += tot;
+        try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
+        FBDB.ref('rewards/' + fbUid).remove().catch(function () {});
+        cloudSave(); updateMenuBest();
+        try { logEv('invite_bonus', { n: n }); } catch (e) {}
+        var mb = $('menuBest'); if (mb) mb.textContent += (lang === 'bn' ? ' · 🎁 গিফট ৳' + tot : ' · 🎁 gift ৳' + tot);
+      }
+    }).catch(function () {});
   } catch (e) {}
 }
 function myCode() { // 6-char recovery code, uid theke stable
@@ -4752,6 +4776,15 @@ function fetchWarWeek() {
       var lastRank = -1; plast.forEach(function (e, i) { if (e._k === fbUid) lastRank = i + 1; });
       var lastId = 'w' + Math.floor(ps / 604800000), claimed = '';
       try { claimed = localStorage.getItem('rrWeekClaim') || ''; } catch (e) {}
+      if (lastRank >= 1 && lastRank <= 3 && claimed !== lastId) { // weekly prize auto-credit
+        var rw0 = [500, 300, 200][lastRank - 1];
+        bankCoins += rw0;
+        try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrWeekClaim', lastId); } catch (e2) {}
+        claimed = lastId;
+        cloudSave(); updateMenuBest();
+        try { logEv('weekly_auto', { rank: lastRank }); } catch (e2) {}
+        var mb0 = $('menuBest'); if (mb0) mb0.textContent += (lang === 'bn' ? ' · 🎁 সাপ্তাহিক ৳' + rw0 : ' · 🎁 weekly ৳' + rw0);
+      }
       weekCache = { top: wk.slice(0, 5), myRank: mine, tot: wk.length, lastRank: lastRank, lastId: lastId, claimed: claimed === lastId };
       warFetching = false;
       if (lbTab === 'war' || lbTab === 'week') renderBoard();
@@ -4786,8 +4819,7 @@ function renderBoard() {
     html += weekCache.top.length ? worldRows(weekCache.top, true) : T('lb_empty');
     if (weekCache.myRank > 0) html += '<div class="best">🏅 ' + (lang === 'bn' ? 'তুমি #' + weekCache.myRank : 'You are #' + weekCache.myRank) + '</div>';
     if (weekCache.lastRank > 0 && weekCache.lastRank <= 3) {
-      if (weekCache.claimed) html += '<div class="best">🎁 ' + (lang === 'bn' ? 'গত সপ্তাহের পুরস্কার নেওয়া ✓' : 'Last week claimed ✓') + '</div>';
-      else html += '<div style="text-align:center;margin-top:8px;"><button class="backBtn" id="weekClaim">🎁 ' + (lang === 'bn' ? 'গত সপ্তাহ #' + weekCache.lastRank + ': ৳' + [500, 300, 200][weekCache.lastRank - 1] + ' নাও' : 'Last week #' + weekCache.lastRank + ': claim ৳' + [500, 300, 200][weekCache.lastRank - 1]) + '</button></div>';
+      html += '<div class="best">🎁 ' + (lang === 'bn' ? 'গত সপ্তাহ #' + weekCache.lastRank + ': ৳' + [500, 300, 200][weekCache.lastRank - 1] + ' auto ✓' : 'Last week #' + weekCache.lastRank + ': ৳' + [500, 300, 200][weekCache.lastRank - 1] + ' auto ✓') + '</div>';
     }
   }
   html += '<div class="best">📦 ' + F('lifetime', tParcels) + '</div>';
@@ -4795,18 +4827,6 @@ function renderBoard() {
     $('lbList').innerHTML = html;
     Array.prototype.forEach.call($('lbList').querySelectorAll('.lbtab'), function (b) {
       b.addEventListener('click', function (e) { e.stopPropagation(); lbTab = b.getAttribute('data-tab'); try { sfx.move(); } catch (err) {} renderBoard(); });
-    });
-    var wc = $('weekClaim');
-    if (wc) wc.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (!weekCache || weekCache.claimed || weekCache.lastRank < 1 || weekCache.lastRank > 3) return;
-      var rw = [500, 300, 200][weekCache.lastRank - 1];
-      bankCoins += rw;
-      try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrWeekClaim', weekCache.lastId); } catch (err) {}
-      weekCache.claimed = true;
-      cloudSave(); renderBoard(); updateMenuBest();
-      try { logEv('weekly_claim', { rank: weekCache.lastRank }); } catch (err) {}
-      sfx.coin();
     });
   }
   if ($('overBoard')) {
@@ -4847,6 +4867,8 @@ function renderProfile() {
     if ($('profStreak')) $('profStreak').textContent = maxStreak() + '🔥';
     if ($('profXpFill')) $('profXpFill').style.width = Math.min(100, xp / xpNeed() * 100) + '%';
     if ($('profXpTxt')) $('profXpTxt').textContent = Math.floor(xp) + '/' + xpNeed();
+    if ($('invMyCode')) { try { $('invMyCode').textContent = myCode(); } catch (e) {} }
+    if ($('invMyTxt')) $('invMyTxt').textContent = bn ? 'আমার কোড:' : 'My code:';
     var mv = $('mProfVal'); if (mv && myRankCache) mv.textContent = '#' + myRankCache.rank;
     var rk = $('profRank');
     if (rk) {
@@ -4983,6 +5005,8 @@ function boot() {
   $('menuBest').textContent = fmtBest() + (playerName ? ' · ' + playerName : '');
   updateMenuBest();
   try { var recNote = recoverRun(); if (recNote) $('menuBest').textContent += recNote; } catch (e) {}
+  try { checkRewards(); } catch (e) {}
+  try { fetchWarWeek(); } catch (e) {} // weekly auto-prize check
   applyLang();
   applyBikeColor(); renderGarage(); renderBoard(); renderDest();
   cloudLoad(); loadGameConfig();
@@ -5027,7 +5051,32 @@ function boot() {
   });
   $('menuHowBtn').addEventListener('click', function (e) { e.stopPropagation(); showTut(null); });
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
-  $('profRow').addEventListener('click', function () { renderProfile(); });  $('dailyClose').addEventListener('click', function () { $('dailyOverlay').classList.add('hidden'); });
+  $('profRow').addEventListener('click', function () { renderProfile(); });
+  $('invBtn').addEventListener('click', function () {
+    var msg = $('invMsg');
+    function say(t) { if (msg) msg.textContent = t; }
+    var c = ($('invInput').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (c.length < 6) { say(lang === 'bn' ? '🔑 ৬ অক্ষরের কোড দাও' : '🔑 Enter 6-char code'); return; }
+    if (c === myCode()) { say(lang === 'bn' ? '😅 নিজের কোড না!' : '😅 Not your own code!'); return; }
+    try { if (localStorage.getItem('rrInvUsed')) { say(lang === 'bn' ? '✅ Invite already done' : '✅ Invite already done'); return; } } catch (e) {}
+    if (!fbReady || !FBDB) { say(lang === 'bn' ? 'নেট নেই' : 'No connection'); return; }
+    FBDB.ref('invitesUsed/' + fbUid).once('value').then(function (ss) {
+      if (ss.val()) { say(lang === 'bn' ? '✅ Invite already done' : '✅ Invite already done'); return; }
+      FBDB.ref('codes/' + c).once('value').then(function (s) {
+        var r = s.val();
+        if (!r || !r.u || r.u === fbUid) { say(lang === 'bn' ? '🔑 কোড পাওয়া যায়নি' : '🔑 Code not found'); return; }
+        FBDB.ref('rewards/' + r.u).push({ amt: 300, from: playerName || '', at: Date.now() }).then(function () {
+          bankCoins += 100;
+          try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrInvUsed', c); } catch (e2) {}
+          try { FBDB.ref('invitesUsed/' + fbUid).set(c); } catch (e2) {}
+          cloudSave(); renderProfile(); updateMenuBest();
+          say((lang === 'bn' ? '🎉 বন্ধু পাবে ৳300, তুমি পেলে ৳100!' : '🎉 Friend gets ৳300, you get ৳100!'));
+          try { logEv('invite_sent', {}); } catch (e2) {}
+          sfx.coin();
+        }).catch(function () { say('🔑 ?'); });
+      }).catch(function () { say('🔑 ?'); });
+    }).catch(function () { say('🔑 ?'); });
+  });  $('dailyClose').addEventListener('click', function () { $('dailyOverlay').classList.add('hidden'); });
   $('dailyClaim').addEventListener('click', function () {
     var info = dailyInfo();
     if (!info.claimable) return;

@@ -21,6 +21,21 @@
         ".write": "newData.hasChildren(['u', 'at']) && newData.child('u').isString() && newData.child('u').val().length <= 40 && newData.child('at').isNumber()"
       }
     },
+    "rewards": {
+      "$uid": {
+        ".read": true,
+        ".write": true,
+        "$k": {
+          ".validate": "newData.val() == null || (newData.hasChildren(['amt', 'at']) && newData.child('amt').isNumber() && newData.child('amt').val() > 0 && newData.child('amt').val() <= 500 && newData.child('at').isNumber())"
+        }
+      }
+    },
+    "invitesUsed": {
+      "$uid": {
+        ".read": true,
+        ".write": "newData.val() == null || (newData.isString() && newData.val().length <= 10)"
+      }
+    },
     "config": {
       ".read": true,
       ".write": true,
