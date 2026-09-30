@@ -472,7 +472,7 @@
   <div class="loc" id="loc"></div>
   <div class="hint" id="hint"></div>
   <div class="hint" id="combo" style="background:#ff5722;color:#fff;font-size:18px;"></div>
-  <div id="routeBar"><u id="routeFill"></u><span id="routeTxt">Teknaf → Tetulia</span></div>
+  <div id="routeBar"><u id="routeFill"></u><span id="routeTxt">Rangpur Division</span></div>
   <div class="powers">
     <div class="power on" id="pHp"><span>🔧</span><b id="hpTxt" style="font-size:15px">100%</b><i><u id="hpFill"></u></i></div>
     <div class="power on" id="pFuel"><span>⛽</span><b id="fuelTxt" style="font-size:15px">100%</b><i><u id="fuelFill"></u></i></div>
@@ -491,7 +491,7 @@
     <div class="mpage on" id="pageMain">
       <img id="menuLogo" src="ride-for-life-logo.png" alt="Ride For Life">
       <div class="menuList">
-        <button class="mrow" data-page="pageDest"><span data-i18n="m_dest">🗺️ Destination</span><span class="mval" id="mDestVal">Teknaf</span><span class="chev">›</span></button>
+        <button class="mrow" data-page="pageDest"><span data-i18n="m_dest">🗺️ Destination</span><span class="mval" id="mDestVal">Rangpur</span><span class="chev">›</span></button>
         <button class="mrow" data-page="pageGarage"><span data-i18n="m_garage">🔧 Garage</span><span class="mval" id="mGarVal">100%</span><span class="chev">›</span></button>
         <button class="mrow" data-page="pageEvents"><span data-i18n="m_events">🎪 Events</span><span class="mval" id="mEvVal"></span><span class="chev">›</span></button>
         <button class="mrow" data-page="pageBoard"><span data-i18n="m_board">🏆 My Best Runs</span><span class="mval"></span><span class="chev">›</span></button>
@@ -512,7 +512,7 @@
       <div class="secCard">
         <div id="destSel">
           <button class="arr" id="destL">◀</button>
-          <div id="destName">📍 Teknaf</div>
+          <div id="destName">📍 Rangpur</div>
           <button class="arr" id="destR">▶</button>
         </div>
         <div id="routeMap"></div>
@@ -2403,62 +2403,59 @@ function makePond(x, z, parent) { // chayani pukur: pani + ghat + kola gach
   makeCoconutPalm(x - w / 2 - 0.8, z + rnd(-1, 1), parent);
   if (Math.random() < 0.5) makeCoconutPalm(x + w / 2 + 0.8, z + rnd(-1, 1), parent);
 }
+function makeRails(x, z, parent) { // rail line + sleepers
+  for (var s = -2; s <= 2; s++) box(3.2, 0.08, 0.3, 0x6b4a2f, x, 0.04, z + s * 0.9, parent);
+  box(0.12, 0.1, 5.2, 0x888888, x - 0.75, 0.1, z, parent);
+  box(0.12, 0.1, 5.2, 0x888888, x + 0.75, 0.1, z, parent);
+}
 function makeLegLandmark(idx, side, z, parent) {
   var x = side * (9.5 + rnd(0, 3));
-  if (idx === 0) { // Teknaf: samudra chata + jal
-    makeUmbrella(x, z, parent, 0x2d7a4f);
-    box(2.4, 0.35, 0.9, 0x6b4a2f, x + 1.6, 0.18, z + 1.2, parent);
-    legBoard(100 + idx, LANDMARK_TX[0][lang], '#2d7a4f', x - side * 1.8, 1.9, z, side, parent);
-  } else if (idx === 1) { // Chayani: pukur + probashi bari + nouka
-    makePond(x, z, parent);
-    box(3.4, 2.4, 2.8, 0xf0ead8, x + side * 4.5, 1.2, z - 1, parent); // probashi paka bari
-    box(3.6, 0.3, 3.0, 0xc23b3b, x + side * 4.5, 2.55, z - 1, parent);
-    box(0.9, 1.6, 0.12, 0x6b4a2f, x + side * 4.5, 0.8, z + 0.5, parent);
-    var boat = new THREE.Group(); boat.position.set(x - side * 1.5, 0.05, z + 0.5); parent.add(boat);
-    box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, boat);
-    legBoard(100 + idx, LANDMARK_TX[1][lang], '#2d7a4f', x - side * 1.8, 1.9, z + 2, side, parent);
-  } else if (idx === 2) { // Cox's Bazar: chatar sari + jhinuk
-    for (var i = -1; i <= 1; i++) makeUmbrella(x + i * 2.2, z + i * 1.2, parent, [0xc23b3b, 0xffc83d, 0x3d6fa5][i + 1]);
-    legBoard(100 + idx, LANDMARK_TX[2][lang], '#3d6fa5', x - side * 1.8, 1.9, z, side, parent);
-  } else if (idx === 3) { // Chattogram: bondor crane + container
-    box(0.4, 6, 0.4, 0xdd2222, x - 1.5, 3, z, parent);
-    box(0.4, 6, 0.4, 0xdd2222, x + 1.5, 3, z, parent);
-    box(4.6, 0.5, 0.7, 0xdd2222, x, 6, z, parent);
-    box(0.07, 2.0, 0.07, 0x333333, x + 1, 4.9, z, parent);
-    box(1.7, 1.2, 1.2, pick([0x2d7a4f, 0x3d6fa5, 0xff8c1a]), x + 1, 3.7, z, parent);
-    legBoard(100 + idx, LANDMARK_TX[3][lang], '#c23b3b', x - side * 2.6, 1.9, z, side, parent);
-  } else if (idx === 4) { // Cumilla: Shalban Bihar stupa
-    box(3.0, 0.6, 3.0, 0x9a5a3a, x, 0.3, z, parent);
-    box(2.2, 0.6, 2.2, 0xa8663f, x, 0.9, z, parent);
-    ell(1.0, 0.8, 1.0, 0xb0703f, x, 1.6, z, parent);
-    cyl(0.08, 0.9, 0.08, 0xc9a86a, x, 2.4, z, parent);
-    legBoard(100 + idx, LANDMARK_TX[4][lang], '#8a5a2e', x - side * 2.4, 1.9, z, side, parent);
-  } else if (idx === 5) { // Dhaka: Ahsan Manzil (golapi prasad)
-    box(3.6, 2.2, 2.4, 0xe89ab0, x, 1.1, z, parent);
-    box(3.8, 0.3, 2.6, 0xffffff, x, 2.35, z, parent);
-    ell(0.7, 0.6, 0.7, 0xffffff, x, 2.9, z, parent);
-    ell(0.4, 0.35, 0.4, 0xffffff, x - 1.3, 2.6, z, parent);
-    ell(0.4, 0.35, 0.4, 0xffffff, x + 1.3, 2.6, z, parent);
-    box(0.8, 1.2, 0.1, 0x5a2e0e, x - side * 0 + 0, 0.6, z + (side > 0 ? -1.25 : 1.25), parent);
-    legBoard(100 + idx, LANDMARK_TX[5][lang], '#c23b3b', x - side * 2.6, 1.9, z + 2, side, parent);
-  } else if (idx === 6) { // Bogura: doier hari
-    box(2.4, 0.12, 1.0, 0x8a6a3f, x, 0.75, z, parent);
-    for (var p = -1; p <= 1; p++) {
-      cyl(0.42, 0.65, 0.42, 0xb5651d, x + p * 0.8, 1.15, z, parent);
-      cyl(0.36, 0.08, 0.36, 0xfff6e8, x + p * 0.8, 1.5, z, parent); // doi
-    }
-    legBoard(100 + idx, LANDMARK_TX[6][lang], '#8a5a2e', x - side * 2.0, 1.9, z, side, parent);
-  } else if (idx === 7) { // Rangpur: Carmichael (sada colonial)
+  if (idx === 0) { // Rangpur: Carmichael gate (sada colonial) + town
     box(4.2, 2.2, 2.2, 0xf0ead8, x, 1.1, z, parent);
     for (var cl = -1.5; cl <= 1.5; cl++) cyl(0.12, 2.0, 0.12, 0xffffff, x + cl, 1.0, z + (side > 0 ? -1.25 : 1.25), parent);
     box(4.4, 0.45, 2.4, 0xc23b3b, x, 2.42, z, parent);
     box(1.0, 1.4, 0.1, 0x6b4a2f, x, 0.7, z + (side > 0 ? -1.15 : 1.15), parent);
-    legBoard(100 + idx, LANDMARK_TX[7][lang], '#2d7a4f', x - side * 2.8, 1.9, z + 2, side, parent);
-  } else { // Tetulia: Kanchenjunga + cha bagan viewpoint
-    var pk = new THREE.Mesh(CG(13, 17, 5), M(0xeef2f8)); pk.position.set(side * 30, 6, z - 12); parent.add(pk);
-    var pk2 = new THREE.Mesh(CG(8, 11, 5), M(0xdfe7f2)); pk2.position.set(side * 30 - 10, 3.5, z - 8); parent.add(pk2);
-    makeTeaBush(x, z, parent);
-    legBoard(100 + idx, LANDMARK_TX[8][lang], '#3d6fa5', x - side * 2.2, 1.9, z + 2, side, parent);
+    legBoard(100 + idx, LANDMARK_TX[0][lang], '#2d7a4f', x - side * 2.8, 1.9, z + 2, side, parent);
+  } else if (idx === 1) { // Dinajpur: Kantajew mondir (terracotta) + lichu dokan
+    box(3.2, 0.5, 3.2, 0x9a4a2a, x, 0.25, z, parent);
+    box(2.4, 0.5, 2.4, 0xa8542f, x, 0.75, z, parent);
+    box(1.6, 0.5, 1.6, 0xb05c33, x, 1.25, z, parent);
+    cyl(0.1, 0.8, 0.1, 0xc9a86a, x, 1.9, z, parent);
+    makeUmbrella(x + side * 3.5, z + 1.5, parent, 0xc23b3b); // lichu dokan
+    legBoard(100 + idx, LANDMARK_TX[1][lang], '#8a5a2e', x - side * 2.4, 1.9, z + 2, side, parent);
+  } else if (idx === 2) { // Thakurgaon: dhan khet + rural bazar stall
+    for (var r = 0; r < 3; r++) box(3.0, 0.5, 0.5, r % 2 ? 0x7ab648 : 0x8fc25a, x + (r - 1) * 0.2, 0.25, z - 1 + r * 1.1, parent);
+    makeUmbrella(x + side * 3.2, z + 1, parent, 0x2d7a4f);
+    legBoard(100 + idx, LANDMARK_TX[2][lang], '#2d7a4f', x - side * 1.8, 1.9, z + 2, side, parent);
+  } else if (idx === 3) { // Panchagarh: cha bagan + border pillar
+    makeTeaBush(x, z, parent); makeTeaBush(x + 1.8, z + 1.2, parent);
+    box(0.5, 1.6, 0.5, 0xf0ead8, x + side * 3.5, 0.8, z, parent); // border pillar
+    box(0.54, 0.3, 0.54, 0x2d7a4f, x + side * 3.5, 1.7, z, parent);
+    legBoard(100 + idx, LANDMARK_TX[3][lang], '#3d6fa5', x - side * 2.2, 1.9, z + 2, side, parent);
+  } else if (idx === 4) { // Nilphamari: Saidpur station + railway
+    box(3.4, 2.0, 2.2, 0xe8d8b0, x, 1.0, z, parent);
+    box(3.6, 0.3, 2.4, 0xc23b3b, x, 2.15, z, parent);
+    makeRails(x - side * 4.2, z, parent);
+    legBoard(100 + idx, LANDMARK_TX[4][lang], '#c23b3b', x - side * 2.6, 1.9, z + 2, side, parent);
+  } else if (idx === 5) { // Lalmonirhat: rail crossing + Teesta barrage wall
+    makeRails(x, z, parent);
+    box(4.5, 1.0, 0.5, 0x9aa0a8, x + side * 4.0, 0.5, z - 1, parent); // barrage
+    box(0.15, 2.2, 0.15, 0xdddddd, x - side * 2.5, 1.1, z + 1.5, parent);
+    box(1.2, 0.3, 0.1, 0xdd2222, x - side * 2.5, 2.0, z + 1.5, parent); // crossing sign
+    legBoard(100 + idx, LANDMARK_TX[5][lang], '#3d6fa5', x - side * 1.8, 1.9, z + 2, side, parent);
+  } else if (idx === 6) { // Kurigram: Dharla bridge + char nouka
+    box(0.5, 2.2, 0.5, 0x8a8a8a, x - 1.8, 1.1, z, parent);
+    box(0.5, 2.2, 0.5, 0x8a8a8a, x + 1.8, 1.1, z, parent);
+    box(4.6, 0.35, 1.2, 0x9aa0a8, x, 2.35, z, parent);
+    var boat = new THREE.Group(); boat.position.set(x + side * 3.5, 0.05, z + 1); parent.add(boat);
+    box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, boat);
+    legBoard(100 + idx, LANDMARK_TX[6][lang], '#2d7a4f', x - side * 2.6, 1.9, z, side, parent);
+  } else { // Gaibandha: Balashi ferry ghat + nouka + pukur
+    makePond(x, z, parent);
+    var boat2 = new THREE.Group(); boat2.position.set(x - side * 1.5, 0.05, z + 0.5); parent.add(boat2);
+    box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, boat2);
+    box(2.6, 0.15, 1.4, 0x8a6a3f, x + side * 4.0, 0.35, z - 1, parent); // ghat platform
+    legBoard(100 + idx, LANDMARK_TX[7][lang], '#2d7a4f', x - side * 1.8, 1.9, z + 2, side, parent);
   }
 }
 function addLegGate() { // map surute rasta-jure swagotom gate
@@ -3054,7 +3051,7 @@ en: {
   bridge_hint: '🌉 Bridge! Careful',
   rep_full: '🔧 Garage repaired bike for ৳100',
   rep_low: '🔧 Emergency repair! Bike at 35%',
-  leg_go: '<b>{0} ride!</b><small>{1}m · Real route {2}</small>',
+  leg_go: '<b>🇧🇩 Entering {0}!</b><small>Rangpur Division · {1}m · 📦 {3}</small>',
   leg_keep: '<b>{0} ride!</b><small>Continuing with score {1} · {2}m</small>',
   crash_dead: '💥 Bike smashed!',
   crash_hit: '💥 Crash! Bike {0}% OK',
@@ -3079,8 +3076,8 @@ en: {
   phase: '{0} {1} time',
   w_cloud: '☁️ Cloudy sky', w_rain: '🌧️ Rain! Wet road, careful', w_heavy: '⛈️ Heavy rain! Very slippery!', w_fog: '🌫️ Fog! Hard to see ahead', w_clear: '☀️ Sun is out!',
   ev_short: '⚡ Found a shortcut! Magnet on', ev_happy: '📞 Customer happy! +50', ev_block: '🚧 Road blocked ahead! Careful', ev_fest: '🎉 Festival offer! Double score',
-  fin_all: '<b>🏁 Tetulia! Teknaf→Tetulia complete!</b><small>Bonus +{0} + ৳500 + special ৳1000!</small>',
-  fin_leg: '<b>🏁 Reached {0}!</b><small>Bonus +{1} · New route: {2}</small>',
+  fin_all: '<b>🏁 Rangpur Division complete!</b><small>Bonus +{0} + ৳500 + special ৳1000!</small>',
+  fin_leg: '<b>🏁 Reached {0}!</b><small>📍 {0} → {2} · Bonus +{1}</small>',
   lock_first: '🔒 Finish {0} first',
   sel_map: '📍 {0} selected! Click again to start the ride',
   dest_lock: '🔒 {0} (Finish previous first)',
@@ -3139,7 +3136,7 @@ bn: {
   bridge_hint: '🌉 ব্রিজ! সাবধানে',
   rep_full: '🔧 গ্যারেজে ৳১০০ দিয়ে বাইক মেরামত হলো',
   rep_low: '🔧 জরুরি মেরামত! বাইক ৩৫%',
-  leg_go: '<b>{0} যাত্রা!</b><small>{1} মিটার · আসল পথ {2}</small>',
+  leg_go: '<b>🇧🇩 {0}-এ ঢুকছ!</b><small>রংপুর বিভাগ · {1} মিটার · 📦 {3}</small>',
   leg_keep: '<b>{0} যাত্রা!</b><small>আগের স্কোর {1} নিয়ে চলছো · {2}মি</small>',
   crash_dead: '💥 বাইক ভেঙে গেছে!',
   crash_hit: '💥 ধাক্কা! বাইক {0}% ঠিক আছে',
@@ -3164,8 +3161,8 @@ bn: {
   phase: '{0} {1} হয়ে গেছে',
   w_cloud: '☁️ মেঘলা আকাশ', w_rain: '🌧️ বৃষ্টি! ভেজা রাস্তা, সাবধানে', w_heavy: '⛈️ মুষলধারে বৃষ্টি! খুব পিচ্ছিল!', w_fog: '🌫️ কুয়াশা! সামনে দেখা কঠিন', w_clear: '☀️ রোদ উঠেছে!',
   ev_short: '⚡ শর্টকাট পেলে! চুম্বক চালু', ev_happy: '📞 কাস্টমার খুশি! +50', ev_block: '🚧 সামনে রাস্তা বন্ধ! সাবধান', ev_fest: '🎉 উৎসব ছাড়! দ্বিগুণ স্কোর',
-  fin_all: '<b>🏁 তেতুলিয়া! টেকনাফ→তেতুলিয়া সম্পূর্ণ!</b><small>বোনাস +{0} + ৳500 + বিশেষ ৳1000!</small>',
-  fin_leg: '<b>🏁 {0} পৌঁছে গেছ!</b><small>বোনাস +{1} · নতুন রুট: {2}</small>',
+  fin_all: '<b>🏁 রংপুর বিভাগ সম্পূর্ণ!</b><small>বোনাস +{0} + ৳500 + বিশেষ ৳1000!</small>',
+  fin_leg: '<b>🏁 {0} পৌঁছে গেছ!</b><small>📍 {0} → {2} · বোনাস +{1}</small>',
   lock_first: '🔒 আগে {0} শেষ করো',
   sel_map: '📍 {0} সিলেক্ট! আবার ক্লিক করলে দৌড় শুরু হবে',
   dest_lock: '🔒 {0} (আগেরটা শেষ করো)',
@@ -3183,17 +3180,16 @@ var BIKE_BN = ['হোন্ডা ড্রিম', 'যামাহা এফ�
 var TAG_EN = ['All-rounder', 'Fuel saver', 'More speed', 'Easy turning', 'Strong body', 'Racing bike'];
 var TAG_BN = ['সবদিক ঠিকঠাক', 'তেল সাশ্রয়ী', 'বেশি গতি', 'সহজে মোড় নেয়', 'শক্ত বডি', 'রেসিং বাইক'];
 var THEME_TX = { sea: { en: 'Seaside', bn: 'সাগর পাড়' }, port: { en: 'Hills+Port', bn: 'পাহাড়+বন্দর' }, village: { en: 'Village', bn: 'গ্রাম' }, city: { en: 'City', bn: 'শহর' }, town: { en: 'Town', bn: 'মফস্বল' }, tea: { en: 'Tea Garden', bn: 'চা-বাগান' }, pond: { en: 'Ponds+Village', bn: 'পুকুর+গ্রাম' } };
-var REAL_EN = ['0 km', '120 km', '80 km', '230 km', '350 km', '450 km', '650 km', '850 km', '1,000 km'];
+var REAL_EN = ['0 km', '65 km', '90 km', '105 km', '60 km', '45 km', '50 km', '75 km'];
 var LANDMARK_TX = [
-  { en: '🌊 Teknaf Beach', bn: '🌊 টেকনাফ সৈকত' },
-  { en: '🛶 Chayani Ponds', bn: '🛶 চায়নীর পুকুর' },
-  { en: '🐚 Cox’s Bazar Sea', bn: '🐚 কক্সবাজার সমুদ্র' },
-  { en: '⚓ Chattogram Port', bn: '⚓ চট্টগ্রাম বন্দর' },
-  { en: '⛩️ Shalban Bihar', bn: '⛩️ শালবন বিহার' },
-  { en: '🏛️ Ahsan Manzil', bn: '🏛️ আহসান মঞ্জিল' },
-  { en: '🍯 Bogura Doi', bn: '🍯 বগুড়ার দই' },
   { en: '🎓 Carmichael College', bn: '🎓 কারমাইকেল কলেজ' },
-  { en: '🏔️ Kanchenjunga View', bn: '🏔️ কাঞ্চনজঙ্ঘা ভিউ' }
+  { en: '⛩️ Kantajew Temple', bn: '⛩️ কান্তজিউ মন্দির' },
+  { en: '🌾 Paddy Field', bn: '🌾 ধানের ক্ষেত' },
+  { en: '🍃 Tea Garden', bn: '🍃 চা-বাগান' },
+  { en: '🚂 Saidpur Railway', bn: '🚂 সৈয়দপুর রেলওয়ে' },
+  { en: '🛤️ Teesta Barrage', bn: '🛤️ তিস্তা ব্যারেজ' },
+  { en: '🌉 Dharla Bridge', bn: '🌉 ধরলা ব্রিজ' },
+  { en: '⛴️ Balashi Ferry Ghat', bn: '⛴️ বালাসী ফেরিঘাট' }
 ];
 var SIGNS_TX = [
   ['Tea Stall', 'চা স্টল'], ['Haribhanga Mango', 'হাঁড়িভাঙ্গা আম'], ['Village Market', 'গ্রাম্য বাজার'],
@@ -3580,23 +3576,32 @@ function diffK() { try { var L = (typeof leg === 'function' ? leg().len : 5000) 
 var GRAV = 36, JUMP_V = 12.5; // jump height ~2.17m: mud/goat/bull/rickshaw par, bus/truck dodge
 var LOCS = [[0, 'Rangpur Town', 'রংপুর শহর'], [350, 'Modern More', 'মডার্ন মোড়'], [900, 'Pairaband', 'পায়রাবন্দ'],
             [1600, 'Taraganj', 'তারাগঞ্জ'], [2500, 'Badarganj', 'বদরগঞ্জ'], [3600, 'Mithapukur', 'মিঠাপুকুর'], [5000, 'Kaunia', 'কাউনিয়া']];
-/* ---------- Teknaf → Tetulia route (DLC legs) ---------- */
+/* ---------- Rangpur Division route (proti zilla ~4 min) ---------- */
 var LEGS = [
-  { bn: 'টেকনাফ', en: 'Teknaf', len: 4500, theme: 'sea', real: '০ কি.মি.' },
-  { bn: 'চায়নী (নোয়াখালী)', en: 'Chayani (Noakhali)', len: 7000, theme: 'pond', real: '১২০ কি.মি.' },
-  { bn: 'কক্সবাজার', en: "Cox's Bazar", len: 5200, theme: 'sea', real: '৮০ কি.মি.' },
-  { bn: 'চট্টগ্রাম', en: 'Chattogram', len: 6000, theme: 'port', real: '২৩০ কি.মি.' },
-  { bn: 'কুমিল্লা', en: 'Cumilla', len: 5500, theme: 'village', real: '৩৫০ কি.মি.' },
-  { bn: 'ঢাকা', en: 'Dhaka', len: 7200, theme: 'city', real: '৪৫০ কি.মি.' },
-  { bn: 'বগুড়া', en: 'Bogura', len: 6200, theme: 'village', real: '৬৫০ কি.মি.' },
-  { bn: 'রংপুর', en: 'Rangpur', len: 6500, theme: 'town', real: '৮৫০ কি.মি.' },
-  { bn: 'তেতুলিয়া', en: 'Tetulia', len: 7500, theme: 'tea', real: '১,০০০ কি.মি.' }
+  { bn: 'রংপুর', en: 'Rangpur', len: 5800, theme: 'town', real: '০ কি.মি.', de: 'Jahaj Company Mor', db: 'জাহাজ কোম্পানি মোড়' },
+  { bn: 'দিনাজপুর', en: 'Dinajpur', len: 5800, theme: 'town', real: '৬৫ কি.মি.', de: 'Dinajpur Sadar', db: 'দিনাজপুর সদর' },
+  { bn: 'ঠাকুরগাঁও', en: 'Thakurgaon', len: 5800, theme: 'village', real: '৯০ কি.মি.', de: 'Ranisankail Road', db: 'রানীশংকৈল রোড' },
+  { bn: 'পঞ্চগড়', en: 'Panchagarh', len: 5800, theme: 'tea', real: '১০৫ কি.মি.', de: 'Banglabandha Road', db: 'বাংলাবান্ধা রোড' },
+  { bn: 'নীলফামারী', en: 'Nilphamari', len: 5800, theme: 'town', real: '৬০ কি.মি.', de: 'Saidpur', db: 'সৈয়দপুর' },
+  { bn: 'লালমনিরহাট', en: 'Lalmonirhat', len: 5800, theme: 'village', real: '৪৫ কি.মি.', de: 'Burimari Road', db: 'বুড়িমারী রোড' },
+  { bn: 'কুড়িগ্রাম', en: 'Kurigram', len: 5800, theme: 'village', real: '৫০ কি.মি.', de: 'Dharla Bridge', db: 'ধরলা ব্রিজ' },
+  { bn: 'গাইবান্ধা', en: 'Gaibandha', len: 5800, theme: 'village', real: '৭৫ কি.মি.', de: 'Balashi Ghat Road', db: 'বালাসী ঘাট রোড' }
+];
+// baki division — coming soon (route map-e lock row)
+var LOCKED_DIVS = [
+  { en: 'Dhaka', bn: 'ঢাকা' }, { en: 'Chattogram', bn: 'চট্টগ্রাম' },
+  { en: 'Khulna', bn: 'খুলনা' }, { en: 'Rajshahi', bn: 'রাজশাহী' },
+  { en: 'Sylhet', bn: 'সিলেট' }, { en: 'Barishal', bn: 'বরিশাল' },
+  { en: 'Mymensingh', bn: 'ময়মনসিংহ' }
 ];
 var selLeg = 0, unlockLeg = 0, arrived = false, justFinished = -1, carryScore = 0;
 try {
   selLeg = +localStorage.getItem('rrLeg') || 0;
   unlockLeg = +localStorage.getItem('rrUnlock') || 0;
+  selLeg = Math.min(selLeg, LEGS.length - 1);
+  unlockLeg = Math.min(unlockLeg, LEGS.length - 1);
 } catch (e) {}
+function dropName(l) { return lang === 'bn' ? (l.db || l.de) : (l.de || l.db); }
 function confettiBurst() {
   for (var ci = 0; ci < 5; ci++) sparks(player.position.x + rnd(-2, 2), py + rnd(1, 3), rnd(-3, 1), 14);
   pop('🎉', player.position.x, py + 3, 0, '#ffe066');
@@ -4010,7 +4015,7 @@ function startGame(keepScore) {
   try { logEv('run_start', { leg: selLeg, ev: eventMode || 'none' }); } catch (e) {}
   if (emergency) toast(elHint, emergency, 2800);
   if (keepScore && score > 0) toast(elLoc, F('leg_keep', legName(leg()), Math.floor(score), leg().len), 3200);
-  else toast(elLoc, F('leg_go', legName(leg()), leg().len, legReal(leg())), 3200);
+  else toast(elLoc, F('leg_go', legName(leg()), leg().len, legReal(leg()), dropName(leg())), 3200);
   if (eventMode) toast(elHint, evName(eventMode) + ' — ' + evDesc(eventMode), 2500);
 }
 function pauseGame() { if (state === 'play') { state = 'pause'; document.body.dataset.ui = 'pause'; $('pause').classList.remove('hidden'); } }
@@ -4254,7 +4259,7 @@ function shareScore() {
     g.fillStyle = '#ffc83d'; g.font = '700 30px Arial, sans-serif';
     g.fillText(bn ? 'আমাকে হারাতে পারো?' : 'Can you beat me?', 256, 505);
     g.fillStyle = '#cfe6cf'; g.font = '400 24px Arial, sans-serif';
-    g.fillText('Teknaf → Tetulia', 256, 555);
+    g.fillText('Rangpur Division', 256, 555);
     // watermark
     g.fillStyle = 'rgba(0,0,0,0.45)';
     g.beginPath();
@@ -5180,11 +5185,16 @@ function renderDest() {
       var g = LEGS[i], lk = i > unlockLeg, dn = i < unlockLeg || (i === LEGS.length - 1 && unlockLeg >= LEGS.length);
       var cls = 'legRow' + (i === selLeg ? ' sel' : '') + (lk ? ' lock' : ' done');
       var st = lk ? '🔒' : (i === selLeg ? T('running') : '✅');
-      html += '<button class="' + cls + '" data-leg="' + i + '"><span>' + (THEME_ICON[g.theme] || '📍') + ' ' + legName(g) + ' <small style="color:var(--panel-soft)">' + themeName(g.theme) + '</small></span>' +
+      html += '<button class="' + cls + '" data-leg="' + i + '"><span>' + (THEME_ICON[g.theme] || '📍') + ' ' + legName(g) + ' <small style="color:var(--panel-soft)">' + themeName(g.theme) + ' · 📦 ' + dropName(g) + '</small></span>' +
         '<span class="km">' + legReal(g) + ' · ~' + legTime(g.len) + '</span><span class="st">' + st + '</span></button>';
     }
+    for (var li = 0; li < LOCKED_DIVS.length; li++) {
+      var ld = LOCKED_DIVS[li];
+      var ldn = lang === 'bn' ? ld.bn : ld.en;
+      html += '<div class="legRow lock"><span>🗺️ ' + ldn + ' <small style="color:var(--gold)">Coming Soon</small></span><span class="st">🔒</span></div>';
+    }
     rm.innerHTML = html;
-    Array.prototype.forEach.call(rm.querySelectorAll('.legRow'), function (b) {
+    Array.prototype.forEach.call(rm.querySelectorAll('.legRow[data-leg]'), function (b) {
       b.addEventListener('click', function (e) {
         e.stopPropagation();
         var idx = +b.getAttribute('data-leg');
@@ -5227,7 +5237,7 @@ function achList() {
     nm('clean', '💥', 'Crash-free run', 'ক্র্যাশ ছাড়া রান', pendingClean),
     nm('b5k', '🏆', 'Best 5000', 'সেরা ৫০০০', best >= 5000),
     nm('st7', '🔥', '7-day streak', '৭ দিনের স্ট্রিক', maxStreak() >= 7),
-    nm('tet', '🗺️', 'Reach Tetulia', 'তেতুলিয়া যাও', unlockLeg >= LEGS.length - 1),
+    nm('tet', '🗺️', 'Reach Gaibandha', 'গাইবান্ধা যাও', unlockLeg >= LEGS.length - 1),
     nm('lv5', '🏍️', 'Level 5', 'লেভেল ৫', riderLevel >= 5)
   ];
 }
