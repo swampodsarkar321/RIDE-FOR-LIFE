@@ -560,6 +560,11 @@
   <button class="btn" id="photoZoomIn" style="font-size:20px;">➕</button>
   <button class="btn" id="photoExit" style="font-size:20px;background:#444;box-shadow:0 5px 0 #222;">✕</button>
 </div>
+<div id="photoShare" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 84px);z-index:30;gap:10px;">
+  <button class="btn" id="photoSave" style="font-size:18px;background:#2d9c42;box-shadow:0 5px 0 #14521f;">💾 Save</button>
+  <button class="btn" id="photoShareBtn" style="font-size:18px;background:#3d6fa5;box-shadow:0 5px 0 #274a70;">📤 Share</button>
+  <button class="btn" id="photoWA" style="font-size:18px;background:#1faa53;box-shadow:0 5px 0 #0d6b32;">WhatsApp</button>
+</div>
 <div class="tag" id="photoHint" style="display:none;position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 14px);z-index:30;background:rgba(0,0,0,.55);padding:4px 16px;border-radius:999px;">Drag to rotate camera</div>
 
 <div class="overlay hidden" id="tutOverlay">
@@ -3719,19 +3724,58 @@ function photoMode(on) {
     var br = $('brakeBtn'); if (br) br.style.display = on ? 'none' : '';
     $('pause').classList.add('hidden');
     $('photoBar').style.display = on ? 'flex' : 'none';
+    $('photoShare').style.display = 'none';
     $('photoHint').style.display = on ? 'block' : 'none';
-    if (on) { photoYaw = 0; photoPitch = 0; photoZoom = 1; applyPhotoCam(); try { logEv('photo', {}); } catch (e) {} }
+    if (on) { photoYaw = 0; photoPitch = 0; photoZoom = 1; applyPhotoCam(); }
     else applyPhotoCam();
   } catch (e) {}
 }
+var lastPhotoBlob = null, lastPhotoURL = null;
 function capturePhoto() {
   try {
-    renderer.render(scene, camera); // same-task render → toDataURL safe
-    var url = renderer.domElement.toDataURL('image/png');
-    var a = document.createElement('a'); a.href = url; a.download = 'ride-for-life.png';
-    document.body.appendChild(a); a.click();
-    setTimeout(function () { try { document.body.removeChild(a); } catch (e) {} }, 800);
+    renderer.render(scene, camera); // same-task render → capture safe
+    if (renderer.domElement.toBlob) {
+      renderer.domElement.toBlob(function (blob) {
+        if (!blob) return;
+        lastPhotoBlob = blob;
+        if (lastPhotoURL) try { URL.revokeObjectURL(lastPhotoURL); } catch (e) {}
+        lastPhotoURL = URL.createObjectURL(blob);
+        $('photoShare').style.display = 'flex';
+        photoNote(lang === 'bn' ? '📸 তোলা! Save / Share করো' : '📸 Captured! Save / Share');
+        try { logEv('photo', {}); } catch (e2) {}
+      }, 'image/png');
+    }
   } catch (e) {}
+}
+function photoNote(t) {
+  try {
+    var h = $('photoHint'); h.textContent = t; h.style.display = 'block';
+    clearTimeout(h._t); h._t = setTimeout(function () { h.textContent = lang === 'bn' ? 'ঘুরাতে drag করো' : 'Drag to rotate camera'; }, 2200);
+  } catch (e) {}
+}
+function savePhoto() {
+  if (!lastPhotoURL) return;
+  var a = document.createElement('a'); a.href = lastPhotoURL; a.download = 'ride-for-life.png';
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { try { document.body.removeChild(a); } catch (e) {} }, 800);
+  photoNote(lang === 'bn' ? '💾 Save হোইছে!' : '💾 Saved!');
+}
+function sharePhotoWA() { // WhatsApp-e photo + text
+  savePhoto();
+  try { window.open('https://wa.me/?text=' + encodeURIComponent(lang === 'bn' ? 'Ride For Life 🏍️ দেখো!' : 'Check out Ride For Life 🏍️'), '_blank'); } catch (e) {}
+}
+function sharePhotoSheet() { // system sheet: Messenger/WhatsApp/List — phone-e best
+  try {
+    if (lastPhotoBlob) {
+      var f = new File([lastPhotoBlob], 'ride-for-life.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) {
+        navigator.share({ files: [f], title: 'Ride For Life' }).catch(function () {});
+        return;
+      }
+    }
+  } catch (e) {}
+  savePhoto(); // PC/fallback: download
+  photoNote(lang === 'bn' ? '💾 Save হোইছে (share phone-e)' : '💾 Saved (share on phone)');
 }
 /* ---------- share card: score card baniye WhatsApp/FB-e share ---------- */
 function shareScore() {
@@ -4907,6 +4951,9 @@ function boot() {
   $('photoZoomOut').addEventListener('click', function () { photoZoom = Math.min(1.5, photoZoom + 0.1); applyPhotoCam(); });
   $('shareBtn').addEventListener('click', function () { shareScore(); });  $('photoExit').addEventListener('click', function () { photoMode(false); if (state === 'pause') $('pause').classList.remove('hidden'); });
   $('photoCap').addEventListener('click', function () { capturePhoto(); });
+  $('photoSave').addEventListener('click', function () { savePhoto(); });
+  $('photoShareBtn').addEventListener('click', function () { sharePhotoSheet(); });
+  $('photoWA').addEventListener('click', function () { sharePhotoWA(); });
   (function () { // photo drag-orbit (sudhu photo mode-e)
     var cv = renderer.domElement, lx = 0, ly = 0, on = false;
     function pos(e) { var t = e.touches && e.touches[0] ? e.touches[0] : e; return [t.clientX, t.clientY]; }
