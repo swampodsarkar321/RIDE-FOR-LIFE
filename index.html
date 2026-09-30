@@ -450,6 +450,7 @@
       </div>
       <button class="btn" id="menuSettingsBtn" style="background:#2d7a4f;box-shadow:0 5px 0 #14521f;font-size:22px;margin-top:10px;" data-i18n="menu_settings">⚙️ Settings</button>
       <button class="btn" id="menuHowBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;font-size:22px;margin-top:10px;">❓ How to</button>
+      <button class="btn" id="installBtn" style="display:none;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;font-size:22px;margin-top:10px;">📲 Install App</button>
       <button class="btn" id="playBtn" data-i18n="play">▶ Start Ride</button>
       <div class="best" id="menuBest"></div>
     </div>
@@ -477,6 +478,15 @@
         <div id="bikeDots">●○○○○○</div>
         <div id="bikeStats"></div>
         <button class="btn" id="bikeBuy" style="display:none;font-size:18px;padding:6px 26px 8px;margin-top:6px;">BUY</button>
+      </div>
+      <div class="sec">🎨 Customize</div>
+      <div class="secCard">
+        <div style="font-size:14px;font-weight:800;margin-bottom:4px;">🪖 Helmet</div>
+        <div id="custHelmet" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div style="font-size:14px;font-weight:800;margin:8px 0 4px;">💡 Light</div>
+        <div id="custLight" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div style="font-size:14px;font-weight:800;margin:8px 0 4px;">🏍️ Sticker</div>
+        <div id="custSticker" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       </div>
       <div class="sec" data-i18n="sec_garage">🔧 Garage</div>
       <div class="secCard"><div id="garage"></div></div>
@@ -2603,7 +2613,7 @@ function cloudLoad() { // boot-e cloud theke notun data anle apply
         if (r.owned && r.owned.length) { ownedBikes = r.owned; try { localStorage.setItem('rrOwned', JSON.stringify(r.owned)); } catch (e) {} }
         if (r.board && r.board.length) { try { localStorage.setItem('rrBoard', JSON.stringify(r.board.slice(0, 5))); } catch (e) {} }
         cloudSave();
-        applyLang(); applyBikeColor(); renderGarage(); renderBoard(); renderDest();
+        applyLang(); applyBikeColor(); applyCustomization(); renderGarage(); renderBoard(); renderDest(); renderCustomize();
       } catch (e) {}
     });
   } catch (e) {}
@@ -4693,6 +4703,67 @@ function frame(now) {
 
 /* ---------- garage + bike color ---------- */
 var BIKE_COLS = [0x0f0f0f, 0x0d8a4f, 0xff8c1a, 0x2a9df4, 0x9b5de5, 0xdd2222];
+/* ---------- PWA install prompt ---------- */
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  try { var ib = $('installBtn'); if (ib) ib.style.display = 'inline-block'; } catch (err) {}
+});
+window.addEventListener('appinstalled', function () {
+  deferredPrompt = null;
+  try { var ib = $('installBtn'); if (ib) ib.style.display = 'none'; } catch (err) {}
+});
+function promptInstall() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function () { deferredPrompt = null; }).catch(function () { deferredPrompt = null; });
+}
+
+/* ---------- bike customization ---------- */
+var HELMET_COLS = [0x00b341, 0xdd2222, 0x2a9df4, 0xffc83d, 0x9b5de5, 0xf5f5f5];
+var LIGHT_COLS = [0xffffcc, 0xff6b6b, 0x6bff6b, 0x6bb8ff, 0xff6bff, 0xffffff];
+var STICKER_EMOJIS = ['🏍️', '⚡', '🔥', '💀', '👑', '🎯'];
+var selHelmet = 0, selLight = 0, selSticker = 0;
+try { selHelmet = +localStorage.getItem('rrHelmet') || 0; } catch (e) {}
+try { selLight = +localStorage.getItem('rrLight') || 0; } catch (e) {}
+try { selSticker = +localStorage.getItem('rrSticker') || 0; } catch (e) {}
+function applyCustomization() {
+  try {
+    helmetM.color.setHex(HELMET_COLS[selHelmet % HELMET_COLS.length]);
+    boxGreenM.color.setHex([0x0d8a4f, 0xdd2222, 0x2a9df4, 0xffc83d, 0x9b5de5, 0xf5f5f5][selSticker % 6]);
+    var hlMesh = bikeG.children.find(function (m) { return m.isMesh && Math.abs(m.position.x) < 0.01 && Math.abs(m.position.y - 1.0) < 0.01 && Math.abs(m.position.z + 1.28) < 0.01; });
+    if (hlMesh && hlMesh.material && hlMesh.material.color) hlMesh.material.color.setHex(LIGHT_COLS[selLight % LIGHT_COLS.length]);
+    var tlMesh = bikeG.children.find(function (m) { return m.isMesh && m.material === tailMat; });
+    if (tlMesh) tailMat.color.setHex(braking ? 0xff2a2a : LIGHT_COLS[selLight % LIGHT_COLS.length]);
+  } catch (e) {}
+}
+function renderCustomize() {
+  try {
+    var bn = lang === 'bn';
+    var h = $('custHelmet'), l = $('custLight'), s = $('custSticker');
+    if (h) h.innerHTML = HELMET_COLS.map(function (c, i) {
+      return '<button class="divBtn' + (i === selHelmet ? ' sel' : '') + '" data-cust="h' + i + '" style="background:#' + c.toString(16).padStart(6, '0') + ';border:2px solid ' + (i === selHelmet ? '#ffc83d' : 'rgba(255,255,255,.2)') + ';"></button>';
+    }).join('');
+    if (l) l.innerHTML = LIGHT_COLS.map(function (c, i) {
+      return '<button class="divBtn' + (i === selLight ? ' sel' : '') + '" data-cust="l' + i + '" style="background:#' + c.toString(16).padStart(6, '0') + ';border:2px solid ' + (i === selLight ? '#ffc83d' : 'rgba(255,255,255,.2)') + ';"></button>';
+    }).join('');
+    if (s) s.innerHTML = STICKER_EMOJIS.map(function (e2, i) {
+      return '<button class="divBtn' + (i === selSticker ? ' sel' : '') + '" data-cust="s' + i + '" style="font-size:20px;">' + e2 + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-cust]'), function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var k = b.getAttribute('data-cust');
+        if (k.charAt(0) === 'h') { selHelmet = +k.slice(1); try { localStorage.setItem('rrHelmet', String(selHelmet)); } catch (e2) {} }
+        else if (k.charAt(0) === 'l') { selLight = +k.slice(1); try { localStorage.setItem('rrLight', String(selLight)); } catch (e2) {} }
+        else { selSticker = +k.slice(1); try { localStorage.setItem('rrSticker', String(selSticker)); } catch (e2) {} }
+        applyCustomization(); renderCustomize(); applyBikeColor();
+        try { sfx.move(); } catch (e2) {}
+      });
+    });
+  } catch (e) {}
+}
 function applyBikeColor() {
   try {
     var c = BIKE_COLS[selBike % BIKE_COLS.length];
@@ -5144,6 +5215,7 @@ function boot() {
     if (tutPending !== null && tutPending !== undefined) { var k = tutPending; tutPending = null; startGame(k); }
   });
   $('menuHowBtn').addEventListener('click', function (e) { e.stopPropagation(); showTut(null); });
+  $('installBtn').addEventListener('click', function (e) { e.stopPropagation(); promptInstall(); });
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
   $('profRow').addEventListener('click', function () { renderProfile(); });
   $('invBtn').addEventListener('click', function () {
