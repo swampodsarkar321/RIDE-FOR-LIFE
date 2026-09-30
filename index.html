@@ -1467,6 +1467,9 @@ function decorate(seg) {
         var cont = box(2.5, 2.5, 6, pick([0xc23b3b, 0x2d7a4f, 0x3d6fa5]), side * (14 + rnd(0, 4)), 1.25, rnd(-14, 14), d);
         box(2.6, 0.1, 6.1, 0x888888, side * (14 + rnd(0, 4)), 2.55, rnd(-14, 14), d);
       }
+    } else if (th === 'pond') { // chayni: pukur / dhan being
+      if (Math.random() < 0.6) makePond(side * (8.5 + rnd(0, 2)), rnd(-14, 14), d);
+      else makePaddyField(side, 0, d);
     } else makePaddyField(side, 0, d);
     [-10, 10].forEach(function (slot) {
       var z = slot + rnd(-2, 2);
@@ -1488,8 +1491,8 @@ function decorate(seg) {
         else makeSchool(side * 10, z, d);
         return;
       }
-      if ((th === 'village' || th === 'town' || th === 'city') && !hutDone && slot === 10 && hutCooldown <= 0 && Math.random() < 0.35) {
-        makeHut(side * (8.5 + rnd(0, 1)), z, d, Math.random() < 0.4);
+      if ((th === 'village' || th === 'town' || th === 'city' || th === 'pond') && !hutDone && slot === 10 && hutCooldown <= 0 && Math.random() < 0.35) {
+        makeHut(side * (8.5 + rnd(0, 1)), z, d, th === 'pond' ? Math.random() < 0.7 : Math.random() < 0.4); // chayni-te probashi paka bari besi
         var sign = new THREE.Mesh(PG(4.6, 1.1), pick(signMats));
         sign.position.set(side * (7.0), 2.4, z + 1.4);
         sign.rotation.y = 0; d.add(sign); // traffic-er dike mukh
@@ -1504,6 +1507,11 @@ function decorate(seg) {
       if (th === 'tea') {
         if (r < 0.55) { makeTeaBush(side * (9 + rnd(0, 3)), z + rnd(-3, 3), d); return; }
         else if (r < 0.7) { makeCoconutPalm(side * (8.5 + rnd(0, 2)), z + rnd(-2, 2), d); return; }
+      }
+      if (th === 'pond') { // chayni scatter: narkel, aam, majhe pukur
+        if (r < 0.4) { makeCoconutPalm(side * (8.5 + rnd(0, 2)), z + rnd(-2, 2), d); return; }
+        else if (r < 0.55) { makePond(side * (9 + rnd(0, 2)), z + rnd(-3, 3), d); return; }
+        else if (r < 0.7) { makeMangoTree(side * (9 + rnd(0, 3)), z + rnd(-3, 3), d); return; }
       }
       if (th === 'port') {
         if (r < 0.45) { for (var k = 0; k < 2; k++) makeBamboo(side * (8 + rnd(0, 3)), z + rnd(-3, 3), d); return; }
@@ -2181,54 +2189,71 @@ function makeUmbrella(x, z, parent, c) {
   var um = new THREE.Mesh(CG(1.4, 0.7, 8), M(c || 0xc23b3b)); um.position.set(x, 2.2, z); um.castShadow = true; parent.add(um);
   box(1.6, 0.06, 0.9, M(0xd8c06a, true), x, 0.05, z + 0.8, parent);
 }
+function makePond(x, z, parent) { // chayani pukur: pani + ghat + kola gach
+  var w = 5 + Math.random() * 3, l = 3.5 + Math.random() * 2;
+  var p = new THREE.Mesh(new THREE.PlaneGeometry(w, l), waterMat);
+  p.rotation.x = -Math.PI / 2; p.position.set(x, 0.02, z); parent.add(p);
+  box(w + 0.6, 0.12, 0.3, 0x8a6a3f, x, 0.06, z + l / 2, parent); // ghat
+  box(0.3, 0.12, l + 0.6, 0x8a6a3f, x + w / 2, 0.06, z, parent);
+  makeCoconutPalm(x - w / 2 - 0.8, z + rnd(-1, 1), parent);
+  if (Math.random() < 0.5) makeCoconutPalm(x + w / 2 + 0.8, z + rnd(-1, 1), parent);
+}
 function makeLegLandmark(idx, side, z, parent) {
   var x = side * (9.5 + rnd(0, 3));
   if (idx === 0) { // Teknaf: samudra chata + jal
     makeUmbrella(x, z, parent, 0x2d7a4f);
     box(2.4, 0.35, 0.9, 0x6b4a2f, x + 1.6, 0.18, z + 1.2, parent);
     legBoard(100 + idx, LANDMARK_TX[0][lang], '#2d7a4f', x - side * 1.8, 1.9, z, side, parent);
-  } else if (idx === 1) { // Cox's Bazar: chatar sari + jhinuk
+  } else if (idx === 1) { // Chayani: pukur + probashi bari + nouka
+    makePond(x, z, parent);
+    box(3.4, 2.4, 2.8, 0xf0ead8, x + side * 4.5, 1.2, z - 1, parent); // probashi paka bari
+    box(3.6, 0.3, 3.0, 0xc23b3b, x + side * 4.5, 2.55, z - 1, parent);
+    box(0.9, 1.6, 0.12, 0x6b4a2f, x + side * 4.5, 0.8, z + 0.5, parent);
+    var boat = new THREE.Group(); boat.position.set(x - side * 1.5, 0.05, z + 0.5); parent.add(boat);
+    box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, boat);
+    legBoard(100 + idx, LANDMARK_TX[1][lang], '#2d7a4f', x - side * 1.8, 1.9, z + 2, side, parent);
+  } else if (idx === 2) { // Cox's Bazar: chatar sari + jhinuk
     for (var i = -1; i <= 1; i++) makeUmbrella(x + i * 2.2, z + i * 1.2, parent, [0xc23b3b, 0xffc83d, 0x3d6fa5][i + 1]);
-    legBoard(100 + idx, LANDMARK_TX[1][lang], '#3d6fa5', x - side * 1.8, 1.9, z, side, parent);
-  } else if (idx === 2) { // Chattogram: bondor crane + container
+    legBoard(100 + idx, LANDMARK_TX[2][lang], '#3d6fa5', x - side * 1.8, 1.9, z, side, parent);
+  } else if (idx === 3) { // Chattogram: bondor crane + container
     box(0.4, 6, 0.4, 0xdd2222, x - 1.5, 3, z, parent);
     box(0.4, 6, 0.4, 0xdd2222, x + 1.5, 3, z, parent);
     box(4.6, 0.5, 0.7, 0xdd2222, x, 6, z, parent);
     box(0.07, 2.0, 0.07, 0x333333, x + 1, 4.9, z, parent);
     box(1.7, 1.2, 1.2, pick([0x2d7a4f, 0x3d6fa5, 0xff8c1a]), x + 1, 3.7, z, parent);
-    legBoard(100 + idx, LANDMARK_TX[2][lang], '#c23b3b', x - side * 2.6, 1.9, z, side, parent);
-  } else if (idx === 3) { // Cumilla: Shalban Bihar stupa
+    legBoard(100 + idx, LANDMARK_TX[3][lang], '#c23b3b', x - side * 2.6, 1.9, z, side, parent);
+  } else if (idx === 4) { // Cumilla: Shalban Bihar stupa
     box(3.0, 0.6, 3.0, 0x9a5a3a, x, 0.3, z, parent);
     box(2.2, 0.6, 2.2, 0xa8663f, x, 0.9, z, parent);
     ell(1.0, 0.8, 1.0, 0xb0703f, x, 1.6, z, parent);
     cyl(0.08, 0.9, 0.08, 0xc9a86a, x, 2.4, z, parent);
-    legBoard(100 + idx, LANDMARK_TX[3][lang], '#8a5a2e', x - side * 2.4, 1.9, z, side, parent);
-  } else if (idx === 4) { // Dhaka: Ahsan Manzil (golapi prasad)
+    legBoard(100 + idx, LANDMARK_TX[4][lang], '#8a5a2e', x - side * 2.4, 1.9, z, side, parent);
+  } else if (idx === 5) { // Dhaka: Ahsan Manzil (golapi prasad)
     box(3.6, 2.2, 2.4, 0xe89ab0, x, 1.1, z, parent);
     box(3.8, 0.3, 2.6, 0xffffff, x, 2.35, z, parent);
     ell(0.7, 0.6, 0.7, 0xffffff, x, 2.9, z, parent);
     ell(0.4, 0.35, 0.4, 0xffffff, x - 1.3, 2.6, z, parent);
     ell(0.4, 0.35, 0.4, 0xffffff, x + 1.3, 2.6, z, parent);
     box(0.8, 1.2, 0.1, 0x5a2e0e, x - side * 0 + 0, 0.6, z + (side > 0 ? -1.25 : 1.25), parent);
-    legBoard(100 + idx, LANDMARK_TX[4][lang], '#c23b3b', x - side * 2.6, 1.9, z + 2, side, parent);
-  } else if (idx === 5) { // Bogura: doier hari
+    legBoard(100 + idx, LANDMARK_TX[5][lang], '#c23b3b', x - side * 2.6, 1.9, z + 2, side, parent);
+  } else if (idx === 6) { // Bogura: doier hari
     box(2.4, 0.12, 1.0, 0x8a6a3f, x, 0.75, z, parent);
     for (var p = -1; p <= 1; p++) {
       cyl(0.42, 0.65, 0.42, 0xb5651d, x + p * 0.8, 1.15, z, parent);
       cyl(0.36, 0.08, 0.36, 0xfff6e8, x + p * 0.8, 1.5, z, parent); // doi
     }
-    legBoard(100 + idx, LANDMARK_TX[5][lang], '#8a5a2e', x - side * 2.0, 1.9, z, side, parent);
-  } else if (idx === 6) { // Rangpur: Carmichael (sada colonial)
+    legBoard(100 + idx, LANDMARK_TX[6][lang], '#8a5a2e', x - side * 2.0, 1.9, z, side, parent);
+  } else if (idx === 7) { // Rangpur: Carmichael (sada colonial)
     box(4.2, 2.2, 2.2, 0xf0ead8, x, 1.1, z, parent);
     for (var cl = -1.5; cl <= 1.5; cl++) cyl(0.12, 2.0, 0.12, 0xffffff, x + cl, 1.0, z + (side > 0 ? -1.25 : 1.25), parent);
     box(4.4, 0.45, 2.4, 0xc23b3b, x, 2.42, z, parent);
     box(1.0, 1.4, 0.1, 0x6b4a2f, x, 0.7, z + (side > 0 ? -1.15 : 1.15), parent);
-    legBoard(100 + idx, LANDMARK_TX[6][lang], '#2d7a4f', x - side * 2.8, 1.9, z + 2, side, parent);
+    legBoard(100 + idx, LANDMARK_TX[7][lang], '#2d7a4f', x - side * 2.8, 1.9, z + 2, side, parent);
   } else { // Tetulia: Kanchenjunga + cha bagan viewpoint
     var pk = new THREE.Mesh(CG(13, 17, 5), M(0xeef2f8)); pk.position.set(side * 30, 6, z - 12); parent.add(pk);
     var pk2 = new THREE.Mesh(CG(8, 11, 5), M(0xdfe7f2)); pk2.position.set(side * 30 - 10, 3.5, z - 8); parent.add(pk2);
     makeTeaBush(x, z, parent);
-    legBoard(100 + idx, LANDMARK_TX[7][lang], '#3d6fa5', x - side * 2.2, 1.9, z + 2, side, parent);
+    legBoard(100 + idx, LANDMARK_TX[8][lang], '#3d6fa5', x - side * 2.2, 1.9, z + 2, side, parent);
   }
 }
 function addLegGate() { // map surute rasta-jure swagotom gate
@@ -2809,10 +2834,11 @@ var BIKE_EN = ['Black', 'Green', 'Orange', 'Blue', 'Purple', 'Red'];
 var BIKE_BN = ['কালো', 'সবুজ', 'কমলা', 'নীল', 'বেগুনি', 'লাল'];
 var TAG_EN = ['All-rounder', 'Fuel saver', 'More speed', 'Easy turning', 'Strong body', 'Racing bike'];
 var TAG_BN = ['সবদিক ঠিকঠাক', 'তেল সাশ্রয়ী', 'বেশি গতি', 'সহজে মোড় নেয়', 'শক্ত বডি', 'রেসিং বাইক'];
-var THEME_TX = { sea: { en: 'Seaside', bn: 'সাগর পাড়' }, port: { en: 'Hills+Port', bn: 'পাহাড়+বন্দর' }, village: { en: 'Village', bn: 'গ্রাম' }, city: { en: 'City', bn: 'শহর' }, town: { en: 'Town', bn: 'মফস্বল' }, tea: { en: 'Tea Garden', bn: 'চা-বাগান' } };
-var REAL_EN = ['0 km', '80 km', '230 km', '350 km', '450 km', '650 km', '850 km', '1,000 km'];
+var THEME_TX = { sea: { en: 'Seaside', bn: 'সাগর পাড়' }, port: { en: 'Hills+Port', bn: 'পাহাড়+বন্দর' }, village: { en: 'Village', bn: 'গ্রাম' }, city: { en: 'City', bn: 'শহর' }, town: { en: 'Town', bn: 'মফস্বল' }, tea: { en: 'Tea Garden', bn: 'চা-বাগান' }, pond: { en: 'Ponds+Village', bn: 'পুকুর+গ্রাম' } };
+var REAL_EN = ['0 km', '120 km', '80 km', '230 km', '350 km', '450 km', '650 km', '850 km', '1,000 km'];
 var LANDMARK_TX = [
   { en: '🌊 Teknaf Beach', bn: '🌊 টেকনাফ সৈকত' },
+  { en: '🛶 Chayani Ponds', bn: '🛶 চায়নীর পুকুর' },
   { en: '🐚 Cox’s Bazar Sea', bn: '🐚 কক্সবাজার সমুদ্র' },
   { en: '⚓ Chattogram Port', bn: '⚓ চট্টগ্রাম বন্দর' },
   { en: '⛩️ Shalban Bihar', bn: '⛩️ শালবন বিহার' },
@@ -3207,6 +3233,7 @@ var LOCS = [[0, 'Rangpur Town', 'রংপুর শহর'], [350, 'Modern More
 /* ---------- Teknaf → Tetulia route (DLC legs) ---------- */
 var LEGS = [
   { bn: 'টেকনাফ', en: 'Teknaf', len: 4500, theme: 'sea', real: '০ কি.মি.' },
+  { bn: 'চায়নী (নোয়াখালী)', en: 'Chayani (Noakhali)', len: 7000, theme: 'pond', real: '১২০ কি.মি.' },
   { bn: 'কক্সবাজার', en: "Cox's Bazar", len: 5200, theme: 'sea', real: '৮০ কি.মি.' },
   { bn: 'চট্টগ্রাম', en: 'Chattogram', len: 6000, theme: 'port', real: '২৩০ কি.মি.' },
   { bn: 'কুমিল্লা', en: 'Cumilla', len: 5500, theme: 'village', real: '৩৫০ কি.মি.' },
@@ -3316,8 +3343,13 @@ function spawnRow(z) {
     for (var k = 0; k < 6; k++) addPickup('coin', LANE_X[1], 0.55, z + 3 + k * 2);
     return;
   }
-  // chunk: poshu parapar (gram/cha-bagan)
-  if ((th0 === 'village' || th0 === 'tea' || th0 === 'town') && dist > 200 && r < 0.30) {
+  // chayni jolaboddota: brishtite kada rasta
+  if (th0 === 'pond' && (weather === 'rain' || weather === 'heavy') && dist > 200 && r < 0.45) {
+    for (var mi = 0; mi < 3; mi++) if (mi !== safe) addObstacle('mud', mi, z + rnd(-1, 1));
+    return;
+  }
+  // chunk: poshu parapar (gram/cha-bagan/chayni)
+  if ((th0 === 'village' || th0 === 'tea' || th0 === 'town' || th0 === 'pond') && dist > 200 && r < 0.30) {
     for (var gi = 0; gi < 3; gi++) if (gi !== safe) addObstacle('goat', gi, z + rnd(-1, 1));
     if (hints.goat < 2) { hints.goat++; toast(elHint, T('goat_hint'), 2200); }
     for (var ga = 0; ga < 6; ga++) addPickup('coin', LANE_X[safe], 1.0 + 1.5 * Math.sin(Math.PI * ga / 5), z - 3 + ga * 1.3);
@@ -3370,6 +3402,7 @@ function spawnRow(z) {
   else if (town) pool = ['van', 'van', 'bus', 'cng', 'rickshaw', 'nosimon', 'truck', 'pickup'];
   else if (th2 === 'sea') pool = ['van', 'nosimon', 'nosimon', 'pickup', 'bull', 'mud', 'goat'];
   else if (th2 === 'tea') pool = ['van', 'nosimon', 'cart', 'bull', 'mud', 'goat'];
+  else if (th2 === 'pond') pool = ['van', 'cng', 'cng', 'rickshaw', 'nosimon', 'cart', 'bull', 'mud', 'mud', 'goat']; // chayni: CNG besi, borshay kada
   else pool = dist < 200 ? ['van', 'nosimon', 'bull', 'mud', 'goat'] : dist < 600 ? ['van', 'van', 'nosimon', 'cng', 'rickshaw', 'cart', 'truck', 'bull', 'mud'] : ['van', 'bus', 'cng', 'nosimon', 'cart', 'truck', 'pickup', 'bull', 'mud'];
   var blocked = 0, maxBlock = dist > 1200 ? 2 : dist > 400 ? 2 : 1;
   for (var l = 0; l < 3; l++) {
@@ -3606,7 +3639,7 @@ function startGame(keepScore) {
   pivot.rotation.set(0, 0, 0); bikeG.rotation.set(0, 0, 0);
   setLegLocs(); arrived = false;
   orderNo = 1; eventT = 35; newOrder(true);
-  var GROUND_TINT = { sea: 0xd8c98a, port: 0x7a8a58, village: 0x6b9450, city: 0x8a8f96, town: 0x7a9a58, tea: 0x4a8a3a };
+  var GROUND_TINT = { sea: 0xd8c98a, port: 0x7a8a58, village: 0x6b9450, city: 0x8a8f96, town: 0x7a9a58, tea: 0x4a8a3a, pond: 0x5f8f4e };
   try { groundMat.color.setHex(GROUND_TINT[legTheme()] || 0x6b9450); } catch (e) {}
   magnetT = 0; doubleT = 0; nitroT = 0; crashT = 0; shake = 0; hints = { banner: 0, low: 0, jam: 0, goat: 0, gate: 0 }; lastLocIdx = -1;
   var EP0 = evP();
