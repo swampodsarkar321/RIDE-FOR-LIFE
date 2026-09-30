@@ -560,7 +560,9 @@
 </div>
 
 <div id="photoBar" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:30;gap:10px;">
+  <button class="btn" id="photoZoomOut" style="font-size:20px;">➖</button>
   <button class="btn" id="photoCap" style="font-size:20px;">📸 Capture</button>
+  <button class="btn" id="photoZoomIn" style="font-size:20px;">➕</button>
   <button class="btn" id="photoExit" style="font-size:20px;background:#444;box-shadow:0 5px 0 #222;">✕</button>
 </div>
 <div class="tag" id="photoHint" style="display:none;position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 14px);z-index:30;background:rgba(0,0,0,.55);padding:4px 16px;border-radius:999px;">Drag to rotate camera</div>
@@ -3704,11 +3706,11 @@ $('menuBtn').addEventListener('click', function (e) {
 });
   $('resumeBtn').addEventListener('click', resumeGame);
 /* ---------- photo mode: pause theke camera ghuriye screenshot ---------- */
-var photoOn = false, photoYaw = 0, photoPitch = 0, photoDrag = null;
+var photoOn = false, photoYaw = 0, photoPitch = 0, photoZoom = 1, photoDrag = null;
 function applyPhotoCam() {
   try {
     var tx = player.position.x * 0.3 + curveAt(-8) * 0.5, ty = 1.5, tz = -8;
-    var bx = player.position.x * 0.45 + curveAt(-8) * 0.3, by = camCfg.h + py * 0.25 + photoPitch, bz = camCfg.dist;
+    var bx = player.position.x * 0.45 + curveAt(-8) * 0.3, by = camCfg.h + py * 0.25 + photoPitch, bz = camCfg.dist * photoZoom;
     var dx = bx - tx, dz = bz - tz, cs = Math.cos(photoYaw), sn = Math.sin(photoYaw);
     camera.position.set(tx + dx * cs - dz * sn, by, tz + dx * sn + dz * cs);
     camera.lookAt(tx, ty, tz);
@@ -3723,7 +3725,7 @@ function photoMode(on) {
     $('pause').classList.add('hidden');
     $('photoBar').style.display = on ? 'flex' : 'none';
     $('photoHint').style.display = on ? 'block' : 'none';
-    if (on) { photoYaw = 0; photoPitch = 0; applyPhotoCam(); try { logEv('photo', {}); } catch (e) {} }
+    if (on) { photoYaw = 0; photoPitch = 0; photoZoom = 1; applyPhotoCam(); try { logEv('photo', {}); } catch (e) {} }
     else applyPhotoCam();
   } catch (e) {}
 }
@@ -4906,6 +4908,8 @@ function boot() {
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { bb.addEventListener(ev, function () { btnBrake = false; bb.classList.remove('held'); }); });
   bb.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('photoBtn').addEventListener('click', function () { photoMode(true); });
+  $('photoZoomIn').addEventListener('click', function () { photoZoom = Math.max(0.6, photoZoom - 0.1); applyPhotoCam(); });
+  $('photoZoomOut').addEventListener('click', function () { photoZoom = Math.min(1.5, photoZoom + 0.1); applyPhotoCam(); });
   $('shareBtn').addEventListener('click', function () { shareScore(); });  $('photoExit').addEventListener('click', function () { photoMode(false); if (state === 'pause') $('pause').classList.remove('hidden'); });
   $('photoCap').addEventListener('click', function () { capturePhoto(); });
   (function () { // photo drag-orbit (sudhu photo mode-e)
