@@ -3797,18 +3797,50 @@ function photoMode(on) {
   } catch (e) {}
 }
 var lastPhotoBlob = null, lastPhotoURL = null;
+function addWatermark(blob, cb) { // capture-er niche "Ride For Life" watermark
+  try {
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var cv = document.createElement('canvas');
+        cv.width = img.width; cv.height = img.height;
+        var g = cv.getContext('2d');
+        g.drawImage(img, 0, 0);
+        var fs = Math.max(14, Math.round(img.width * 0.028));
+        g.font = '800 ' + fs + 'px Arial, sans-serif';
+        g.textAlign = 'center';
+        var label = 'Ride For Life';
+        var tw = g.measureText(label).width;
+        var pad = fs * 0.6, bh = fs * 1.8;
+        var bx = (cv.width - tw) / 2 - pad, by = cv.height - bh - fs * 0.4;
+        g.fillStyle = 'rgba(0,0,0,0.45)';
+        g.beginPath();
+        if (g.roundRect) g.roundRect(bx, by, tw + pad * 2, bh, fs * 0.4); else g.rect(bx, by, tw + pad * 2, bh);
+        g.fill();
+        g.fillStyle = '#ffffff';
+        g.fillText(label, cv.width / 2, by + bh / 2 + fs * 0.35);
+        if (cv.toBlob) cv.toBlob(function (b2) { cb(b2); }, 'image/png');
+        else cb(blob);
+      } catch (e) { cb(blob); }
+    };
+    img.onerror = function () { cb(blob); };
+    img.src = URL.createObjectURL(blob);
+  } catch (e) { cb(blob); }
+}
 function capturePhoto() {
   try {
     renderer.render(scene, camera); // same-task render → capture safe
     if (renderer.domElement.toBlob) {
       renderer.domElement.toBlob(function (blob) {
         if (!blob) return;
-        lastPhotoBlob = blob;
-        if (lastPhotoURL) try { URL.revokeObjectURL(lastPhotoURL); } catch (e) {}
-        lastPhotoURL = URL.createObjectURL(blob);
-        $('photoShare').style.display = 'flex';
-        photoNote(lang === 'bn' ? '📸 তোলা! Save / Share করো' : '📸 Captured! Save / Share');
-        try { logEv('photo', {}); } catch (e2) {}
+        addWatermark(blob, function (wb) {
+          lastPhotoBlob = wb;
+          if (lastPhotoURL) try { URL.revokeObjectURL(lastPhotoURL); } catch (e) {}
+          lastPhotoURL = URL.createObjectURL(wb);
+          $('photoShare').style.display = 'flex';
+          photoNote(lang === 'bn' ? '📸 তোলা! Save / Share করো' : '📸 Captured! Save / Share');
+          try { logEv('photo', {}); } catch (e2) {}
+        });
       }, 'image/png');
     }
   } catch (e) {}
@@ -3869,6 +3901,13 @@ function shareScore() {
     g.fillText(bn ? 'আমাকে হারাতে পারো?' : 'Can you beat me?', 256, 505);
     g.fillStyle = '#cfe6cf'; g.font = '400 24px Arial, sans-serif';
     g.fillText('Teknaf → Tetulia', 256, 555);
+    // watermark
+    g.fillStyle = 'rgba(0,0,0,0.45)';
+    g.beginPath();
+    if (g.roundRect) g.roundRect(156, 590, 200, 36, 10); else g.rect(156, 590, 200, 36);
+    g.fill();
+    g.fillStyle = '#ffffff'; g.font = '800 22px Arial, sans-serif';
+    g.fillText('Ride For Life', 256, 616);
     var txt = (bn ? 'আমার স্কোর ' : 'My score ') + s + ' — Ride For Life!';
     if (c.toBlob) {
       c.toBlob(function (blob) {
