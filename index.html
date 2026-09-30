@@ -2329,6 +2329,9 @@ function cloudSave() { // local + cloud — sob save ekhan diye
       localStorage.setItem('rrOwned', JSON.stringify(ownedBikes));
       localStorage.setItem('rrDiv', String(playerDiv));
       localStorage.setItem('rrTParcels', String(tParcels));
+      localStorage.setItem('rrStars', String(tStars));
+      localStorage.setItem('rrCrash', String(tCrash));
+      localStorage.setItem('rrNm', String(nmTotal));
       localStorage.setItem('rrSavedAt', String(now));
     } catch (e) {}
     if (!fbReady || !FBDB || !fbUid) return;
@@ -2337,6 +2340,7 @@ function cloudSave() { // local + cloud — sob save ekhan diye
       xp: Math.floor(xp), bike: selBike, bag: bagLevel, hp: hpStore,
       leg: selLeg, unlock: unlockLeg, upS: upSpeed, upH: upHandle,
       div: playerDiv, tp: tParcels, owned: ownedBikes,
+      tst: tStars, tc: tCrash, tnm: nmTotal,
       board: getBoard(), at: now
     });
     try { // recovery code → uid mapping (notun phone-e ferot)
@@ -2458,6 +2462,9 @@ function cloudLoad() { // boot-e cloud theke notun data anle apply
         if (typeof r.name === 'string' && r.name) { playerName = r.name; try { localStorage.setItem('rrName', r.name); } catch (e) {} }
         if (typeof r.div === 'string' && r.div) { playerDiv = r.div; try { localStorage.setItem('rrDiv', r.div); } catch (e) {} }
         if (typeof r.tp === 'number') { tParcels = r.tp; try { localStorage.setItem('rrTParcels', String(r.tp)); } catch (e) {} }
+        if (typeof r.tst === 'number') { tStars = r.tst; try { localStorage.setItem('rrStars', String(r.tst)); } catch (e) {} }
+        if (typeof r.tc === 'number') { tCrash = r.tc; try { localStorage.setItem('rrCrash', String(r.tc)); } catch (e) {} }
+        if (typeof r.tnm === 'number') { nmTotal = r.tnm; try { localStorage.setItem('rrNm', String(r.tnm)); } catch (e) {} }
         if (r.owned && r.owned.length) { ownedBikes = r.owned; try { localStorage.setItem('rrOwned', JSON.stringify(r.owned)); } catch (e) {} }
         if (r.board && r.board.length) { try { localStorage.setItem('rrBoard', JSON.stringify(r.board.slice(0, 5))); } catch (e) {} }
         cloudSave();
@@ -2822,8 +2829,10 @@ var missionLevel = 1, missionTarget = 10, missionGot = 0;
 var combo = 0, comboT = 0, lastComboShown = -1, nmStreak = 0;
 /* level/xp/garage */
 var xp = 0, riderLevel = 1, bankCoins = 0, upSpeed = 0, upHandle = 0, bagLevel = 0;
-var playerName = '', selBike = 0, playerDiv = '', tParcels = 0, tStars = 0;
+var playerName = '', selBike = 0, playerDiv = '', tParcels = 0, tStars = 0, tCrash = 0, nmTotal = 0, runCrash = 0, pendingClean = false;
 try { tStars = +localStorage.getItem('rrStars') || 0; } catch (e) {}
+try { tCrash = +localStorage.getItem('rrCrash') || 0; } catch (e) {}
+try { nmTotal = +localStorage.getItem('rrNm') || 0; } catch (e) {}
 var BIKE_PRICE = [0, 1000, 2000, 3000, 4500, 7000]; // joto valo ability toto dam (0 = free)
 var ownedBikes = [0]; // new user: normal bike free
 var DIVS = [
@@ -3466,7 +3475,7 @@ function startGame(keepScore) {
   dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0;
   if (keepScore && carryScore > 0) { score = carryScore; } else { score = 0; }
   carryScore = 0;
-  combo = 0; comboT = 0; missionGot = 0; timeScale = 1; slowT = 0; carried = 0; tutStep = 0; nmStreak = 0;
+  combo = 0; comboT = 0; missionGot = 0; timeScale = 1; slowT = 0; carried = 0; tutStep = 0; nmStreak = 0; runCrash = 0;
   crashOn = false; if (crashPts) crashPts.visible = false;
   pivot.rotation.set(0, 0, 0); bikeG.rotation.set(0, 0, 0);
   setLegLocs(); arrived = false;
@@ -3509,7 +3518,8 @@ function die() {
   sliding = false;
   crashBurst(player.position.x, py + 1); // dhulo + tukro chitke
   if (carried > 0) { carried = Math.floor(carried / 2); } // crash-e ordhek parcel nosto (baki ordhek beche jay)
-  orderCrash = true; nmStreak = 0; // rating katbe + near-miss streak reset
+  orderCrash = true; nmStreak = 0; runCrash++; tCrash++; // rating katbe + near-miss streak reset
+  try { localStorage.setItem('rrCrash', String(tCrash)); } catch (e) {}
   if (hp <= 0) { hp = 0; finalDead = true; toast(elHint, T('crash_dead'), 2000); }
   else { finalDead = false; invT = 2.5; toast(elHint, F('crash_hit', hp), 2000); }
 }
@@ -3526,6 +3536,8 @@ function endRun() {
   // bank + xp save
   bankCoins += coinCount;
   try { localStorage.removeItem('rrRun'); } catch (e) {} // run sesh — snapshot ar lagbe na
+  if (runCrash === 0 && parcelCount > 0) pendingClean = true; // crash-free run badge
+  checkAch(); // achievement reward bank-e dhukbe, nicher save-e jabe
   var lvUp = false;
   while (xp >= xpNeed()) { xp -= xpNeed(); riderLevel++; lvUp = true; }
   try {
@@ -3797,7 +3809,8 @@ function update(dt) {
       o.passed = true;
       var dx = Math.abs(player.position.x - o.x);
       if (dx > o.hw + 0.18 && dx < o.hw + 1.1) {
-        nmStreak++;
+        nmStreak++; nmTotal++;
+        try { localStorage.setItem('rrNm', String(nmTotal)); } catch (e) {}
         var nmPts = Math.round((20 + Math.min(nmStreak, 10) * 5) * (doubleT > 0 ? 2 * scoreXK : scoreXK));
         score += nmPts;
         pop('😱 +' + nmPts + (nmStreak > 1 ? ' x' + nmStreak : ''), player.position.x, py + 2.9, 0, '#ff9d66'); sfx.move();
@@ -4435,6 +4448,37 @@ function getBoard() {
 }
 function medal(i) { return i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.'; }
 var lbTab = 'div', divCache = null, globCache = null, divFetching = false, globFetching = false;
+/* ---------- achievements ---------- */
+function achGot() { try { return JSON.parse(localStorage.getItem('rrAch') || '[]'); } catch (e) { return []; } }
+function maxStreak() { try { return +localStorage.getItem('rrMaxStreak') || 0; } catch (e) { return 0; } }
+function achList() {
+  var got = achGot(), bn = lang === 'bn';
+  function nm(id, ico, en, bnx, ok) { return { id: id, ico: ico, t: bn ? bnx : en, got: ok || got.indexOf(id) >= 0 }; }
+  return [
+    nm('p100', '📦', '100 parcels', '১০০ পার্সেল', tParcels >= 100),
+    nm('p1000', '📦', '1000 parcels', '১০০০ পার্সেল', tParcels >= 1000),
+    nm('s50', '⭐', '50 stars', '৫০ স্টার', tStars >= 50),
+    nm('nm50', '😱', '50 near-miss', '৫০ নিয়ার-মিস', nmTotal >= 50),
+    nm('clean', '💥', 'Crash-free run', 'ক্র্যাশ ছাড়া রান', pendingClean),
+    nm('b5k', '🏆', 'Best 5000', 'সেরা ৫০০০', best >= 5000),
+    nm('st7', '🔥', '7-day streak', '৭ দিনের স্ট্রিক', maxStreak() >= 7),
+    nm('tet', '🗺️', 'Reach Tetulia', 'তেতুলিয়া যাও', unlockLeg >= LEGS.length - 1),
+    nm('lv5', '🏍️', 'Level 5', 'লেভেল ৫', riderLevel >= 5)
+  ];
+}
+function checkAch() {
+  try {
+    var got = achGot(), fresh = [];
+    achList().forEach(function (a) { if (a.got && got.indexOf(a.id) < 0) { got.push(a.id); fresh.push(a); } });
+    if (fresh.length) {
+      try { localStorage.setItem('rrAch', JSON.stringify(got)); } catch (e) {}
+      pendingClean = false;
+      var rw = fresh.length * 200; bankCoins += rw;
+      toast(elLoc, '🏅 ' + fresh.map(function (a) { return a.ico; }).join(' ') + ' +' + rw, 3200);
+      try { logEv('achieve', { n: fresh.length }); } catch (e) {}
+    }
+  } catch (e) {}
+}
 function myRows(lb) {
   return lb.map(function (e, i) {
     var me = playerName && e.n === playerName ? ' class="me"' : '';
@@ -4496,7 +4540,7 @@ function fetchWarWeek() {
 }
 function renderBoard() {
   var html = '';
-  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">⚔️</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">📅</button></div>';
+  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">⚔️</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">📅</button><button class="lbtab' + (lbTab === 'ach' ? ' sel' : '') + '" data-tab="ach">🏅</button></div>';
   if (lbTab === 'div') {
     if (!playerDiv) html += T('need_div');
     else if (divCache) html += divCache.length ? worldRows(divCache, false) : T('lb_empty');
@@ -4514,6 +4558,15 @@ function renderBoard() {
       var me = playerDiv && w.id === playerDiv ? ' class="me"' : '';
       return '<div' + me + '><b>' + (i + 1) + '.</b> ' + divName(w.id) + ' — ' + w.s + ' <small>(' + w.n + (lang === 'bn' ? ' জন)' : ' riders)') + '</small></div>';
     }).join('') || T('lb_empty');
+  }
+  if (lbTab === 'ach') {
+    html += '<h3>🏅 ' + (lang === 'bn' ? 'অর্জন (প্রতিটা ৳২০০)' : 'Badges (৳200 each)') + '</h3>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' + achList().map(function (a) {
+      return '<div style="padding:8px 6px;border-radius:10px;font-size:13px;font-weight:800;text-align:center;'
+        + (a.got ? 'background:linear-gradient(135deg,#2d9c42,#1a6b2a);border:2px solid #7fe0a0;color:#fff;'
+          : 'background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);color:#888;')
+        + '">' + (a.got ? a.ico : '🔒') + '<br>' + a.t + '</div>';
+    }).join('') + '</div>';
   }
   if (lbTab === 'week' && weekCache) {
     html += '<h3>📅 ' + (lang === 'bn' ? 'এই সপ্তাহ' : 'This week') + '</h3>';
@@ -4689,6 +4742,7 @@ function boot() {
     try {
       localStorage.setItem('rrBank', String(bankCoins));
       localStorage.setItem('rrDaily', JSON.stringify({ last: dayStr(), streak: info.streak }));
+      if (info.streak > maxStreak()) localStorage.setItem('rrMaxStreak', String(info.streak));
     } catch (e) {}
     cloudSave(); renderDaily(); updateMenuBest();
     try { logEv('daily_claim', { streak: info.streak }); } catch (e) {}
