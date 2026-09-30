@@ -507,7 +507,7 @@
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
       <div class="sec" data-i18n="sec_profile">👤 Profile</div>
       <div class="board" style="text-align:center;">
-        <div style="font-size:44px;">🏍️</div>
+        <div style="font-size:44px;" id="profAvatar">🏍️</div>
         <div id="profName" style="font-size:24px;font-weight:800;"></div>
         <div id="profDiv" style="color:var(--gold);font-weight:700;"></div>
         <div class="best" id="profRank" style="margin:8px 0;"></div>
@@ -647,6 +647,8 @@
     <input id="nameInput" maxlength="14" data-i18n-ph="name_ph" placeholder="e.g. Sakib">
     <div class="bn" data-i18n="name_div">Your division?</div>
     <div id="divGrid"></div>
+    <div class="bn" style="margin-top:10px;">🎭 Avatar</div>
+    <div id="avatarGrid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0;"></div>
     <button class="btn" id="nameBtn" data-i18n="name_go">Start</button>
     <div class="bn" style="margin-top:14px;opacity:.8">🔑 <span id="codeLbl">Have a recovery code?</span></div>
     <div style="display:flex;gap:8px;margin-top:6px;">
@@ -2491,7 +2493,7 @@ function cloudSave() { // local + cloud — sob save ekhan diye
       leg: selLeg, unlock: unlockLeg, upS: upSpeed, upH: upHandle, upF: upFuel, upM: upMag, upN: upNitro,
       div: playerDiv, tp: tParcels, owned: ownedBikes,
       tst: tStars, tc: tCrash, tnm: nmTotal,
-      cst: selHelmet, csl: selLight, css: selSticker,
+      cst: selHelmet, csl: selLight, css: selSticker, av: selAvatar,
       board: getBoard(), at: now
     });
     try { // recovery code → uid mapping (notun phone-e ferot)
@@ -2682,6 +2684,7 @@ function cloudLoad() { // boot-e cloud theke notun data anle apply
         if (typeof r.cst === 'number') { selHelmet = r.cst; try { localStorage.setItem('rrHelmet', String(r.cst)); } catch (e) {} }
         if (typeof r.csl === 'number') { selLight = r.csl; try { localStorage.setItem('rrLight', String(r.csl)); } catch (e) {} }
         if (typeof r.css === 'number') { selSticker = r.css; try { localStorage.setItem('rrSticker', String(r.css)); } catch (e) {} }
+        if (typeof r.av === 'number') { selAvatar = r.av; try { localStorage.setItem('rrAvatar', String(r.av)); } catch (e) {} }
         if (r.owned && r.owned.length) { ownedBikes = r.owned; try { localStorage.setItem('rrOwned', JSON.stringify(r.owned)); } catch (e) {} }
         if (r.board && r.board.length) { try { localStorage.setItem('rrBoard', JSON.stringify(r.board.slice(0, 5))); } catch (e) {} }
         cloudSave();
@@ -2696,7 +2699,7 @@ function submitScore(s, pc) { // proti player 1 entry — sudhu highest score th
     var ref = FBDB.ref('scores_by_player/' + fbUid);
     ref.once('value').then(function (snap) {
       var cur = snap.val();
-      var entry = { n: playerName || 'Rider', s: s, p: pc, div: playerDiv, tp: tParcels, t: Date.now() };
+      var entry = { n: playerName || 'Rider', s: s, p: pc, div: playerDiv, tp: tParcels, t: Date.now(), av: getAvatar() };
       if (!cur || s > (cur.s || 0)) { try { ref.set(entry); } catch (e) {} }
       else { try { ref.update({ n: entry.n, div: entry.div, tp: entry.tp, t: entry.t }); } catch (e) {} }
     });
@@ -2705,8 +2708,9 @@ function submitScore(s, pc) { // proti player 1 entry — sudhu highest score th
 function worldRows(arr, showDiv) {
   return arr.map(function (e, i) {
     var me = (playerName && e.n === playerName) ? ' me' : '';
+    var av = e.av || '🧑‍💼';
     var sub = e.p + '📦' + (showDiv && (e.dv || e.div) ? ' · ' + divName(e.dv || e.div) : '');
-    return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm">' + (e.n || T('rider')) + '<small>' + sub + '</small></span><span class="sc">' + e.s + '</span></div>';
+    return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm">' + av + ' ' + (e.n || T('rider')) + '<small>' + sub + '</small></span><span class="sc">' + e.s + '</span></div>';
   }).join('');
 }
 function refreshWorldBoards() { // over screen-e world + division (10s throttle)
@@ -5089,7 +5093,28 @@ function renderBoard() {
   refreshWorldBoards();
 }
 function upLvl(kind) { return kind === 's' ? upSpeed : kind === 'h' ? upHandle : kind === 'f' ? upFuel : kind === 'm' ? upMag : upNitro; }
-/* ---------- profile: nam/level/score/rank/badge ---------- */
+/* ---------- avatar system ---------- */
+var AVATARS = ['🧑‍💼', '👩‍💼', '🧑‍🎤', '👩‍🎤', '🧑‍🚀', '👩‍🚀', '🧑‍🍳', '👩‍🍳', '🧑‍🔧', '👩‍🔧', '🧑‍🎨', '👩‍🎨', '🧑‍⚕️', '👩‍⚕️', '🧑‍🏫', '👩‍🏫', '🧑‍🌾', '👩‍🌾', '🧑‍💻', '👩‍💻', '🧑‍🚒', '👩‍🚒', '🧑‍✈️', '👩‍✈️'];
+var selAvatar = 0;
+try { selAvatar = +localStorage.getItem('rrAvatar') || 0; } catch (e) {}
+function renderAvatarPicker() {
+  try {
+    var el = $('avatarGrid'); if (!el) return;
+    el.innerHTML = AVATARS.map(function (a, i) {
+      return '<button class="divBtn' + (i === selAvatar ? ' sel' : '') + '" data-av="' + i + '" style="font-size:28px;padding:6px;">' + a + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(el.querySelectorAll('[data-av]'), function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        selAvatar = +b.getAttribute('data-av');
+        try { localStorage.setItem('rrAvatar', String(selAvatar)); } catch (e2) {}
+        renderAvatarPicker(); renderProfile();
+        try { sfx.move(); } catch (e2) {}
+      });
+    });
+  } catch (e) {}
+}
+function getAvatar() { return AVATARS[selAvatar % AVATARS.length]; }
 var myRankCache = null, myRankFetching = false;
 function fetchMyRank() {
   if (myRankCache || myRankFetching || !fbReady || !FBDB) return;
@@ -5112,6 +5137,7 @@ function renderProfile() {
   try {
     var bn = lang === 'bn';
     if ($('profName')) $('profName').textContent = playerName || (bn ? 'রাইডার' : 'Rider');
+    if ($('profAvatar')) $('profAvatar').textContent = getAvatar();
     if ($('profDiv')) $('profDiv').textContent = '📍 ' + (playerDiv ? divName(playerDiv) : '');
     if ($('profLvl')) $('profLvl').textContent = riderLevel;
     if ($('profBest')) $('profBest').textContent = best;
@@ -5356,6 +5382,7 @@ function boot() {
     sfx.coin();
   });
   try { renderDaily(); } catch (e) {}
+  renderAvatarPicker();
   state = 'menu'; speed = 9;
   loadProgress('Done!');
   try {
