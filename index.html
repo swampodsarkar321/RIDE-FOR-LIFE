@@ -3396,7 +3396,7 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
             else activeEventId = null;
           }
         } catch (e2) { activeEventId = null; }
-        applyLang(); applyBikeColor(); renderGarage(); renderDest(); renderEvents();
+        applyLang(); applyBikeColor(); applyCustomization(); renderCustomize(); renderGarage(); renderDest(); renderEvents();
       } catch (e) {}
     });
   } catch (e) {}
@@ -5624,7 +5624,7 @@ function boot() {
   try { askNotify(); } catch (e) {}
   try { fetchWarWeek(); } catch (e) {} // weekly auto-prize check
   applyLang();
-  applyBikeColor(); renderGarage(); renderBoard(); renderDest();
+  applyBikeColor(); applyCustomization(); renderCustomize(); renderGarage(); renderBoard(); renderDest();
   cloudLoad(); loadGameConfig();
   if (selLeg > unlockLeg) { selLeg = unlockLeg; try { localStorage.setItem('rrLeg', String(selLeg)); } catch (e) {} renderDest(); }
   document.body.dataset.ui = 'menu';
