@@ -677,6 +677,8 @@
         </div>
         <div id="routeMap"></div>
       </div>
+      <div class="sec">🗺️ Journey</div>
+      <div class="secCard"><div id="journeyMap"></div></div>
     </div>
     <div class="mpage" id="pageGarage">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
@@ -699,6 +701,8 @@
         <div id="custLight" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
         <div style="font-size:14px;font-weight:800;margin:8px 0 4px;">🏍️ Sticker</div>
         <div id="custSticker" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div style="font-size:14px;font-weight:800;margin:8px 0 4px;">🧥 Jacket</div>
+        <div id="custJacket" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       </div>
       <div class="sec" data-i18n="sec_garage">🔧 Garage</div>
       <div class="secCard"><div id="garage"></div></div>
@@ -784,6 +788,7 @@
       <div class="setRow"><span class="lbl"><span class="ico">🎵</span><span data-i18n="set_music">Music</span><span class="sub" data-i18n="set_music_sub">Background music</span></span><button class="tgl on" id="setMusic">On</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">📺</span><span data-i18n="set_quality">Quality</span><span class="sub" data-i18n="set_quality_sub">Graphics quality</span></span><button class="tgl" id="setQuality">High</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">📳</span><span data-i18n="set_vib">Vibration</span><span class="sub" data-i18n="set_vib_sub">Phone vibrates on crash</span></span><button class="tgl on" id="setVib">On</button></div>
+      <div class="setRow"><span class="lbl"><span class="ico">📱</span><span>Tilt Control</span><span class="sub">Buttons / Tilt phone to steer</span></span><button class="tgl" id="setTilt">Buttons</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">📊</span><span data-i18n="set_fps">Show FPS</span><span class="sub" data-i18n="set_fps_sub">Developer mode</span></span><button class="tgl" id="setFps">Off</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🌐</span><span data-i18n="set_lang">Language</span><span class="sub" data-i18n="set_lang_sub">English / বাংলা</span></span><button class="tgl on" id="setLang">English</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🔔</span><span data-i18n="set_push">Push Notification</span><span class="sub" data-i18n="set_push_sub">Daily reward reminder</span></span><button class="tgl" id="setPush">Off</button></div>
@@ -2785,7 +2790,28 @@ function makeTruck() {
   g.scale.set(1.3, 1.28, 1.2); // ashol truck: bike-er double er kachakachi
   return { mesh: wrap(g), hw: 1.05, hd: 2.5, y0: 0, y1: 4.0 };
 }
-var MAKERS = { van: makeVan, nosimon: makeNosimon, cart: makeBullCart, bull: makeBullLoose, mud: makeMudPuddle, truck: makeTruck, bus: makeBus, cng: makeCNG, rickshaw: makeRickshaw, pickup: makePickup, goat: makeGoat };
+function makePed() { // rasta par howa manush — dhakka lagbe na, horn bajbe
+  var g = new THREE.Group();
+  var shirt = pick([0xc23b3b, 0x2d7a4f, 0x3d6fa5, 0xff8c1a, 0x9b5de5]);
+  box(0.32, 0.55, 0.22, shirt, 0, 1.05, 0, g);
+  box(0.13, 0.5, 0.15, 0x2a2a3a, -0.1, 0.45, 0, g);
+  box(0.13, 0.5, 0.15, 0x2a2a3a, 0.1, 0.45, 0, g);
+  ell(0.15, 0.17, 0.15, SKIN, 0, 1.5, 0, g);
+  box(0.1, 0.45, 0.12, shirt, -0.24, 1.0, 0, g);
+  box(0.1, 0.45, 0.12, shirt, 0.24, 1.0, 0, g);
+  g.userData.ph = Math.random() * 6;
+  return { mesh: g, hw: 0.3, hd: 0.3, y0: 0, y1: 1.6, cross: (Math.random() < 0.5 ? -1 : 1) * (1.6 + Math.random() * 1.2), soft: true };
+}
+function makeBicycle() {
+  var g = new THREE.Group(), c1 = pick([0xc23b3b, 0x2d7a4f, 0x3d6fa5]);
+  wheel(0.3, 0.08, 0, 0.3, -0.35, g); wheel(0.3, 0.08, 0, 0.3, 0.35, g);
+  box(0.06, 0.06, 0.75, c1, 0, 0.55, 0, g);
+  box(0.3, 0.08, 0.3, 0x1c1c1c, 0, 0.85, 0.1, g);
+  box(0.3, 0.55, 0.25, 0x8a5a3a, 0, 1.15, 0.05, g);
+  ell(0.14, 0.16, 0.14, SKIN, 0, 1.6, 0.05, g);
+  return { mesh: wrap(g), hw: 0.45, hd: 0.6, y0: 0, y1: 1.8 };
+}
+var MAKERS = { van: makeVan, nosimon: makeNosimon, cart: makeBullCart, bull: makeBullLoose, mud: makeMudPuddle, truck: makeTruck, bus: makeBus, cng: makeCNG, rickshaw: makeRickshaw, pickup: makePickup, goat: makeGoat, ped: makePed, bicycle: makeBicycle };
 
 /* ---------- pickups ---------- */
 var COIN_GEO = new THREE.CylinderGeometry(0.42, 0.42, 0.1, 20); COIN_GEO.rotateX(Math.PI / 2);
@@ -3082,6 +3108,21 @@ function renderMissionList() {
         + '<small style="color:var(--panel-soft);">' + prog + '/' + m.target + ' · ৳' + m.reward + (done ? ' ✅' : isToday ? ' · TODAY' : '') + '</small></span>'
         + '<span class="st">' + (done ? '✅' : isToday ? '▶' : '🔒') + '</span></div>';
     }
+    try {
+      weekReset();
+      var wc = weekClaimed(), wbn = lang === 'bn';
+      var WM = [
+        { id: 'p', ico: '📦', t: wbn ? '১০০ পার্সেল' : '100 parcels', p: Math.min(wPar, 100) + '/100', done: wc.indexOf('p') >= 0 },
+        { id: 'e', ico: '💰', t: wbn ? '৳৫০০০ আয়' : 'Earn ৳5000', p: Math.min(wEarn, 5000) + '/5000', done: wc.indexOf('e') >= 0 },
+        { id: 'd', ico: '🗺️', t: wbn ? '৫ জেলা' : '5 districts', p: Math.min(wDistricts.length, 5) + '/5', done: wc.indexOf('d') >= 0 }
+      ];
+      h += '<div class="sec" style="margin-top:10px;">📅 ' + (wbn ? 'সাপ্তাহিক' : 'Weekly') + '</div>';
+      WM.forEach(function (w) {
+        h += '<div class="legRow' + (w.done ? ' sel' : '') + '"><span style="font-size:22px;">' + w.ico + '</span>'
+          + '<span style="flex:1;"><b>' + w.t + '</b><br><small style="color:var(--panel-soft);">' + w.p + '</small></span>'
+          + '<span class="st">' + (w.done ? '✅' : '▶') + '</span></div>';
+      });
+    } catch (e) {}
     el.innerHTML = h;
   } catch (e) {}
 }
@@ -3840,21 +3881,30 @@ function spName() {
   if (spType === 'fragile') return lang === 'bn' ? '🍷 ভঙ্গুর পার্সেল' : '🍷 Fragile parcel';
   if (spType === 'hot') return lang === 'bn' ? '🍔 গরম খাবার' : '🍔 Hot food';
   if (spType === 'med') return lang === 'bn' ? '🚨 জরুরি ওষুধ (ডবল পে!)' : '🚨 Emergency meds (double pay!)';
+  if (spType === 'elec') return lang === 'bn' ? '📺 ইলেকট্রনিক্স (crash-e half!)' : '📺 Electronics (crash = half!)';
+  if (spType === 'doc') return lang === 'bn' ? '📄 জরুরি ডকুমেন্ট' : '📄 Urgent document';
+  if (spType === 'groc') return lang === 'bn' ? '🛒 বাজার (বেশি parcel!)' : '🛒 Grocery (more parcels!)';
+  if (spType === 'cod') return lang === 'bn' ? '💰 ক্যাশ অন ডেলিভারি (+৳60)' : '💰 Cash on delivery (+৳60)';
   return '';
 }
 function newOrder(loud) {
   orderSecs = 0; orderCrash = false;
   try { orderT0 = Date.now(); } catch (e) {}
-  spType = null; // 30% special parcel
+  spType = null; // special parcel lottery
   try {
     var sr = Math.random();
-    if (sr < 0.10) spType = 'fragile';
-    else if (sr < 0.20) spType = 'hot';
-    else if (sr < 0.30) spType = 'med';
+    if (sr < 0.08) spType = 'fragile';
+    else if (sr < 0.15) spType = 'hot';
+    else if (sr < 0.21) spType = 'med';
+    else if (sr < 0.27) spType = 'elec';
+    else if (sr < 0.32) spType = 'doc';
+    else if (sr < 0.38) spType = 'groc';
+    else if (sr < 0.43) spType = 'cod';
   } catch (e) {}
   var EP1 = evP();
   if (EP1.quota) { orderNeed = EP1.quota; orderReward = EP1.reward || EP1.quota * 60; }
   else { orderNeed = Math.min(bagCap(), 3 + ((Math.random() * 4) | 0)); orderReward = orderNeed * 40 + ((Math.random() * 3) | 0) * 20; }
+  if (spType === 'groc') { orderNeed = Math.min(bagCap(), orderNeed + 2); orderReward += 80; }
   if (loud) toast(elLoc, F('order', orderNo, orderNeed, orderReward), 3000);
 }
 var lastRowZ = -30, nextGap = 32;
@@ -3970,6 +4020,7 @@ function grantDistrict(d, silent) {
     got.push(d);
     try { localStorage.setItem('rrDistDone', JSON.stringify(got)); } catch (e) {}
     xp += 500; bankCoins += 1000;
+    try { addGems(2); } catch (e) {}
     var gift = -1;
     for (var i = 0; i < BIKE_PRICE.length; i++) if (ownedBikes.indexOf(i) < 0) { gift = i; break; }
     var extra = '';
@@ -4090,6 +4141,25 @@ function spawnRow(z) {
     nextCheckDist = dist + rnd(520, 640);
     spawnCheckpoint(z);
     toast(elHint, T('check_hint'), 2600);
+    return;
+  }
+  if (dist >= nextTrainDist && !gates.length && remainD > 200) {
+    nextTrainDist = dist + rnd(900, 1400);
+    spawnTrain(z);
+    return;
+  }
+  if (dist >= nextSvcDist && !gates.length && remainD > 200) {
+    nextSvcDist = dist + rnd(700, 1100);
+    spawnSvc(Math.random() < 0.5 ? 'fuel' : 'mech', z);
+    return;
+  }
+  if (zoneOf(dist) === 'BAZAAR' && dist > 200 && r < 0.35) { // bazar: pedestrian + rickshaw bhir
+    addObstacle('ped', (Math.random() * 3) | 0, z);
+    if (Math.random() < 0.5) sfx.horn();
+    return;
+  }
+  if (dist > 200 && r < 0.16) { // bicycle / cng traffic
+    addObstacle(Math.random() < 0.5 ? 'bicycle' : 'cng', (Math.random() * 3) | 0, z);
     return;
   }
   if (dist > 250 && r < 0.10 + 0.08 * d) {
@@ -4301,13 +4371,141 @@ function makeRecipientStand(laneIdx) { // prapok daray ache — realistic manush
   g.userData.arrow = ar;
   return g;
 }
+/* ---------- batch2: zones, train, fuel/mech, gems, weekly, rating, journey, tilt ---------- */
+var ZONES = ['CITY', 'SUBURBAN', 'BAZAAR', 'VILLAGE', 'FIELD', 'BRIDGE', 'HIGHWAY'];
+var zoneIdx = -1;
+function zoneOf(d) { return ZONES[Math.floor(d / 650) % ZONES.length]; }
+function zoneName(z) {
+  var m = { CITY: ['City', 'শহর'], SUBURBAN: ['Suburban', 'শহরতলি'], BAZAAR: ['Bazaar', 'বাজার'], VILLAGE: ['Village', 'গ্রাম'], FIELD: ['Open Field', 'খোলা মাঠ'], BRIDGE: ['Bridge', 'ব্রিজ'], HIGHWAY: ['Highway', 'মহাসড়ক'] };
+  var x = m[z] || m.VILLAGE; return lang === 'bn' ? x[1] : x[0];
+}
+function zoneTick() {
+  if (state !== 'play') return;
+  var zi = ZONES.indexOf(zoneOf(dist));
+  if (zi !== zoneIdx) {
+    zoneIdx = zi;
+    try { toast(elHint, '🏙️ ' + zoneName(ZONES[zi]), 1800); } catch (e) {}
+    if (ZONES[zi] === 'BAZAAR') { try { sfx.horn(); } catch (e) {} }
+  }
+}
+var nextTrainDist = 900, nextSvcDist = 500;
+function spawnTrain(z) {
+  var g = new THREE.Group();
+  box(0.3, 2.4, 0.3, 0x333333, -4.8, 1.2, 0, g); box(0.3, 2.4, 0.3, 0x333333, 4.8, 1.2, 0, g);
+  for (var i = 0; i < 5; i++) box(1.15, 0.3, 0.16, 0xdd2222, -4.2 + i * 1.2, 1.9, 0, g); // barrier: dan lane khola
+  var tr = new THREE.Group();
+  box(1.8, 1.6, 9.0, 0x1a3c5a, 0, 1.3, 0, tr);
+  box(1.82, 0.4, 9.02, 0xffc83d, 0, 1.9, 0, tr);
+  for (var w = -3; w <= 3; w += 2) { box(0.3, 0.5, 0.3, 0x111111, -0.9, 0.25, w, tr); box(0.3, 0.5, 0.3, 0x111111, 0.9, 0.25, w, tr); }
+  tr.position.set(-32, 0, 0); g.add(tr);
+  g.userData.train = tr;
+  g.position.z = z; scene.add(g);
+  gates.push({ mesh: g, kind: 'train', lane: -1, z: z, done: false, t: 0 });
+  try { toast(elHint, lang === 'bn' ? '🚨 ট্রেন আসছে! ডান লেন নাও!' : '🚨 TRAIN COMING! Take right lane!', 2600); sfx.checkpoint(); } catch (e) {}
+}
+function makeSvcGate(kind) {
+  var g = new THREE.Group();
+  var col = kind === 'fuel' ? '#ff8c1a' : '#2d7a4f';
+  box(0.25, 3.2, 0.25, 0x333333, -4.6, 1.6, 0, g); box(0.25, 3.2, 0.25, 0x333333, 4.6, 1.6, 0, g);
+  var t = new THREE.Mesh(PG(5.2, 0.9), new THREE.MeshBasicMaterial({ map: textTex(kind === 'fuel' ? (lang === 'bn' ? '⛽ তেল নাও' : '⛽ FUEL STOP') : (lang === 'bn' ? '🔧 মেরামত' : '🔧 REPAIR'), 512, 128, col, '#ffffff', '#333333') }));
+  t.position.set(0, 3.0, 0.12); g.add(t);
+  box(0.3, 0.7, 0.25, 0x1a3c5a, 3.8, 0.85, 0.5, g);
+  box(0.34, 0.5, 0.28, kind === 'fuel' ? 0xff8c1a : 0x2d7a4f, 3.8, 0.35, 0.5, g);
+  ell(0.16, 0.18, 0.16, SKIN, 3.8, 1.35, 0.5, g);
+  return g;
+}
+function spawnSvc(kind, z) {
+  var m = makeSvcGate(kind); m.position.z = z; scene.add(m);
+  gates.push({ mesh: m, kind: kind, lane: lane, z: z, done: false });
+}
+var gems = 0, dblRun = false;
+try { gems = +localStorage.getItem('rrGems') || 0; } catch (e) {}
+function addGems(n, why) {
+  gems += n;
+  try { localStorage.setItem('rrGems', String(gems)); } catch (e) {}
+  try { if ($('hdGems')) $('hdGems').textContent = gems; } catch (e) {}
+  if (!why) return;
+  try { toast(elHint, '💎 +' + n + ' ' + why, 2000); sfx.coin(); } catch (e) {}
+}
+var rateSum = 0, rateN = 0;
+try { rateSum = +localStorage.getItem('rrRateS') || 0; } catch (e) {}
+try { rateN = +localStorage.getItem('rrRateN') || 0; } catch (e) {}
+function myRating() { return rateN ? (rateSum / rateN).toFixed(1) : '5.0'; }
+var tiltOn = false, tiltLast = 0;
+try { tiltOn = localStorage.getItem('rrTilt') === '1'; } catch (e) {}
+function weekId() { try { return 'w' + Math.floor(weekStartTs(0) / 604800000); } catch (e) { return 'w0'; } }
+var wPar = 0, wEarn = 0, wDistricts = [];
+try { wPar = +localStorage.getItem('rrWkP') || 0; } catch (e) {}
+try { wEarn = +localStorage.getItem('rrWkE') || 0; } catch (e) {}
+try { wDistricts = JSON.parse(localStorage.getItem('rrWkD') || '[]'); } catch (e) { wDistricts = []; }
+function weekReset() {
+  try {
+    if (localStorage.getItem('rrWkId') !== weekId()) {
+      localStorage.setItem('rrWkId', weekId());
+      wPar = 0; wEarn = 0; wDistricts = [];
+      localStorage.setItem('rrWkP', '0'); localStorage.setItem('rrWkE', '0'); localStorage.setItem('rrWkD', '[]'); localStorage.setItem('rrWkC', '[]');
+    }
+  } catch (e) {}
+}
+function weekClaimed() { try { return JSON.parse(localStorage.getItem('rrWkC') || '[]'); } catch (e) { return []; } }
+function checkWeekly() {
+  try {
+    weekReset();
+    var c = weekClaimed(), bn = lang === 'bn', changed = false;
+    function grant(id, amt, txt) {
+      if (c.indexOf(id) >= 0) return;
+      c.push(id); changed = true;
+      bankCoins += amt;
+      toast(elLoc, '<b>📅 ' + txt + '</b><small>+৳' + amt + '</small>', 3500);
+      sfx.power(); confettiBurst();
+    }
+    if (wPar >= 100) grant('p', 300, bn ? 'সাপ্তাহিক: ১০০ পার্সেল!' : 'Weekly: 100 parcels!');
+    if (wEarn >= 5000) grant('e', 400, bn ? 'সাপ্তাহিক: ৳৫০০০ আয়!' : 'Weekly: earn ৳5000!');
+    if (wDistricts.length >= 5) grant('d', 500, bn ? 'সাপ্তাহিক: ৫ জেলা!' : 'Weekly: 5 districts!');
+    if (changed) {
+      try { localStorage.setItem('rrWkC', JSON.stringify(c)); localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
+      cloudSave();
+    }
+  } catch (e) {}
+}
+function legDistrict(i) { var d = 0; for (var k = 0; k < DIST_HEADS.length; k++) if (i >= DIST_HEADS[k].n) d = k; return d; }
+function renderJourney() {
+  try {
+    var el = $('journeyMap'); if (!el) return;
+    var bn = lang === 'bn', h = '';
+    for (var d = DIST_HEADS.length - 1; d >= 0; d--) {
+      var dh = DIST_HEADS[d], first = dh.n;
+      var last = (d + 1 < DIST_HEADS.length) ? DIST_HEADS[d + 1].n - 1 : LEGS.length - 1;
+      var done = 0;
+      for (var i = first; i <= last; i++) if (i < unlockLeg) done++;
+      var st = unlockLeg > last ? '✅' : (selLeg >= first && selLeg <= last ? '▶' : '🔒');
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 10px;">'
+        + '<span style="color:var(--gold);font-weight:800;">' + (d < DIST_HEADS.length - 1 ? '│' : ' ') + '</span>'
+        + '<span style="font-size:20px;">' + st + '</span>'
+        + '<span style="flex:1;font-weight:800;">' + dh.dot + ' ' + (bn ? dh.bn : dh.en) + '<small style="display:block;font-size:11px;color:var(--panel-soft);">' + done + '/' + (last - first + 1) + '</small></span></div>';
+      if (d > 0) h += '';
+    }
+    el.innerHTML = h;
+  } catch (e) {}
+}
+var CUSTS = [['Rahim', '24'], ['Karim', '11'], ['Sumi', '7'], ['Jalal', '31']];
+var custMats = [];
+function custMat(i) {
+  if (custMats[i]) return custMats[i];
+  var c = CUSTS[i % CUSTS.length];
+  custMats[i] = new THREE.MeshBasicMaterial({ map: textTex('🏠 ' + c[0] + ' #' + c[1], 512, 128, '#7a4a1a', '#ffffff', '#ffc83d') });
+  return custMats[i];
+}
+var delStreak = 0;
 function spawnDeliveryPair(z) { // age pickup stall, 150m pore prapok
   var pl = (Math.random() * 3) | 0;
   var rl = (Math.random() * 3) | 0;
   var pk = makePickupStall(pl); pk.position.z = z; scene.add(pk);
   gates.push({ mesh: pk, kind: 'pickup', lane: pl, z: z, done: false });
   var rc = makeRecipientStand(rl); rc.position.z = z - 150; scene.add(rc);
-  gates.push({ mesh: rc, kind: 'deliver', lane: rl, z: z - 150, done: false, arrow: rc.userData.arrow, arm: rc.userData.arm, armBase: -2.4 });
+  var ci = (Math.random() * CUSTS.length) | 0;
+  try { var cb = new THREE.Mesh(PG(2.6, 0.65), custMat(ci)); cb.position.set(0, 2.4, 0); rc.add(cb); } catch (e) {}
+  gates.push({ mesh: rc, kind: 'deliver', lane: rl, z: z - 150, done: false, arrow: rc.userData.arrow, arm: rc.userData.arm, armBase: -2.4, cust: ci });
   if (hints.gate < 2) { hints.gate++; toast(elHint, F('pick_hint', laneName(pl)), 2200); }
   for (var gc = 0; gc < 6; gc++) addPickup('coin', LANE_X[pl], 1.0, z + 4 + gc * 2);
 }
@@ -4387,6 +4585,7 @@ function startGame(keepScore) {
   addLegGate();
   hp = hpStore; invT = 0; finalDead = false;
   heat = 0; bustedFine = 0; try { chaseStop(); } catch (e) {}
+  zoneIdx = -1; nextTrainDist = 900; nextSvcDist = 500; delStreak = 0;
   dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0; skidX = 0; skidV = 0; skidT = 0;
   if (keepScore && carryScore > 0) { score = carryScore; } else { score = 0; }
   carryScore = 0;
@@ -4474,7 +4673,7 @@ function die() {
   sliding = false;
   crashBurst(player.position.x, py + 1); // dhulo + tukro chitke
   if (carried > 0) { carried = Math.floor(carried / 2); } // crash-e ordhek parcel nosto (baki ordhek beche jay)
-  orderCrash = true; nmStreak = 0; runCrash++; tCrash++; // rating katbe + near-miss streak reset
+  orderCrash = true; nmStreak = 0; runCrash++; tCrash++; delStreak = 0; // rating katbe + near-miss streak reset
   try { localStorage.setItem('rrCrash', String(tCrash)); } catch (e) {}
   if (hp <= 0) { hp = 0; finalDead = true; toast(elHint, T('crash_dead'), 2000); }
   else { finalDead = false; invT = 2.5; toast(elHint, F('crash_hit', hp), 2000); }
@@ -4491,8 +4690,12 @@ function endRun() {
   var s = Math.floor(score), isBest = s > best;
   if (isBest) { best = s; try { localStorage.setItem('rangpurRushBest', String(best)); } catch (e) {} }
   // bank + xp save
+  if (dblRun) { coinCount *= 2; dblRun = false; }
   bankCoins += coinCount;
   tDist += Math.floor(dist); tEarn += coinCount;
+  wEarn += coinCount;
+  try { localStorage.setItem('rrWkE', String(wEarn)); } catch (e) {}
+  try { checkWeekly(); } catch (e) {}
   if (isNight) tNight++;
   if (weather === 'rain' || weather === 'heavy') tRain++;
   try { localStorage.setItem('rrDist', String(tDist)); localStorage.setItem('rrEarn', String(tEarn)); localStorage.setItem('rrNightR', String(tNight)); localStorage.setItem('rrRainR', String(tRain)); } catch (e) {}
@@ -4749,7 +4952,8 @@ $('settingsClose').addEventListener('click', function () {
   if (state === 'pause') $('pause').classList.remove('hidden');
 });
 function renderSettings() {
-  var sfx = $('setSfx'), mus = $('setMusic'), q = $('setQuality'), vib = $('setVib'), fps = $('setFps'), lg = $('setLang');
+  var sfx = $('setSfx'), mus = $('setMusic'), q = $('setQuality'), vib = $('setVib'), fps = $('setFps'), lg = $('setLang'), tt = $('setTilt');
+  if (tt) { tt.textContent = tiltOn ? 'Tilt' : 'Buttons'; tt.classList.toggle('on', tiltOn); }
   if (sfx) { sfx.textContent = sfxOn ? T('on') : T('off'); sfx.classList.toggle('on', sfxOn); }
   if (mus) { mus.textContent = musicOn ? T('on') : T('off'); mus.classList.toggle('on', musicOn); }
   if (q) { q.textContent = quality === 'high' ? T('high') : T('low'); q.classList.toggle('on', quality === 'high'); }
@@ -4763,6 +4967,25 @@ function bindSetting(id, fn) { var el = $(id); if (el) el.addEventListener('clic
 bindSetting('setSfx', function () { sfxOn = !sfxOn; try { if (!sfxOn) engineStop(); else if (state === 'play' && !muted) engineStart(); } catch (e) {} });
 bindSetting('setMusic', function () { musicOn = !musicOn; try { radioTick(); updateRadioUI(); } catch (e) {} });
 bindSetting('setLang', function () { setLang(lang === 'bn' ? 'en' : 'bn'); });
+bindSetting('setTilt', function () {
+  tiltOn = !tiltOn;
+  try { localStorage.setItem('rrTilt', tiltOn ? '1' : '0'); } catch (e) {}
+  if (tiltOn && typeof DeviceMotionEvent !== 'undefined' && DeviceMotionEvent.requestPermission) {
+    DeviceMotionEvent.requestPermission().catch(function () {});
+  }
+  toast(elHint, tiltOn ? '📱 Tilt ON' : '🔘 Buttons', 1500);
+});
+window.addEventListener('devicemotion', function (e) {
+  try {
+    if (!tiltOn || state !== 'play') return;
+    var g = e.accelerationIncludingGravity;
+    if (!g) return;
+    var now = Date.now();
+    if (now - tiltLast < 350) return;
+    if (g.x > 2.2) { tiltLast = now; moveLane(1); }
+    else if (g.x < -2.2) { tiltLast = now; moveLane(-1); }
+  } catch (err) {}
+});
 bindSetting('setPush', function () {
   if (notifyPerm() === 'granted') { toast(elHint, '🔔 On', 1200); }
   else { askNotify(); toast(elHint, '🔔 Permission…', 1200); }
@@ -4894,6 +5117,7 @@ function update(dt) {
     if (missionInfo().id === 'score') addMissionProgress(speed * dt * (doubleT > 0 ? 2 * scoreXK : scoreXK));
     if (missionInfo().id === 'distance') addMissionProgress(speed * dt);
     try { chaseTick(dt); } catch (e) {}
+    try { zoneTick(); } catch (e) {}
     // gontobye pouchano?
     if (!arrived && dist >= leg().len) {
       arrived = true; endReason = 'arrive'; arrivedName = legName(leg());
@@ -4911,6 +5135,11 @@ function update(dt) {
       } else {
         justFinished = selLeg;
         if (unlockLeg < selLeg + 1) { unlockLeg = selLeg + 1; try { localStorage.setItem('rrUnlock', String(selLeg + 1)); } catch (e) {} }
+        try {
+          var _wd = legDistrict(justFinished);
+          if (wDistricts.indexOf(_wd) < 0) { wDistricts.push(_wd); try { localStorage.setItem('rrWkD', JSON.stringify(wDistricts)); } catch (e) {} }
+          checkWeekly();
+        } catch (e) {}
         toast(elLoc, F('fin_leg', legName(leg()), ab, legName(LEGS[selLeg + 1])), 4000);
         try {
           var _di = checkDistRewards(true);
@@ -4946,6 +5175,11 @@ function update(dt) {
 
   for (i = obstacles.length - 1; i >= 0; i--) {
     var o = obstacles[i]; o.z += mv; o.mesh.position.z = o.z;
+    if (o.cross && state === 'play') { // pedestrian rasta par hoy
+      o.x += o.cross * dt;
+      if (o.x > 9 || o.x < -9) { scene.remove(o.mesh); obstacles.splice(i, 1); continue; }
+      if (!o.horned && Math.abs(o.z) < 8) { o.horned = true; try { sfx.cngBeep(); } catch (e) {} }
+    }
     o.mesh.position.x = o.x + curveAt(o.z);
     // near-miss: gari gaye laglo na kintu gaa ghese gelo — streak-e bonus bare
     if (state === 'play' && !o.passed && !o.banner && o.z > o.hd + 0.4) {
@@ -4970,6 +5204,12 @@ function update(dt) {
     gt.mesh.position.x = curveAt(gt.z);
     if (gt.arrow) { try { gt.arrow.position.y = 3.6 + Math.sin(time * 5 + gt.z * 0.1) * 0.35; } catch (e) {} }
     if (gt.arm) { try { gt.arm.rotation.z = gt.armBase + Math.sin(time * 6 + gt.z * 0.15) * 0.35; } catch (e) {} }
+    if (gt.kind === 'train' && !gt.done) { // rail crossing — barrier 8s, dan lane khola
+      gt.t += dt;
+      try { if (gt.mesh.userData.train) gt.mesh.userData.train.position.x = -32 + gt.t * 10; } catch (e) {}
+      if (gt.t > 8) { gt.done = true; try { scene.remove(gt.mesh); } catch (e) {} gates.splice(i, 1); continue; }
+      if (state === 'play' && gt.t < 6.5 && Math.abs(gt.z) < 1.6 && py < 1.2 && player.position.x < 1.5) { gt.done = true; die(); }
+    }
     if (gt.kind === 'check' && !gt.done && state === 'play' && gt.z > -85 && gt.z < -6) {
       warnBrake = true;
       if (!gt.warned) { gt.warned = true; sfx.checkpoint(); toast(elHint, T('check_slow'), 2200); }
@@ -4980,6 +5220,8 @@ function update(dt) {
         var take = Math.min(orderNeed, bagCap()) - carried;
         if (take > 0 && lane === gt.lane) {
           carried += take; parcelCount += take; missionGot += take;
+          wPar += take;
+          try { localStorage.setItem('rrWkP', String(wPar)); checkWeekly(); } catch (e) {}
           score += take * 10; xp += take * 5;
           sfx.power(); pop('📦 +' + take, player.position.x, py + 2.7, 0, '#7dff9a');
           sparks(player.position.x, py + 1, -0.5, 12);
@@ -5010,7 +5252,29 @@ function update(dt) {
           toast(elHint, T('check_pass'), 1800);
         }
       }
+      else if (gt.kind === 'fuel') {
+        if (speed < 8) {
+          var fneed = 100 - fuel;
+          if (fneed > 5 && bankCoins >= 80) { bankCoins -= 80; fuel = 100; try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {} cloudSave(); sfx.deliver(); toast(elLoc, lang === 'bn' ? '⛽ ফুল ট্যাংক! −৳80' : '⛽ Full tank! −৳80', 2200); }
+          else if (fneed <= 5) toast(elHint, lang === 'bn' ? '⛽ ট্যাংক ভর্তি!' : '⛽ Tank full!', 1500);
+          else toast(elHint, lang === 'bn' ? '⛽ ৳80 লাগবে!' : '⛽ Need ৳80!', 1500);
+        } else toast(elHint, lang === 'bn' ? '⛽ থামো! (speed কমাও)' : '⛽ Stop! (slow down)', 1500);
+      }
+      else if (gt.kind === 'mech') {
+        if (speed < 8) {
+          var miss = 100 - hp;
+          if (miss < 5) toast(elHint, lang === 'bn' ? '🔧 বাইক ঠিক আছে!' : '🔧 Bike is fine!', 1500);
+          else {
+            var mcc = miss > 50 ? 120 : miss >= 25 ? 70 : 20;
+            var mrep = mcc === 120 ? 100 : mcc === 70 ? 50 : 10;
+            if (bankCoins >= mcc) { bankCoins -= mcc; hp = Math.min(100, hp + mrep); try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {} cloudSave(); sfx.deliver(); toast(elLoc, (lang === 'bn' ? '🔧 মেরামত +' : '🔧 Repaired +') + mrep + '% −৳' + mcc, 2200); }
+            else toast(elHint, (lang === 'bn' ? '🔧 ৳' : '🔧 Need ৳') + mcc + (lang === 'bn' ? ' লাগবে!' : '!'), 1500);
+          }
+        } else toast(elHint, lang === 'bn' ? '🔧 থামো! (speed কমাও)' : '🔧 Stop! (slow down)', 1500);
+      }
       else if (lane === gt.lane && carried > 0) {
+        var custN = gt.cust != null ? CUSTS[gt.cust % CUSTS.length] : null;
+        if (speed > 10) { toast(elHint, (lang === 'bn' ? '🏠 থামো! ' : '🏠 Slow down! ') + (custN ? custN[0] + ' #' + custN[1] : ''), 1500); return; }
         var pay = carried * 30; pop('📦 +' + pay, player.position.x, 3, 0, '#7dff9a');
         score += pay; xp += carried * 10;
         sfx.deliver();
@@ -5027,6 +5291,9 @@ function update(dt) {
           var spNote = '';
           if (spType === 'med') { pay2 = Math.round(pay2 * 2); spNote = '🚨'; } // emergency: double pay
           if (spType === 'fragile' && orderCrash) { pay2 = Math.round(pay2 / 2); spNote = '🍷💔'; } // crash-e vege geche
+          if (spType === 'elec' && orderCrash) { pay2 = Math.floor(pay2 / 2); tip = 0; spNote = '📺💔'; } // electronics: crash-e boro penalty
+          if (spType === 'doc' && heat <= 0) { pay2 = Math.round(pay2 * 1.5); spNote = '📄✅'; } // police-safe document bonus
+          if (spType === 'cod') { pay2 += 60; spNote = '💰'; } // cash on delivery bonus
           // customer rating: crash -2, deri (>90s) -1; star onujayi tip
           var oSecs = 0; try { oSecs = Math.round((Date.now() - orderT0) / 1000); } catch (e) {}
           var stars = 5;
@@ -5041,6 +5308,11 @@ function update(dt) {
           var starTxt = '★★★★★'.slice(0, stars) + '☆☆☆☆☆'.slice(0, 5 - stars);
           tStars += stars;
           try { localStorage.setItem('rrStars', String(tStars)); } catch (e) {}
+          rateSum += stars; rateN++;
+          try { localStorage.setItem('rrRateS', String(rateSum)); localStorage.setItem('rrRateN', String(rateN)); } catch (e) {}
+          delStreak++;
+          var streakBonus = 0;
+          if (delStreak % 3 === 0) { streakBonus = 100; pay2 += 100; spNote += '🔥x' + delStreak; }
           bankCoins += pay2 + tip;
           try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
           if (evP().quota) toast(elLoc, F('exp_done', xMult, carried, xSec, pay2) + '<br>' + starTxt + (tip > 0 ? ' +৳' + tip : '') + (spNote ? ' ' + spNote : ''), 3600);
@@ -5149,6 +5421,7 @@ function update(dt) {
   if (state === 'play') {
     for (i = 0; i < obstacles.length; i++) {
       var ob = obstacles[i];
+      if (ob.soft) continue; // pedestrian — dhakka lagbe na
       if (Math.abs(ob.z) < ob.hd + 0.35 && Math.abs(px - ob.x) < ob.hw + 0.18 && py < ob.y1 - 0.05 && py + ph > ob.y0 + 0.05) { die(); break; }
     }
   }
@@ -5536,13 +5809,19 @@ function promptInstall() {
 var HELMET_COLS = [0x00b341, 0xdd2222, 0x2a9df4, 0xffc83d, 0x9b5de5, 0xf5f5f5];
 var LIGHT_COLS = [0xffffcc, 0xff6b6b, 0x6bff6b, 0x6bb8ff, 0xff6bff, 0xffffff];
 var STICKER_EMOJIS = ['🏍️', '⚡', '🔥', '💀', '👑', '🎯'];
-var selHelmet = 0, selLight = 0, selSticker = 0;
+var selHelmet = 0, selLight = 0, selSticker = 0, selJacket = 0;
+var JACKET_COLS = [0x232323, 0xc23b3b, 0x2d7a4f, 0x2a9df4, 0xffc83d, 0x9b5de5];
 try { selHelmet = +localStorage.getItem('rrHelmet') || 0; } catch (e) {}
 try { selLight = +localStorage.getItem('rrLight') || 0; } catch (e) {}
 try { selSticker = +localStorage.getItem('rrSticker') || 0; } catch (e) {}
+try { selJacket = +localStorage.getItem('rrJacket') || 0; } catch (e) {}
 function applyCustomization() {
   try {
     helmetM.color.setHex(HELMET_COLS[selHelmet % HELMET_COLS.length]);
+    jacketM.color.setHex(JACKET_COLS[selJacket % JACKET_COLS.length]);
+    var bagScale = [0.85, 1.0, 1.25][Math.min(bagLevel, 2)];
+    var boxMesh0 = bikeG.children.find(function (m) { return m.isMesh && Math.abs(m.position.x) < 0.01 && Math.abs(m.position.y - 1.52) < 0.01 && Math.abs(m.position.z - 0.75) < 0.01; });
+    if (boxMesh0) boxMesh0.scale.setScalar(bagScale);
     var stickerEmoji = STICKER_EMOJIS[selSticker % STICKER_EMOJIS.length];
     var stickerTex = createStickerTexture(stickerEmoji);
     var boxMesh = bikeG.children.find(function (m) { return m.isMesh && Math.abs(m.position.x) < 0.01 && Math.abs(m.position.y - 1.52) < 0.01 && Math.abs(m.position.z - 0.75) < 0.01; });
@@ -5571,12 +5850,17 @@ function renderCustomize() {
     if (s) s.innerHTML = STICKER_EMOJIS.map(function (e2, i) {
       return '<button class="divBtn' + (i === selSticker ? ' sel' : '') + '" data-cust="s' + i + '" style="font-size:20px;">' + e2 + '</button>';
     }).join('');
+    var jc = $('custJacket');
+    if (jc) jc.innerHTML = JACKET_COLS.map(function (c, i) {
+      return '<button class="divBtn' + (i === selJacket ? ' sel' : '') + '" data-cust="j' + i + '" style="background:#' + c.toString(16).padStart(6, '0') + ';border:2px solid ' + (i === selJacket ? '#ffc83d' : 'rgba(255,255,255,.2)') + ';"></button>';
+    }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('[data-cust]'), function (b) {
       b.addEventListener('click', function (e) {
         e.stopPropagation();
         var k = b.getAttribute('data-cust');
         if (k.charAt(0) === 'h') { selHelmet = +k.slice(1); try { localStorage.setItem('rrHelmet', String(selHelmet)); } catch (e2) {} }
         else if (k.charAt(0) === 'l') { selLight = +k.slice(1); try { localStorage.setItem('rrLight', String(selLight)); } catch (e2) {} }
+        else if (k.charAt(0) === 'j') { selJacket = +k.slice(1); try { localStorage.setItem('rrJacket', String(selJacket)); } catch (e2) {} }
         else { selSticker = +k.slice(1); try { localStorage.setItem('rrSticker', String(selSticker)); } catch (e2) {} }
         applyCustomization(); renderCustomize(); applyBikeColor();
         try { sfx.move(); } catch (e2) {}
@@ -5656,6 +5940,7 @@ function renderDest() {
     }
     html += '<div class="legRow lock"><span>🔒 ' + (lang === 'bn' ? 'আরও ৭ বিভাগ' : '7 more divisions') + ' <small style="color:var(--gold)">' + (lang === 'bn' ? 'শীঘ্রই আসছে' : 'Coming Soon') + '</small></span><span class="st">🔒</span></div>';
     rm.innerHTML = html;
+    try { renderJourney(); } catch (e) {}
     Array.prototype.forEach.call(rm.querySelectorAll('.legRow[data-leg]'), function (b) {
       b.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -5780,6 +6065,7 @@ function checkAch() {
       try { localStorage.setItem('rrAch', JSON.stringify(got)); } catch (e) {}
       pendingClean = false;
       var rw = fresh.length * 200; bankCoins += rw;
+      try { addGems(fresh.length); } catch (e) {}
       toast(elLoc, '🏅 ' + fresh.map(function (a) { return a.ico; }).join(' ') + ' +' + rw, 3200);
       try { logEv('achieve', { n: fresh.length }); } catch (e) {}
     }
@@ -5866,7 +6152,8 @@ function renderStats() {
       st('💥', bn ? 'ক্র্যাশ' : 'Crashes', tCrash) +
       st('✨', bn ? 'পারফেক্ট' : 'Perfect', tPerfect) +
       st('🌙', bn ? 'রাত' : 'Night', tNight) +
-      st('🌧️', bn ? 'বৃষ্টি' : 'Rain', tRain);
+      st('🌧️', bn ? 'বৃষ্টি' : 'Rain', tRain) +
+      st('⭐', bn ? 'রেটিং' : 'Rating', myRating());
   } catch (e) {}
 }
 function renderBoard() {
@@ -6026,7 +6313,7 @@ function renderProfile() {
     var bn = lang === 'bn';
     if ($('profName')) $('profName').textContent = playerName || (bn ? 'রাইডার' : 'Rider');
     if ($('profAvatar')) $('profAvatar').innerHTML = '<img src="' + getAvatar() + '" style="width:64px;height:64px;border-radius:50%;border:3px solid var(--gold);background:#fff;" onerror="this.style.display=\'none\';this.parentNode.textContent=\'🏍️\'">';
-    if ($('profDiv')) $('profDiv').textContent = '📍 ' + (playerDiv ? divName(playerDiv) : '');
+    if ($('profDiv')) $('profDiv').textContent = '📍 ' + (playerDiv ? divName(playerDiv) : '') + ' · ⭐ ' + myRating();
     if ($('profLvl')) $('profLvl').textContent = riderLevel;
     if ($('profBest')) $('profBest').textContent = best;
     if ($('profBank')) $('profBank').textContent = '৳' + bankCoins;
@@ -6060,6 +6347,14 @@ function renderGarage() {
   if ($('menuLvlV')) $('menuLvlV').textContent = riderLevel;
   if ($('menuBankV')) $('menuBankV').textContent = bankCoins;
   g.innerHTML = '<div class="best" style="margin:0 0 8px">' + F('gar_head', riderLevel, Math.floor(xp), xpNeed(), bankCoins) + '</div>' +
+    '<div class="board" style="margin:0 0 8px;"><div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin:0;">' +
+    '<div class="stat"><small>🔧 Engine</small><b>L' + upSpeed + '</b></div>' +
+    '<div class="stat"><small>🛑 Brake</small><b>L' + upHandle + '</b></div>' +
+    '<div class="stat"><small>🛞 Susp.</small><b>L' + upHandle + '</b></div>' +
+    '<div class="stat"><small>⛽ Tank</small><b>L' + upFuel + '</b></div>' +
+    '<div class="stat"><small>📦 Cargo</small><b>L' + bagLevel + '</b></div>' +
+    '<div class="stat"><small>💎 Gems</small><b>' + gems + '</b></div>' +
+    '</div></div>' +
     '<div class="setList" style="margin:0">' +
     '<div class="setRow"><span class="lbl"><span class="ico">🏍️</span>' + T('up_bike') + ' ' + hpStore + '%<span class="sub">' + T('up_cond') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upR">' + T('gar_repair') + repairCost() + '</button></div>' +
     '<div class="setRow"><span class="lbl"><span class="ico">🎒</span>' + T('up_bag') + ' ' + F('gar_pcs', bagCap()) + '<span class="sub">' + T('up_bag_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upB">' + (bagLevel >= 2 ? T('gar_max') : T('gar_bigger') + BAG_COST[bagLevel + 1]) + '</button></div>' +
@@ -6068,6 +6363,8 @@ function renderGarage() {
     '<div class="setRow"><span class="lbl"><span class="ico">⛽</span>' + T('up_fuel') + ' · Lvl ' + upFuel + '<span class="sub">' + T('up_fuel_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upF">' + (upFuel >= UMAX ? T('gar_max') : T('gar_up') + upCost('f')) + '</button></div>' +
     '<div class="setRow"><span class="lbl"><span class="ico">🌾</span>' + T('up_mag') + ' · Lvl ' + upMag + '<span class="sub">' + T('up_mag_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upM">' + (upMag >= UMAX ? T('gar_max') : T('gar_up') + upCost('m')) + '</button></div>' +
     '<div class="setRow"><span class="lbl"><span class="ico">🚀</span>' + T('up_nitro') + ' · Lvl ' + upNitro + '<span class="sub">' + T('up_nitro_sub') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upN">' + (upNitro >= UMAX ? T('gar_max') : T('gar_up') + upCost('n')) + '</button></div>' +
+    '<div class="setRow"><span class="lbl"><span class="ico">💎</span>' + (lang === 'bn' ? 'পিট স্টপ' : 'Pit Stop') + '<span class="sub">' + (lang === 'bn' ? 'ফুল মেরামত + 300 XP' : 'Full repair + 300 XP') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="upPit">3 💎</button></div>' +
+    '<div class="setRow"><span class="lbl"><span class="ico">💎</span>' + (lang === 'bn' ? 'ডাবল রান' : 'Double Run') + '<span class="sub">' + (lang === 'bn' ? 'পরের রান দ্বিগুণ কয়েন' : 'Next run double coins') + '</span></span><button class="btn" style="font-size:15px;padding:2px 14px 4px" id="up2x">' + (dblRun ? '✅' : '2 💎') + '</button></div>' +
     '</div>';
   $('upS').addEventListener('click', function (e) { e.stopPropagation(); buyUp('s'); });
   $('upH').addEventListener('click', function (e) { e.stopPropagation(); buyUp('h'); });
@@ -6076,6 +6373,21 @@ function renderGarage() {
   $('upN').addEventListener('click', function (e) { e.stopPropagation(); buyUp('n'); });
   $('upR').addEventListener('click', function (e) { e.stopPropagation(); buyRepair(); });
   $('upB').addEventListener('click', function (e) { e.stopPropagation(); buyBag(); });
+  $('upPit').addEventListener('click', function (e) { e.stopPropagation(); buyPit(); });
+  $('up2x').addEventListener('click', function (e) { e.stopPropagation(); buy2x(); });
+}
+function buyPit() {
+  if (gems < 3) { toast(elHint, lang === 'bn' ? '💎 ৩ জেম লাগবে!' : '💎 Need 3 gems!', 1800); return; }
+  gems -= 3; hpStore = 100; xp += 300;
+  try { localStorage.setItem('rrGems', String(gems)); localStorage.setItem('rrHp', '100'); } catch (e) {}
+  sfx.deliver(); renderGarage(); updateMenuBest(); cloudSave();
+}
+function buy2x() {
+  if (dblRun) return;
+  if (gems < 2) { toast(elHint, lang === 'bn' ? '💎 ২ জেম লাগবে!' : '💎 Need 2 gems!', 1800); return; }
+  gems -= 2; dblRun = true;
+  try { localStorage.setItem('rrGems', String(gems)); } catch (e) {}
+  sfx.power(); renderGarage(); updateMenuBest();
 }
 function buyBag() {
   if (bagLevel >= 2) return;
@@ -6083,7 +6395,7 @@ function buyBag() {
   if (bankCoins < c) { toast(elHint, T('buy_fail'), 1800); return; }
   bankCoins -= c; bagLevel++;
   try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrBag', String(bagLevel)); } catch (e) {}
-  sfx.deliver(); renderGarage(); cloudSave();
+  sfx.deliver(); renderGarage(); applyCustomization(); cloudSave();
 }
 function buyRepair() {
   var c = repairCost();
@@ -6120,6 +6432,7 @@ function updateMenuHeader() {
     if ($('hdXpFill')) $('hdXpFill').style.width = Math.min(100, xp / need * 100) + '%';
     if ($('hdXpTxt')) $('hdXpTxt').textContent = Math.floor(xp) + '/' + need + ' XP';
     if ($('hdCoins')) $('hdCoins').textContent = bankCoins;
+    if ($('hdGems')) $('hdGems').textContent = gems;
     var day = 1; try { day = dailyInfo().streak || 1; } catch (e) {}
     if ($('mmFoot')) $('mmFoot').textContent = (bn ? 'রংপুর' : 'Rangpur') + ' • ' + (bn ? 'দিন ' : 'Day ') + day + ' • ' + (bn ? 'দৌড় শুরু' : 'Ride Begins');
   } catch (e) {}
@@ -6266,7 +6579,7 @@ function boot() {
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
   $('profRow').addEventListener('click', function () { renderProfile(); });
   $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
-  $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
+  $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, '💎 ' + gems + (lang === 'bn' ? ' · গ্যারেজে খরচ করো' : ' · spend in Garage'), 1800); });
   $('coinPlus').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
   // radio FM: HUD pill tap = next station · prothom touch-e audio unlock
   (function () {
@@ -6310,6 +6623,7 @@ function boot() {
       localStorage.setItem('rrDaily', JSON.stringify({ last: dayStr(), streak: info.streak }));
       if (info.streak > maxStreak()) localStorage.setItem('rrMaxStreak', String(info.streak));
     } catch (e) {}
+    if (info.streak >= 7) { try { addGems(3, lang === 'bn' ? '৭ দিন স্ট্রিক!' : '7-day streak!'); } catch (e) {} }
     cloudSave(); renderDaily(); updateMenuBest();
     try { logEv('daily_claim', { streak: info.streak }); } catch (e) {}
     sfx.coin();
