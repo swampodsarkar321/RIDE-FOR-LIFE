@@ -4273,7 +4273,19 @@ function toast(el, html, ms) {
 }
 
 var blobGeoO = null, blobMatO = null;
+function clearAround(z, r) { // gate-er asepashe obstacle thakbe na — reachable guarantee
+  try {
+    for (var i = obstacles.length - 1; i >= 0; i--) {
+      if (Math.abs(obstacles[i].z - z) < r) { try { scene.remove(obstacles[i].mesh); } catch (e) {} obstacles.splice(i, 1); }
+    }
+  } catch (e) {}
+}
 function addObstacle(kind, laneIdx, z) {
+  try { // gate-er kache spawn noy — customer/pickup kokhono obstacle-er vitore na
+    for (var gi = 0; gi < gates.length; gi++) {
+      if (Math.abs(z - gates[gi].z) < 9) return null;
+    }
+  } catch (e) {}
   var o = kind === 'banner' ? makeBanner() : MAKERS[kind]();
   o.x = kind === 'banner' ? 0 : LANE_X[laneIdx]; o.z = z; o.kind = kind; o.passed = false;
   o.mesh.position.set(o.x, 0, z); scene.add(o.mesh); obstacles.push(o);
@@ -4610,6 +4622,7 @@ function spawnTrain(z) {
   tr.position.set(-34, 0, 0); g.add(tr);
   g.userData.train = tr;
   g.position.z = z; scene.add(g);
+  clearAround(z, 14);
   gates.push({ mesh: g, kind: 'train', lane: -1, z: z, done: false, t: 0 });
   try { toast(elHint, lang === 'bn' ? '🚨 ট্রেন আসছে! ডান লেন নাও!' : '🚨 TRAIN COMING! Take right lane!', 2600); sfx.checkpoint(); } catch (e) {}
 }
@@ -4661,6 +4674,7 @@ function makeSvcGate(kind) {
 }
 function spawnSvc(kind, z) {
   var m = makeSvcGate(kind); m.position.z = z; scene.add(m);
+  clearAround(z, 14);
   gates.push({ mesh: m, kind: kind, lane: lane, z: z, done: false });
 }
 var gems = 0, dblRun = false;
@@ -4747,6 +4761,7 @@ function spawnDeliveryPair(z) { // age pickup stall, 150m pore prapok
   var rl = (Math.random() * 3) | 0;
   var pk = makePickupStall(pl); pk.position.z = z; scene.add(pk);
   gates.push({ mesh: pk, kind: 'pickup', lane: pl, z: z, done: false });
+  clearAround(z, 14); clearAround(z - 150, 14);
   var rc = makeRecipientStand(rl); rc.position.z = z - 150; scene.add(rc);
   var ci = (Math.random() * CUSTS.length) | 0;
   try { var cb = new THREE.Mesh(PG(2.6, 0.65), custMat(ci)); cb.position.set(0, 2.4, 0); rc.add(cb); } catch (e) {}
@@ -4788,6 +4803,7 @@ function makeCheckpoint() {
   return g;
 }
 function spawnCheckpoint(z) {
+  clearAround(z, 14);
   var mesh = makeCheckpoint(); mesh.position.z = z; scene.add(mesh);
   gates.push({ mesh: mesh, kind: 'check', lane: -1, z: z, done: false });
 }
