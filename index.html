@@ -1397,12 +1397,52 @@ function makeHut(x, z, parent, big) {
   var roof = new THREE.Mesh(CG(w * 0.85, h * 0.75, 4), roofMat);
   roof.rotation.y = Math.PI / 4; roof.position.y = h + h * 0.35; roof.castShadow = true; roof.receiveShadow = true; g.add(roof);
   box(0.7, 1.1, 0.08, 0x6b4a2f, 0, 0.55, d / 2 + 0.02, g);
+  box(0.8, 0.06, 0.1, 0x8a5a2e, 0, 1.12, d / 2 + 0.02, g); // door frame top
+  box(0.06, 1.16, 0.1, 0x8a5a2e, -0.38, 0.58, d / 2 + 0.02, g); // door frame sides
+  box(0.06, 1.16, 0.1, 0x8a5a2e, 0.38, 0.58, d / 2 + 0.02, g);
   box(0.5, 0.5, 0.06, 0x9fc4d8, -w / 3, 0.85, d / 2 + 0.02, g);
+  box(0.6, 0.06, 0.08, 0xffffff, -w / 3, 1.12, d / 2 + 0.02, g); // window frame top
+  box(0.6, 0.06, 0.08, 0xffffff, -w / 3, 0.58, d / 2 + 0.02, g);
+  box(0.06, 0.6, 0.08, 0xffffff, -w / 3 - 0.28, 0.85, d / 2 + 0.02, g);
+  box(0.06, 0.6, 0.08, 0xffffff, -w / 3 + 0.28, 0.85, d / 2 + 0.02, g);
   var litWin = new THREE.Mesh(PG(0.4, 0.4), winGlowMat); litWin.position.set(-w / 3, 0.85, d / 2 + 0.06); g.add(litWin); // raate ghorer alo
   var porch = box(w * 0.6, 0.08, 0.9, 0xc9a86a, 0, 0.04, d / 2 + 0.5, g);
   cyl(0.06, 1.2, 0.06, 0x6b4a2f, -w * 0.25, 0.6, d / 2 + 0.85, g);
   cyl(0.06, 1.2, 0.06, 0x6b4a2f, w * 0.25, 0.6, d / 2 + 0.85, g);
   parent.add(g);
+}
+var wireMat = null;
+function makePowerLine(side, parent) { // electric pole + jhula tar (BD road feel)
+  var x = side * 7.2;
+  [-20, 20].forEach(function (z) {
+    cyl(0.12, 7.5, 0.12, 0x4a3a28, x, 3.75, z, parent);
+    box(1.5, 0.12, 0.12, 0x4a3a28, x, 7.1, z, parent); // crossarm
+    box(0.1, 0.18, 0.1, 0x222222, x - 0.6, 7.25, z, parent);
+    box(0.1, 0.18, 0.1, 0x222222, x + 0.6, 7.25, z, parent);
+  });
+  if (!wireMat) wireMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+  [-0.6, 0, 0.6].forEach(function (o) {
+    try {
+      var cur = new THREE.QuadraticBezierCurve3(
+        new THREE.Vector3(x + o, 7.25, -20),
+        new THREE.Vector3(x + o, 6.3, 0),
+        new THREE.Vector3(x + o, 7.25, 20));
+      var ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(cur.getPoints(8)), wireMat);
+      parent.add(ln);
+    } catch (e) {}
+  });
+}
+function makeBanana(x, z, parent) { // kola gach: mota kando + jhula pata + chora
+  var g = new THREE.Group(); g.position.set(x, 0, z);
+  cyl(0.16, 2.2, 0.16, 0x4a7a3a, 0, 1.1, 0, g);
+  for (var i = 0; i < 6; i++) {
+    var piv = new THREE.Group(); piv.position.y = 2.2; piv.rotation.y = i * Math.PI / 3 + rnd(0, 0.5); g.add(piv);
+    var lf = box(0.5, 0.04, 2.4, leafMat, 0, 0.35, 1.1, piv); lf.rotation.x = 0.55 + rnd(0, 0.25);
+  }
+  ell(0.16, 0.4, 0.16, 0x6b4a8a, 0.3, 1.7, 0.2, g); // kolar chora (beguni ful)
+  for (var b = 0; b < 4; b++) ell(0.07, 0.12, 0.07, 0x9acD32, -0.2 + b * 0.12, 1.9, -0.1, g); // kacha kola
+  parent.add(g);
+  try { swayTrees.push({ g: g, base: 0, ph: Math.random() * 6 }); if (swayTrees.length > 140) swayTrees.shift(); } catch (e) {}
 }
 function makeBamboo(x, z, parent) {
   var g = new THREE.Group(); g.position.set(x, 0, z);
@@ -1874,6 +1914,8 @@ function decorate(seg) {
     });
     makeLamp(side, -5 + rnd(-1, 1), d);
     makeLamp(side, 15 + rnd(-1, 1), d);
+    if ((side === 1 && Math.random() < 0.6) || (side === -1 && Math.random() < 0.25)) makePowerLine(side, d); // electric pole + tar
+    if (!town && Math.random() < 0.22) makeBanana(side * (8 + rnd(0, 2)), rnd(-14, 14), d); // kola gach
     if (billboardsOn && Math.random() < (town ? 0.65 : 0.50)) makeBillboard(side, rnd(-12, 12), d);
     if (!town && Math.random() < 0.4) makeEgret(side * (6.5 + rnd(0, 3)), rnd(0.3, 0.4), rnd(-16, 16), d);
     if (Math.random() < 0.55) { try { makeLegLandmark(typeof selLeg !== 'undefined' ? selLeg : 0, side, rnd(-14, 14), d); } catch (e) {} }
@@ -2569,6 +2611,8 @@ function makeBus() {
   chromeBox(1.7, 0.25, 0.15, 0, 0.65, -2.12, g);
   headPair(g, -2.2, 1.0);
   box(0.6, 0.25, 0.05, 0x111111, 0, 0.35, 0.5, g); // destination board
+  if (!makeBus.routes) makeBus.routes = ['RANGPUR', 'DINAJPUR', 'SAIDPUR', 'PANCHAGARH'].map(function (r) { return new THREE.MeshBasicMaterial({ map: textTex(r, 256, 64, '#111111', '#ffc83d', '#ffc83d') }); });
+  try { var rb = new THREE.Mesh(PG(0.55, 0.14), pick(makeBus.routes)); rb.position.set(0, 0.35, 0.53); g.add(rb); } catch (e) {}
   tailPair(g, 2.05, 1.1);
   wheel(0.45, 0.26, -0.85, 0.45, -1.3, g); wheel(0.45, 0.26, 0.85, 0.45, -1.3, g);
   wheel(0.45, 0.26, -0.85, 0.45, 1.3, g); wheel(0.45, 0.26, 0.85, 0.45, 1.3, g);
