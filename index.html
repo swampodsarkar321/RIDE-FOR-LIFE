@@ -1858,35 +1858,53 @@ try {
   clothM = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, metalness: 0.05, roughness: 0.9 });
   boxGreenM = new THREE.MeshStandardMaterial({ color: 0x0d8a4f, metalness: 0.3, roughness: 0.4, envMap: SKYCUBE, envMapIntensity: 0.8 });
 } catch (e) {}
-box(0.38, 0.45, 1.7, bikePaintM, 0, 0.72, 0, bikeG); // body
-box(0.34, 0.12, 0.95, clothM, 0, 0.98, -0.25, bikeG); // seat
-ell(0.29, 0.2, 0.44, bikeTankM, 0, 0.92, 0.45, bikeG); // tank
+box(0.32, 0.4, 1.5, bikePaintM, 0, 0.72, 0, bikeG); // frame body (color anchor)
+box(0.34, 0.3, 0.8, 0x2a2d33, 0, 0.55, 0.1, bikeG); // engine block
+for (var fi = 0; fi < 3; fi++) box(0.4, 0.05, 0.7, 0x1a1c20, 0, 0.48 + fi * 0.12, 0.1, bikeG); // cooling fins
+ell(0.26, 0.2, 0.5, bikeTankM, 0, 0.95, 0.35, bikeG); // teardrop tank
+cyl(0.05, 0.04, 0.05, bikeChromeM, 0, 1.14, 0.35, bikeG); // tank cap
+box(0.32, 0.1, 0.7, clothM, 0, 1.0, -0.15, bikeG); // rider seat
+box(0.3, 0.13, 0.4, clothM, 0, 1.03, 0.42, bikeG); // pillion step-up
+box(0.2, 0.22, 0.06, bikePaintM, -0.2, 0.78, 0.45, bikeG); box(0.2, 0.22, 0.06, bikePaintM, 0.2, 0.78, 0.45, bikeG); // side covers
 box(0.5, 0.07, 0.07, bikeChromeM, 0, 1.12, -1.05, bikeG); // handlebar
-box(0.03, 0.25, 0.03, 0x222222, -0.22, 1.25, -1.05, bikeG); box(0.03, 0.25, 0.03, 0x222222, 0.22, 1.25, -1.05, bikeG);
-box(0.12, 0.08, 0.03, 0x111111, -0.22, 1.4, -1.05, bikeG); box(0.12, 0.08, 0.03, 0x111111, 0.22, 1.4, -1.05, bikeG); // rear-view mirror
-box(0.06, 0.7, 0.06, bikeChromeM, -0.12, 0.75, -1.0, bikeG); box(0.06, 0.7, 0.06, bikeChromeM, 0.12, 0.75, -1.0, bikeG); // front fork
-var exP = cyl(0.05, 1.1, 0.05, bikeChromeM, 0.25, 0.45, 0.3, bikeG); exP.rotation.x = Math.PI / 2; // chrome exhaust pipe
-var exM = cyl(0.08, 0.4, 0.08, bikeChromeM, 0.25, 0.45, 0.95, bikeG); exM.rotation.x = Math.PI / 2; // muffler
-box(0.28, 0.06, 0.5, 0x1a1a1a, 0, 0.68, -1.0, bikeG); // front fender
+box(0.1, 0.09, 0.09, 0x111111, -0.28, 1.12, -1.05, bikeG); box(0.1, 0.09, 0.09, 0x111111, 0.28, 1.12, -1.05, bikeG); // grips
+box(0.03, 0.22, 0.03, 0x222222, -0.2, 1.22, -1.02, bikeG); box(0.03, 0.22, 0.03, 0x222222, 0.2, 1.22, -1.02, bikeG); // mirror stalks
+box(0.12, 0.08, 0.03, 0x111111, -0.2, 1.36, -1.0, bikeG); box(0.12, 0.08, 0.03, 0x111111, 0.2, 1.36, -1.0, bikeG); // mirrors
+var forkL = cyl(0.055, 0.78, 0.055, bikeChromeM, -0.12, 0.78, -1.06, bikeG); forkL.rotation.x = 0.3; // raked fork L
+var forkR = cyl(0.055, 0.78, 0.055, bikeChromeM, 0.12, 0.78, -1.06, bikeG); forkR.rotation.x = 0.3; // raked fork R
+var exP = cyl(0.045, 1.0, 0.045, bikeChromeM, 0.24, 0.42, 0.25, bikeG); exP.rotation.x = Math.PI / 2; // exhaust pipe
+var exM = cyl(0.09, 0.55, 0.09, bikeChromeM, 0.25, 0.42, 0.8, bikeG); exM.rotation.x = Math.PI / 2; // fat muffler
+cyl(0.095, 0.06, 0.095, 0x1a1a1a, 0.25, 0.42, 1.08, bikeG).rotation.x = Math.PI / 2; // muffler tip
+box(0.04, 0.5, 0.7, 0x1a1a1a, -0.2, 0.45, 0.5, bikeG); // chain cover
+var shL = cyl(0.04, 0.42, 0.04, bikeChromeM, -0.15, 0.62, 0.82, bikeG); shL.rotation.x = 0.35; // rear shock L
+var shR = cyl(0.04, 0.42, 0.04, bikeChromeM, 0.15, 0.62, 0.82, bikeG); shR.rotation.x = 0.35; // rear shock R
 var tailMat = new THREE.MeshPhongMaterial({ color: 0x8a1010, emissive: 0x000000 });
 box(0.22, 0.14, 0.06, tailMat, 0, 0.82, 1.35, bikeG); // taillight (pichone, camera dike)
 var ptGlow = new THREE.Sprite(playerTailGlowMat); ptGlow.scale.set(0.75, 0.75, 1); ptGlow.position.set(0, 0.82, 1.48); bikeG.add(ptGlow);
 box(0.28, 0.16, 0.02, 0xffdd00, 0, 0.58, 1.3, bikeG); // plate
-var wheelF = wheel(0.42, 0.14, 0, 0.42, -1.0, bikeG);
-var wheelB = wheel(0.42, 0.14, 0, 0.42, 1.0, bikeG);
-[wheelF, wheelB].forEach(function (ww) { // spoke wheel: chrome hub + crossed spokes (chakar sathe ghore)
+var wheelF = wheel(0.42, 0.2, 0, 0.42, -1.0, bikeG);
+var wheelB = wheel(0.42, 0.2, 0, 0.42, 1.0, bikeG);
+[wheelF, wheelB].forEach(function (ww) { // fat tire + rim + 5 spokes (chakar sathe ghore)
   try {
-    var hub = new THREE.Mesh(CYL, bikeChromeM); hub.scale.set(0.18, 1.2, 0.18); hub.castShadow = false; ww.add(hub);
-    for (var s = 0; s < 4; s++) {
+    var rim = new THREE.Mesh(CYL, bikeChromeM); rim.scale.set(0.26, 1.08, 0.26); rim.castShadow = false; ww.add(rim);
+    var hub = new THREE.Mesh(CYL, M(0x333333)); hub.scale.set(0.09, 1.15, 0.09); hub.castShadow = false; ww.add(hub);
+    for (var s = 0; s < 5; s++) {
       var sp = new THREE.Mesh(BOX, bikeChromeM);
-      sp.scale.set(1.7, 0.5, 0.09); sp.rotation.y = s * Math.PI / 4; sp.castShadow = false; ww.add(sp);
+      sp.scale.set(1.5, 0.16, 0.06); sp.rotation.y = s * Math.PI / 5; sp.castShadow = false; ww.add(sp);
     }
+  } catch (e) {}
+});
+[-1.0, 1.0].forEach(function (wz) { // curved fender over each wheel
+  try {
+    var fen = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.07, 8, 14, Math.PI), bikePaintM);
+    fen.rotation.y = Math.PI / 2; fen.position.set(0, 0.42, wz); fen.castShadow = true; bikeG.add(fen);
   } catch (e) {}
 });
 var heatShim = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOWTEX, color: 0xcfd8e3, transparent: true, opacity: 0, depthWrite: false }));
 heatShim.scale.set(0.5, 0.5, 1); heatShim.position.set(0.25, 0.45, 1.35); bikeG.add(heatShim); // heat haze: silencer-er gorom shimmer
-// headlight samne (-z)
-var hl = box(0.2, 0.16, 0.06, 0xffffcc, 0, 1.0, -1.28, bikeG);
+// headlight samne (-z): gol bucket + chrome ring
+ell(0.14, 0.15, 0.12, bikeChromeM, 0, 1.0, -1.24, bikeG); // bucket
+var hl = cyl(0.12, 0.08, 0.12, 0xffffcc, 0, 1.0, -1.28, bikeG); hl.rotation.x = Math.PI / 2; // round lens
 var hlBeam = new THREE.Mesh(new THREE.CircleGeometry(0.5, 12), new THREE.MeshBasicMaterial({ color: 0xfff2b0, transparent: true, opacity: 0, fog: false }));
 hlBeam.position.set(0, 0.9, -2.2); hlBeam.rotation.y = Math.PI; bikeG.add(hlBeam);
 var hlGlow = new THREE.Sprite(playerHeadGlowMat); hlGlow.scale.set(1.1, 1.1, 1); hlGlow.position.set(0, 1.0, -1.42); bikeG.add(hlGlow);
