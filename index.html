@@ -1790,6 +1790,36 @@ function decorate(seg) {
       if (Math.random() < 0.6) makePond(side * (8.5 + rnd(0, 2)), rnd(-14, 14), d);
       else makePaddyField(side, 0, d);
     } else makePaddyField(side, 0, d);
+    var lm = (typeof leg === 'function' && leg().lm) ? leg().lm : ''; // proti elakar signature
+    if (lm === 'river' || lm === 'ghat') {
+      if (Math.random() < 0.5) {
+        var rw = new THREE.Mesh(PG(6, 26), waterMat); rw.rotation.x = -Math.PI / 2; rw.position.set(side * 13, 0.01, rnd(-6, 6)); d.add(rw);
+        if (Math.random() < 0.6) { var bt = new THREE.Group(); bt.position.set(side * 13, 0.05, rnd(-10, 10)); d.add(bt); box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, bt); }
+      }
+    } else if (lm === 'rail') {
+      if (Math.random() < 0.4) makeRails(side * 11, rnd(-10, 10), d); // pase rail line
+    } else if (lm === 'paddy') {
+      if (Math.random() < 0.5) makeHaystack(side * (9 + rnd(0, 2)), rnd(-12, 12), d);
+    } else if (lm === 'wheat') {
+      for (var wr2 = 0; wr2 < 3; wr2++) box(3.0, 0.45, 0.6, 0xd8b83a, side * (9 + rnd(0, 2)), 0.22, rnd(-14, 14), d); // gomer khet
+      if (Math.random() < 0.4) { box(0.9, 0.7, 0.6, 0xb08d4a, side * 10, 0.35, rnd(-10, 10), d); box(0.9, 0.7, 0.6, 0xb08d4a, side * 10, 1.0, rnd(-10, 10), d); } // fosoler bosta
+    } else if (lm === 'market') {
+      if (Math.random() < 0.5) makeUmbrella(side * (8 + rnd(0, 1.5)), rnd(-12, 12), d, pick([0xc23b3b, 0xffc83d, 0x2d7a4f]));
+    } else if (lm === 'highway') {
+      if (Math.random() < 0.3) { // brickfield: Chimney + iter stack
+        cyl(0.5, 7, 0.5, 0x8a4a2a, side * 16, 3.5, rnd(-10, 10), d);
+        for (var bi = 0; bi < 3; bi++) box(1.4, 0.5, 0.9, 0xa8542f, side * (12 + rnd(0, 2)), 0.25 + bi * 0.5, rnd(-8, 8), d);
+      }
+    } else if (lm === 'tea') {
+      if (side === 1 && Math.random() < 0.5) { // dure pahar silhouette
+        var pk = new THREE.Mesh(CG(26, 15, 5), M(0x8fa8c8)); pk.position.set(55, 2, -40); d.add(pk);
+        var pk2 = new THREE.Mesh(CG(16, 10, 5), M(0x7a9cc0)); pk2.position.set(40, 1, -30); d.add(pk2);
+      }
+    } else if (lm === 'airport') {
+      if (Math.random() < 0.35) { box(0.15, 5, 0.15, 0xdddddd, side * 12, 2.5, rnd(-10, 10), d); box(1.2, 0.5, 0.2, 0xff8c1a, side * 12, 5.1, rnd(-10, 10), d); } // windsock pole
+    } else if (lm === 'border') {
+      if (Math.random() < 0.4) { box(0.4, 1.8, 0.4, 0xf0ead8, side * 7.5, 0.9, rnd(-12, 12), d); box(0.44, 0.3, 0.44, 0x2d7a4f, side * 7.5, 1.95, rnd(-12, 12), d); } // border pillar
+    }
     [-10, 10].forEach(function (slot) {
       var z = slot + rnd(-2, 2);
       if (town) {
@@ -2709,6 +2739,10 @@ function makeLegLandmark(idx, side, z, parent) {
     box(2.2, 0.35, 0.7, 0x6b4a2f, 0, 0.18, 0, rbt);
     box(2.0, 0.12, 1.0, 0x8a6a3f, x - side * 3.0, 0.3, z - 1, parent);
     board('#2d7a4f');
+  } else if (kind === 'wheat') { // gomer khet + bosta
+    for (var wr = 0; wr < 3; wr++) box(3.0, 0.45, 0.6, 0xd8b83a, x + (wr - 1) * 0.3, 0.22, z - 1 + wr, parent);
+    box(0.9, 0.7, 0.6, 0xb08d4a, x + 3.2, 0.35, z + 1, parent); box(0.9, 0.7, 0.6, 0xb08d4a, x + 3.2, 1.0, z + 1, parent);
+    board('#a88a2e');
   } else if (kind === 'market') { // gramin bazar: stall sari
     makeUmbrella(x - 1.5, z, parent, 0xc23b3b);
     makeUmbrella(x + 1.5, z + 1, parent, 0x2d7a4f);
@@ -3986,9 +4020,9 @@ var LEGS = [
   { bn: 'দেবীগঞ্জ', en: 'Debiganj', len: 2900, theme: 'village', lm: 'river', real: '১১৫ কি.মি.', re: '115 km' },
   // ⚫ ঠাকুরগাঁও — ৫
   { bn: 'ঠাকুরগাঁও সদর', en: 'Thakurgaon Sadar', len: 2900, theme: 'town', lm: 'town', real: '৯০ কি.মি.', re: '90 km' },
-  { bn: 'বালিয়াডাঙ্গী', en: 'Baliadangi', len: 2900, theme: 'village', lm: 'paddy', real: '১০০ কি.মি.', re: '100 km' },
-  { bn: 'রাণীশংকৈল', en: 'Ranisankail', len: 2900, theme: 'village', lm: 'market', real: '১০৮ কি.মি.', re: '108 km' },
-  { bn: 'পীরগঞ্জ', en: 'Thakurgaon Pirganj', len: 2900, theme: 'village', lm: 'paddy', real: '৯৮ কি.মি.', re: '98 km' },
+  { bn: 'বালিয়াডাঙ্গী', en: 'Baliadangi', len: 2900, theme: 'village', lm: 'wheat', real: '১০০ কি.মি.', re: '100 km' },
+  { bn: 'রাণীশংকৈল', en: 'Ranisankail', len: 2900, theme: 'village', lm: 'wheat', real: '১০৮ কি.মি.', re: '108 km' },
+  { bn: 'পীরগঞ্জ', en: 'Thakurgaon Pirganj', len: 2900, theme: 'village', lm: 'wheat', real: '৯৮ কি.মি.', re: '98 km' },
   { bn: 'হরিপুর', en: 'Haripur', len: 2900, theme: 'village', lm: 'border', real: '১১৫ কি.মি.', re: '115 km' }
 ];
 var DIST_HEADS = [
@@ -4152,7 +4186,8 @@ function spawnRow(z) {
     return;
   }
   if (dist >= nextTrainDist && !svcBusy() && remainD > 200) {
-    nextTrainDist = dist + rnd(900, 1400);
+    var railLm = (typeof leg === 'function' && leg().lm === 'rail');
+    nextTrainDist = dist + (railLm ? rnd(450, 800) : rnd(900, 1400)); // rail elakay train besi
     spawnTrain(z);
     return;
   }
@@ -4190,9 +4225,11 @@ function spawnRow(z) {
     for (var ga = 0; ga < 6; ga++) addPickup('coin', LANE_X[safe], 1.0 + 1.5 * Math.sin(Math.PI * ga / 5), z - 3 + ga * 1.3);
     return;
   }
-  // chunk: bus sari (shohor/bondor)
+  // chunk: bus sari (shohor/bondor) — elaka onujayi traffic mix
+  var lm0 = (typeof leg === 'function' && leg().lm) ? leg().lm : '';
   if ((town || th0 === 'port') && dist > 250 && r < 0.38) {
-    for (var bi = 0; bi < 3; bi++) if (bi !== safe) addObstacle(pick(['bus', 'bus', 'van', 'cng']), bi, z + rnd(-0.5, 0.5));
+    var pool = lm0 === 'highway' ? ['truck', 'truck', 'bus', 'van'] : ['bus', 'cng', 'rickshaw', 'van', 'bus'];
+    for (var bi = 0; bi < 3; bi++) if (bi !== safe) addObstacle(pick(pool), bi, z + rnd(-0.5, 0.5));
     if (Math.random() < 0.4) sfx.horn();
     for (var bc = 0; bc < 6; bc++) addPickup('coin', LANE_X[safe], 1.0, z + 4 + bc * 2);
     return;
