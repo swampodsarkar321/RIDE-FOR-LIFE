@@ -4133,23 +4133,25 @@ function spawnRow(z) {
   }
   // delivery pickup + praapok + police checkpoint: distance-counter, row is kept clear
   var remainD = leg().len - dist;
-  if (dist >= nextGateDist && !gates.length && remainD > 320) {
+  function delBusy() { for (var di = 0; di < gates.length; di++) { var dk = gates[di].kind; if (dk === 'pickup' || dk === 'deliver') return true; } return false; }
+  if (dist >= nextGateDist && !delBusy() && remainD > 320) {
     nextGateDist = dist + rnd(330, 430);
     spawnDeliveryPair(z);
     return;
   }
-  if (dist >= nextCheckDist && !gates.length && remainD > 220) {
+  function svcBusy() { for (var bi = 0; bi < gates.length; bi++) { var bk = gates[bi].kind; if (bk === 'fuel' || bk === 'mech' || bk === 'train' || bk === 'check') return true; } return false; }
+  if (dist >= nextCheckDist && !svcBusy() && remainD > 220) {
     nextCheckDist = dist + rnd(520, 640);
     spawnCheckpoint(z);
     toast(elHint, T('check_hint'), 2600);
     return;
   }
-  if (dist >= nextTrainDist && !gates.length && remainD > 200) {
+  if (dist >= nextTrainDist && !svcBusy() && remainD > 200) {
     nextTrainDist = dist + rnd(900, 1400);
     spawnTrain(z);
     return;
   }
-  if (dist >= nextSvcDist && !gates.length && remainD > 200) {
+  if (dist >= nextSvcDist && !svcBusy() && remainD > 200) {
     nextSvcDist = dist + rnd(600, 900);
     spawnSvc(fuel < 45 ? 'fuel' : (Math.random() < 0.5 ? 'fuel' : 'mech'), z);
     return;
@@ -4388,7 +4390,7 @@ function zoneTick() {
     if (ZONES[zi] === 'BAZAAR') { try { sfx.horn(); } catch (e) {} }
   }
 }
-var nextTrainDist = 900, nextSvcDist = 500;
+var nextTrainDist = 900, nextSvcDist = 500, emgFuel = false;
 function spawnTrain(z) {
   var g = new THREE.Group();
   box(0.3, 2.4, 0.3, 0x333333, -4.8, 1.2, 0, g); box(0.3, 2.4, 0.3, 0x333333, 4.8, 1.2, 0, g);
@@ -4649,7 +4651,7 @@ function startGame(keepScore) {
   addLegGate();
   hp = hpStore; invT = 0; finalDead = false;
   heat = 0; bustedFine = 0; try { chaseStop(); } catch (e) {}
-  zoneIdx = -1; nextTrainDist = 900; nextSvcDist = 500; delStreak = 0;
+  zoneIdx = -1; nextTrainDist = 900; nextSvcDist = 500; delStreak = 0; emgFuel = false;
   dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0; skidX = 0; skidV = 0; skidT = 0;
   if (keepScore && carryScore > 0) { score = carryScore; } else { score = 0; }
   carryScore = 0;
@@ -5157,6 +5159,12 @@ function update(dt) {
     speed += (target - speed) * Math.min(1, dt * (isBrake ? 4 : 2.5));
     fuel -= dt * (0.7 + speed * 0.02) * 1.3 * bst.fuel * fuelEff() * fuelDrainK; // tel ektu taratari sesh — pickup must
     if (fuel <= 30 && !fuelWarned) { fuelWarned = true; sfx.fuelLow(); toast(elHint, T('fuel_low'), 2500); }
+    if (fuel < 25 && !emgFuel) { // emergency: tel sesh-er age fuel stop pathao
+      var hasFuel = false;
+      for (var efi = 0; efi < gates.length; efi++) if (gates[efi].kind === 'fuel') { hasFuel = true; break; }
+      if (!hasFuel) { emgFuel = true; try { spawnSvc('fuel', -70); } catch (e) {} }
+    }
+    if (fuel > 60) emgFuel = false;
     if (fuel <= 12 && fuel > 0) { fuelCritT -= dt; if (fuelCritT <= 0) { fuelCritT = 2; sfx.fuelLow(); toast(elHint, T('fuel_crit'), 1800); } }
     if (fuel <= 0 && !fuelOut) {
       fuelOut = true; fuel = 0; endReason = 'fuel';
@@ -5404,6 +5412,7 @@ function update(dt) {
           toast(elHint, T('gate_miss'), 1800);
       }
     }
+    if (gt.done && gt.z > 8 && (gt.kind === 'pickup' || gt.kind === 'check' || gt.kind === 'fuel' || gt.kind === 'mech' || gt.kind === 'deliver')) { try { scene.remove(gt.mesh); } catch (e) {} gates.splice(i, 1); continue; }
     if (gt.z > 22) { scene.remove(gt.mesh); gates.splice(i, 1); }
   }
 
