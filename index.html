@@ -5184,7 +5184,7 @@ function update(dt) {
 
   /* v2 fx: speed lines, sparks, headlight, wet road, brake light */
   var fxK = state === 'play' ? clamp((speed - 21) / 15, 0, 1) : 0;
-  slMat.opacity += (fxK * 0.4 - slMat.opacity) * Math.min(1, dt * 5);
+  slMat.opacity += (fxK * 0.4 * (1 - nightK * 0.55) - slMat.opacity) * Math.min(1, dt * 5);
   if (slMat.opacity > 0.01) {
     var fxLen = 1.5 + speed * 0.22;
     for (var fxi = 0; fxi < SL_N; fxi++) {
@@ -5269,8 +5269,8 @@ function update(dt) {
       if (typeof moonGlow !== 'undefined' && moonGlow) moonGlow.position.y = moonY;
     } catch (e) {}
     var fxCd = 1 - nightK * 0.82;
-    if (farCloudMat) farCloudMat.color.setScalar(fxCd);
-    if (driftCloudMat) driftCloudMat.color.setScalar(fxCd);
+    if (farCloudMat) { farCloudMat.color.setScalar(fxCd); farCloudMat.opacity = 0.85 * (1 - nightK * 0.65); }
+    if (driftCloudMat) { driftCloudMat.color.setScalar(fxCd); driftCloudMat.opacity = 0.9 * (1 - nightK * 0.65); }
   }
   var braking = state === 'play' && (keyBrake || btnBrake || brakeT > 0);
   tailMat.color.setHex(braking ? 0xff2a2a : 0x8a1010);
