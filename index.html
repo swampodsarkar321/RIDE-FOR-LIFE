@@ -2792,17 +2792,23 @@ function makeTruck() {
   g.scale.set(1.3, 1.28, 1.2); // ashol truck: bike-er double er kachakachi
   return { mesh: wrap(g), hw: 1.05, hd: 2.5, y0: 0, y1: 4.0 };
 }
-function makePed() { // rasta par howa manush — dhakka lagbe na, horn bajbe
+function makePed() { // footpath-e hata manush — realistic, dhakka lagbe na
   var g = new THREE.Group();
-  var shirt = pick([0xc23b3b, 0x2d7a4f, 0x3d6fa5, 0xff8c1a, 0x9b5de5]);
-  box(0.32, 0.55, 0.22, shirt, 0, 1.05, 0, g);
-  box(0.13, 0.5, 0.15, 0x2a2a3a, -0.1, 0.45, 0, g);
-  box(0.13, 0.5, 0.15, 0x2a2a3a, 0.1, 0.45, 0, g);
-  ell(0.15, 0.17, 0.15, SKIN, 0, 1.5, 0, g);
-  box(0.1, 0.45, 0.12, shirt, -0.24, 1.0, 0, g);
-  box(0.1, 0.45, 0.12, shirt, 0.24, 1.0, 0, g);
+  var shirt = pick([0xc23b3b, 0x2d7a4f, 0x3d6fa5, 0xff8c1a, 0x9b5de5, 0xf2f2f2]);
+  var pants = pick([0x2a2a3a, 0x1a3c5a, 0x5c4033, 0x3a3a3a]);
+  box(0.13, 0.1, 0.24, 0x1a1a1a, -0.1, 0.05, 0.02, g); // juta
+  box(0.13, 0.1, 0.24, 0x1a1a1a, 0.1, 0.05, 0.02, g);
+  var legL = box(0.13, 0.5, 0.15, pants, -0.1, 0.35, 0, g); // hata paa
+  var legR = box(0.13, 0.5, 0.15, pants, 0.1, 0.35, 0, g);
+  box(0.34, 0.55, 0.24, shirt, 0, 0.9, 0, g); // shirt
+  var armL = box(0.1, 0.48, 0.12, shirt, -0.24, 0.88, 0, g); // dolna hat
+  var armR = box(0.1, 0.48, 0.12, shirt, 0.24, 0.88, 0, g);
+  ell(0.15, 0.17, 0.15, SKIN, 0, 1.35, 0, g); // matha
+  if (Math.random() < 0.4) box(0.2, 0.08, 0.2, 0xffffff, 0, 1.5, 0, g); // tupi
+  else box(0.32, 0.06, 0.3, 0x1a1a1a, 0, 1.48, 0, g); // chul
   g.userData.ph = Math.random() * 6;
-  return { mesh: g, hw: 0.3, hd: 0.3, y0: 0, y1: 1.6, cross: (Math.random() < 0.5 ? -1 : 1) * (1.6 + Math.random() * 1.2), soft: true };
+  g.userData.legL = legL; g.userData.legR = legR; g.userData.armL = armL; g.userData.armR = armR;
+  return { mesh: g, hw: 0.3, hd: 0.3, y0: 0, y1: 1.6, stroll: true, soft: true };
 }
 var MAKERS = { van: makeVan, nosimon: makeNosimon, cart: makeBullCart, bull: makeBullLoose, mud: makeMudPuddle, truck: makeTruck, bus: makeBus, cng: makeCNG, rickshaw: makeRickshaw, pickup: makePickup, goat: makeGoat, ped: makePed };
 
@@ -4147,8 +4153,11 @@ function spawnRow(z) {
     spawnSvc(Math.random() < 0.5 ? 'fuel' : 'mech', z);
     return;
   }
-  if (zoneOf(dist) === 'BAZAAR' && dist > 200 && r < 0.35) { // bazar: pedestrian + rickshaw bhir
-    addObstacle('ped', (Math.random() * 3) | 0, z);
+  if (zoneOf(dist) === 'BAZAAR' && dist > 200 && r < 0.35) { // bazar: footpath-e hata manush
+    addObstacle('ped', 1, z);
+    var po = obstacles[obstacles.length - 1];
+    po.x = (Math.random() < 0.5 ? -1 : 1) * rnd(6.2, 7.8); po.mesh.position.x = po.x;
+    po.strollV = (Math.random() < 0.5 ? -1 : 1) * rnd(0.6, 1.2);
     if (Math.random() < 0.5) sfx.horn();
     return;
   }
@@ -4239,7 +4248,6 @@ function spawnRow(z) {
     addPickup('coin', LANE_X[safe], arc ? 1.0 + 1.6 * Math.sin(Math.PI * c / (n - 1)) : 1.0, z + 4 + c * 2);
   }
   if (Math.random() < 0.07) addPickup(Math.random() < 0.5 ? 'paddy' : 'mango', LANE_X[safe], 1.2, z + 17);
-  if (hp < 60 && Math.random() < 0.12) addPickup('wrench', LANE_X[safe], 1.0, z + 18); // bike bhanga thakle repair drop
   if (fuel < 30 && Math.random() < 0.45) addPickup('fuel', LANE_X[safe], 1.0, z + 20); // tel sesh-er dike — must drop
   else if (fuel < 65 && Math.random() < 0.28) addPickup('fuel', LANE_X[safe], 1.0, z + 20); // maintain korte hobe
   else if (Math.random() < 0.05) addPickup('fuel', LANE_X[safe], 1.0, z + 20); // option sobsomoy thakbe
@@ -4416,9 +4424,17 @@ function makeSvcGate(kind) {
   box(0.25, 3.2, 0.25, 0x333333, -4.6, 1.6, 0, g); box(0.25, 3.2, 0.25, 0x333333, 4.6, 1.6, 0, g);
   var t = new THREE.Mesh(PG(5.2, 0.9), new THREE.MeshBasicMaterial({ map: textTex(kind === 'fuel' ? (lang === 'bn' ? '⛽ তেল নাও' : '⛽ FUEL STOP') : (lang === 'bn' ? '🔧 মেরামত' : '🔧 REPAIR'), 512, 128, col, '#ffffff', '#333333') }));
   t.position.set(0, 3.0, 0.12); g.add(t);
-  box(0.3, 0.7, 0.25, 0x1a3c5a, 3.8, 0.85, 0.5, g);
-  box(0.34, 0.5, 0.28, kind === 'fuel' ? 0xff8c1a : 0x2d7a4f, 3.8, 0.35, 0.5, g);
-  ell(0.16, 0.18, 0.16, SKIN, 3.8, 1.35, 0.5, g);
+  var mc = kind === 'fuel' ? 0xff8c1a : 0x2d7a4f;
+  box(0.13, 0.1, 0.24, 0x1a1a1a, 3.7, 0.05, 0.52, g); box(0.13, 0.1, 0.24, 0x1a1a1a, 3.9, 0.05, 0.52, g); // juta
+  box(0.13, 0.55, 0.15, 0x2a2a3a, 3.7, 0.38, 0.5, g); box(0.13, 0.55, 0.15, 0x2a2a3a, 3.9, 0.38, 0.5, g); // paa
+  box(0.36, 0.6, 0.26, mc, 3.8, 0.95, 0.5, g); // uniform shirt
+  box(0.38, 0.12, 0.28, 0xe8e8e8, 3.8, 1.0, 0.5, g); // reflective belt
+  box(0.11, 0.5, 0.13, mc, 3.55, 0.9, 0.5, g); box(0.11, 0.5, 0.13, mc, 4.05, 0.9, 0.5, g); // hat
+  box(0.11, 0.12, 0.12, SKIN, 3.55, 0.6, 0.5, g); box(0.11, 0.12, 0.12, SKIN, 4.05, 0.6, 0.5, g); // hat
+  ell(0.16, 0.18, 0.16, SKIN, 3.8, 1.42, 0.5, g); // matha
+  box(0.22, 0.09, 0.22, 0x1a3c5a, 3.8, 1.58, 0.5, g); // cap
+  box(0.4, 0.3, 0.25, 0xc23b3b, 3.8, 0.15, 1.1, g); // toolbox
+  box(0.42, 0.05, 0.27, 0x888888, 3.8, 0.32, 1.1, g); // box handle
   return g;
 }
 function spawnSvc(kind, z) {
@@ -5182,9 +5198,14 @@ function update(dt) {
 
   for (i = obstacles.length - 1; i >= 0; i--) {
     var o = obstacles[i]; o.z += mv; o.mesh.position.z = o.z;
-    if (o.cross && state === 'play') { // pedestrian rasta par hoy
-      o.x += o.cross * dt;
-      if (o.x > 9 || o.x < -9) { scene.remove(o.mesh); obstacles.splice(i, 1); continue; }
+    if (o.stroll && state === 'play') { // footpath dhore hata + paa-hat dola
+      o.z += (o.strollV || 0.8) * dt;
+      try {
+        var pud = o.mesh.userData, pwt = time * 9 + (pud.ph || 0);
+        o.mesh.position.y = Math.abs(Math.sin(pwt)) * 0.06;
+        if (pud.legL) { pud.legL.rotation.x = Math.sin(pwt) * 0.55; pud.legR.rotation.x = -Math.sin(pwt) * 0.55; }
+        if (pud.armL) { pud.armL.rotation.x = -Math.sin(pwt) * 0.4; pud.armR.rotation.x = Math.sin(pwt) * 0.4; }
+      } catch (e) {}
       if (!o.horned && Math.abs(o.z) < 8) { o.horned = true; try { sfx.cngBeep(); } catch (e) {} }
     }
     o.mesh.position.x = o.x + curveAt(o.z);
@@ -5268,7 +5289,7 @@ function update(dt) {
         }
       }
       else if (gt.kind === 'fuel') {
-        if (speed < 8) {
+        if (speed < 13) { // brake floor 11.5 — brake chaplei hobe
           var fneed = 100 - fuel;
           if (fneed > 5 && bankCoins >= 80) { bankCoins -= 80; fuel = 100; try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {} cloudSave(); sfx.deliver(); toast(elLoc, lang === 'bn' ? '⛽ ফুল ট্যাংক! −৳80' : '⛽ Full tank! −৳80', 2200); }
           else if (fneed <= 5) toast(elHint, lang === 'bn' ? '⛽ ট্যাংক ভর্তি!' : '⛽ Tank full!', 1500);
@@ -5276,7 +5297,7 @@ function update(dt) {
         } else toast(elHint, lang === 'bn' ? '⛽ থামো! (speed কমাও)' : '⛽ Stop! (slow down)', 1500);
       }
       else if (gt.kind === 'mech') {
-        if (speed < 8) {
+        if (speed < 13) { // brake floor 11.5 — samne gelei hobe
           var miss = 100 - hp;
           if (miss < 5) toast(elHint, lang === 'bn' ? '🔧 বাইক ঠিক আছে!' : '🔧 Bike is fine!', 1500);
           else {
@@ -5289,7 +5310,7 @@ function update(dt) {
       }
       else if (lane === gt.lane && carried > 0) {
         var custN = gt.cust != null ? CUSTS[gt.cust % CUSTS.length] : null;
-        if (speed > 10) { toast(elHint, (lang === 'bn' ? '🏠 থামো! ' : '🏠 Slow down! ') + (custN ? custN[0] + ' #' + custN[1] : ''), 1500); return; }
+        if (speed > 13) { toast(elHint, (lang === 'bn' ? '🏠 থামো! ' : '🏠 Slow down! ') + (custN ? custN[0] + ' #' + custN[1] : ''), 1500); return; }
         var pay = carried * 30; pop('📦 +' + pay, player.position.x, 3, 0, '#7dff9a');
         score += pay; xp += carried * 10;
         sfx.deliver();
@@ -5414,10 +5435,6 @@ function update(dt) {
           sfx.power();
           missionLevel++; missionTarget = 8 + missionLevel * 2; missionGot = 0;
         }
-      }
-      else if (p.type === 'wrench') {
-        hp = Math.min(100, hp + 30);
-        sfx.deliver(); toast(elHint, F('rep_pick', hp), 1500);
       }
       else if (p.type === 'fuel') {
         fuel = Math.min(100, fuel + fuelPickAmt); fuelWarned = fuel <= 30; fuelCritT = 0;
