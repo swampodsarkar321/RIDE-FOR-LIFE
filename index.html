@@ -2266,6 +2266,7 @@ function setStation(i, silent) {
   radioTick();
   updateRadioUI();
   if (!silent) { try { toast(elHint, '📻 ' + st.flag + ' ' + st.name + (st.tracks.length ? ' ▶ ' + st.tracks[radioTrack].split('/').pop().slice(0, 26) : ' · ' + st.desc), 2800); } catch (e) {} }
+  if (!silent && st.id === 'trf') setTimeout(function () { try { speakTraffic(); } catch (e) {} }, 1600); // tune-in bulletin
   try { logEv('radio_station', { id: st.id }); } catch (e) {}
 }
 function nextStation() { setStation(radioIdx + 1); }
@@ -2329,6 +2330,29 @@ function closeWheel() {
   try {
     wheelOpen = false;
     $('radioWheel').classList.remove('on');
+  } catch (e) {}
+}
+function trafficMsg() {
+  try {
+    var nx = LEGS[Math.min(selLeg + 1, LEGS.length - 1)];
+    return {
+      show: lang === 'bn'
+        ? '🚦 ট্রাফিক আপডেট: ' + legName(leg()) + '–' + legName(nx) + ' রোডে ভিড়!'
+        : '🚦 Traffic: heavy rush on ' + legName(leg()) + '–' + legName(nx) + ' road!',
+      say: 'Traffic update. Heavy rush on ' + leg().en + ' to ' + nx.en + ' road. Drive carefully.'
+    };
+  } catch (e) { return { show: '🚦 Traffic!', say: 'Traffic update.' }; }
+}
+function speakTraffic() { // traffic radio voice bulletin
+  try {
+    if (!musicOn || muted || state !== 'play') return;
+    if (!('speechSynthesis' in window)) return;
+    var m = trafficMsg();
+    toast(elHint, m.show, 2800);
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    var u = new SpeechSynthesisUtterance(m.say);
+    u.lang = 'en-US'; u.rate = 1.05; u.volume = 0.9;
+    window.speechSynthesis.speak(u);
   } catch (e) {}
 }
 /* ---------- background music: station groove (mp3 na thakle procedural) ---------- */
@@ -4446,7 +4470,7 @@ window.addEventListener('keydown', function (e) {
   if (k === 'ArrowLeft' || k === 'a' || k === 'A') moveLane(-1);
   else if (k === 'ArrowRight' || k === 'd' || k === 'D') moveLane(1);
   else if (k === 'ArrowUp' || k === 'w' || k === 'W' || k === ' ') jump();
-  else if (k === 'r' || k === 'R') { try { nextStation(); } catch (e) {} }
+  else if (k === 'r' || k === 'R') { try { if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return; if (wheelOpen) closeWheel(); else openWheel(); } catch (e2) {} }
   else if (k === 'ArrowDown' || k === 's' || k === 'S') slide();
 });
 window.addEventListener('keyup', function (e) {
@@ -5833,14 +5857,8 @@ function update(dt) {
     if (annT <= 0) {
       annT = (radioStation().traffic ? rnd(30, 60) : rnd(90, 150)); // traffic channel-e ghono khobor
       if (musicOn && !muted) {
-        try {
-          var nx = LEGS[Math.min(selLeg + 1, LEGS.length - 1)];
-          var msg = lang === 'bn'
-            ? '🚦 ট্রাফিক আপডেট: ' + legName(leg()) + '–' + legName(nx) + ' রোডে ভিড়!'
-            : '🚦 Traffic: heavy rush on ' + legName(leg()) + '–' + legName(nx) + ' road!';
-          toast(elHint, msg, 2800);
-          if (Math.random() < 0.35) nextGap = Math.min(nextGap, 10);
-        } catch (e) {}
+        try { speakTraffic(); } catch (e) {}
+        try { if (Math.random() < 0.35) nextGap = Math.min(nextGap, 10); } catch (e) {}
       }
     }
   }
