@@ -2553,6 +2553,11 @@ function makeCNG() {
   paintBox(1.0, 0.5, 0.6, 0x222222, 0, 0.8, -0.6, g);
   var ws2 = glassBox(0.9, 0.45, 0.06, 0, 1.0, -0.92, g); ws2.rotation.x = -0.2;
   box(1.06, 0.12, 1.9, 0x111111, 0, 1.2, 0, g); // roof
+  box(0.3, 0.42, 0.24, 0x2a9df4, -0.25, 0.72, -0.15, g); // driver torso
+  ell(0.13, 0.15, 0.13, SKIN, -0.25, 1.05, -0.15, g); // driver head
+  box(0.09, 0.09, 0.4, SKIN, -0.25, 0.72, -0.45, g); // driver arms to handle
+  box(0.32, 0.42, 0.24, 0xc23b3b, 0.2, 0.72, 0.55, g); // passenger torso
+  ell(0.13, 0.15, 0.13, SKIN, 0.2, 1.05, 0.55, g); // passenger head
   headPair(g, -0.95, 0.6);
   wheel(0.3, 0.18, -0.55, 0.3, -0.6, g); wheel(0.3, 0.18, 0.55, 0.3, -0.6, g);
   wheel(0.3, 0.18, 0, 0.3, 0.7, g);
@@ -4428,6 +4433,9 @@ function spawnTrain(z) {
     var w1 = cyl(0.4, 0.25, 0.4, 0x222222, wx, 0.5, 0.85, tr); w1.rotation.x = Math.PI / 2;
     var w2 = cyl(0.4, 0.25, 0.4, 0x222222, wx, 0.5, -0.85, tr); w2.rotation.x = Math.PI / 2;
   });
+  [[5.2, 4.4], [-1.6, 5.3], [-7.4, 5.3]].forEach(function (ss) { // side skirts — faka bondho, vashe lagbe na
+    box(ss[1], 0.5, 0.08, 0x00402e, ss[0], 0.55, 0.92, tr); box(ss[1], 0.5, 0.08, 0x00402e, ss[0], 0.55, -0.92, tr);
+  });
   tr.position.set(-34, 0, 0); g.add(tr);
   g.userData.train = tr;
   g.position.z = z; scene.add(g);
@@ -5284,7 +5292,15 @@ function update(dt) {
     if (gt.kind === 'train' && !gt.done) { // rail crossing — barrier 8s, dan lane khola
       gt.t += dt;
       try { if (gt.mesh.userData.train) gt.mesh.userData.train.position.x = -32 + gt.t * 10; } catch (e) {}
-      if (gt.t > 8) { gt.done = true; try { scene.remove(gt.mesh); } catch (e) {} gates.splice(i, 1); continue; }
+      if (gt.t > 8) { // train gelo — barrier uthlo, track thakbe
+        gt.done = true;
+        try {
+          var _tr = gt.mesh.userData.train;
+          if (_tr) gt.mesh.remove(_tr);
+          gt.mesh.traverse(function (m) { if (m.isMesh && m.geometry && m.geometry.type === 'BoxGeometry' && Math.abs(m.position.y - 1.9) < 0.01) m.visible = false; });
+        } catch (e) {}
+        continue;
+      }
       if (state === 'play' && gt.t < 6.5 && Math.abs(gt.z) < 1.6 && py < 1.2 && player.position.x < 1.5) { gt.done = true; die(); }
     }
     if (gt.kind === 'check' && !gt.done && state === 'play' && gt.z > -85 && gt.z < -6) {
