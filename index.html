@@ -2802,16 +2802,7 @@ function makePed() { // rasta par howa manush — dhakka lagbe na, horn bajbe
   g.userData.ph = Math.random() * 6;
   return { mesh: g, hw: 0.3, hd: 0.3, y0: 0, y1: 1.6, cross: (Math.random() < 0.5 ? -1 : 1) * (1.6 + Math.random() * 1.2), soft: true };
 }
-function makeBicycle() {
-  var g = new THREE.Group(), c1 = pick([0xc23b3b, 0x2d7a4f, 0x3d6fa5]);
-  wheel(0.3, 0.08, 0, 0.3, -0.35, g); wheel(0.3, 0.08, 0, 0.3, 0.35, g);
-  box(0.06, 0.06, 0.75, c1, 0, 0.55, 0, g);
-  box(0.3, 0.08, 0.3, 0x1c1c1c, 0, 0.85, 0.1, g);
-  box(0.3, 0.55, 0.25, 0x8a5a3a, 0, 1.15, 0.05, g);
-  ell(0.14, 0.16, 0.14, SKIN, 0, 1.6, 0.05, g);
-  return { mesh: wrap(g), hw: 0.45, hd: 0.6, y0: 0, y1: 1.8 };
-}
-var MAKERS = { van: makeVan, nosimon: makeNosimon, cart: makeBullCart, bull: makeBullLoose, mud: makeMudPuddle, truck: makeTruck, bus: makeBus, cng: makeCNG, rickshaw: makeRickshaw, pickup: makePickup, goat: makeGoat, ped: makePed, bicycle: makeBicycle };
+var MAKERS = { van: makeVan, nosimon: makeNosimon, cart: makeBullCart, bull: makeBullLoose, mud: makeMudPuddle, truck: makeTruck, bus: makeBus, cng: makeCNG, rickshaw: makeRickshaw, pickup: makePickup, goat: makeGoat, ped: makePed };
 
 /* ---------- pickups ---------- */
 var COIN_GEO = new THREE.CylinderGeometry(0.42, 0.42, 0.1, 20); COIN_GEO.rotateX(Math.PI / 2);
@@ -4158,8 +4149,8 @@ function spawnRow(z) {
     if (Math.random() < 0.5) sfx.horn();
     return;
   }
-  if (dist > 200 && r < 0.16) { // bicycle / cng traffic
-    addObstacle(Math.random() < 0.5 ? 'bicycle' : 'cng', (Math.random() * 3) | 0, z);
+  if (dist > 200 && r < 0.16) { // cng traffic
+    addObstacle('cng', (Math.random() * 3) | 0, z);
     return;
   }
   if (dist > 250 && r < 0.10 + 0.08 * d) {
@@ -5214,6 +5205,14 @@ function update(dt) {
       warnBrake = true;
       if (!gt.warned) { gt.warned = true; sfx.checkpoint(); toast(elHint, T('check_slow'), 2200); }
     }
+    if (gt.kind === 'deliver' && !gt.done && !gt.warned && state === 'play' && gt.z > -85 && gt.z < -6) {
+      gt.warned = true;
+      try {
+        var cwn = gt.cust != null ? CUSTS[gt.cust % CUSTS.length] : null;
+        toast(elHint, '🏠 ' + (cwn ? cwn[0] + ' #' + cwn[1] : '') + (lang === 'bn' ? ' অপেক্ষা করছে — থামো!' : ' waiting — slow down!'), 2200);
+        sfx.cngBeep();
+      } catch (e) {}
+    }
     if (state === 'play' && !gt.done && gt.z >= -0.5) {
       gt.done = true;
       if (gt.kind === 'pickup') {
@@ -5819,9 +5818,6 @@ function applyCustomization() {
   try {
     helmetM.color.setHex(HELMET_COLS[selHelmet % HELMET_COLS.length]);
     jacketM.color.setHex(JACKET_COLS[selJacket % JACKET_COLS.length]);
-    var bagScale = [0.85, 1.0, 1.25][Math.min(bagLevel, 2)];
-    var boxMesh0 = bikeG.children.find(function (m) { return m.isMesh && Math.abs(m.position.x) < 0.01 && Math.abs(m.position.y - 1.52) < 0.01 && Math.abs(m.position.z - 0.75) < 0.01; });
-    if (boxMesh0) boxMesh0.scale.setScalar(bagScale);
     var stickerEmoji = STICKER_EMOJIS[selSticker % STICKER_EMOJIS.length];
     var stickerTex = createStickerTexture(stickerEmoji);
     var boxMesh = bikeG.children.find(function (m) { return m.isMesh && Math.abs(m.position.x) < 0.01 && Math.abs(m.position.y - 1.52) < 0.01 && Math.abs(m.position.z - 0.75) < 0.01; });
