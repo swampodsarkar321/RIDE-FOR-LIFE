@@ -417,6 +417,8 @@
   #radioPill b { font-size: 17px; }
   #radioPill .live-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 8px #ff3b30; animation: liveBlink 1.1s ease-in-out infinite; flex-shrink: 0; }
   #radioPill.off .live-dot { background: #888; box-shadow: none; animation: none; }
+  #chasePill { border: 2px solid #ff3b30; animation: chasePulse .5s ease-in-out infinite alternate; }
+  @keyframes chasePulse { from { box-shadow: 0 0 0 0 rgba(255,59,48,0); } to { box-shadow: 0 0 14px 4px rgba(255,59,48,.7); } }
   @keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
   .stCard {
     pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box;
@@ -599,6 +601,7 @@
     <div class="pill coins"><div class="coin-ico">📦</div><b id="parcels">0</b></div>
     <div class="pill coins"><div class="coin-ico">৳</div><b id="coins">0</b></div>
     <div class="pill coins" id="missionPill"><div class="coin-ico">🎯</div><b id="mission">0/10</b></div>
+    <div class="pill coins" id="chasePill" style="display:none;"><div class="coin-ico">🚔</div><b id="chaseTxt">10s</b></div>
     <div class="pill coins" id="timePill"><div class="coin-ico" id="timeIco">🌅</div><b id="timeTxt" style="font-size:19px">Morning</b></div>
     <button class="pill coins" id="radioPill" aria-label="Radio station"><div class="live-dot"></div><div class="coin-ico">📻</div><b id="radioTxt">BAN</b></button>
     <div class="spacer"></div>
@@ -3329,6 +3332,10 @@ en: {
   gate_miss: '😞 Gate missed! Parcels kept',
   check_pass: '✅ Checkpoint cleared! +20',
   check_fine: '<b>🚔 Fine −{0}!</b><small>Go slow at checkpoints</small>',
+  chase_start: '🚔 Police chase! 10s clean = escape!',
+  chase_esc: '🎉 Escaped! +৳200',
+  over_busted_t: '🚔 Caught!',
+  over_busted_s: 'Fine −৳{0} · Drive safe next time',
   combo: '🔥 Combo x{0} ({1})',
   phase: '{0} {1} time',
   w_cloud: '☁️ Cloudy sky', w_rain: '🌧️ Rain! Wet road, careful', w_heavy: '⛈️ Heavy rain! Very slippery!', w_fog: '🌫️ Fog! Hard to see ahead', w_clear: '☀️ Sun is out!',
@@ -3426,6 +3433,10 @@ bn: {
   gate_miss: '😞 গেট মিস! পার্সেল রয়ে গেল',
   check_pass: '✅ চেকপোস্ট পার! +20',
   check_fine: '<b>🚔 জরিমানা −{0}!</b><small>চেকপোস্টে আস্তে যেতে হয়</small>',
+  chase_start: '🚔 পুলিশ ধাওয়া! ১০ সেকেন্ড ঠিকঠাক চালাও!',
+  chase_esc: '🎉 পালিয়ে গেছ! +৳200',
+  over_busted_t: '🚔 ধরা পড়েছ!',
+  over_busted_s: 'জরিমানা −৳{0} · পরের বার সামলে চালাও',
   combo: '🔥 কম্বো x{0} ({1})',
   phase: '{0} {1} হয়ে গেছে',
   w_cloud: '☁️ মেঘলা আকাশ', w_rain: '🌧️ বৃষ্টি! ভেজা রাস্তা, সাবধানে', w_heavy: '⛈️ মুষলধারে বৃষ্টি! খুব পিচ্ছিল!', w_fog: '🌫️ কুয়াশা! সামনে দেখা কঠিন', w_clear: '☀️ রোদ উঠেছে!',
@@ -3564,6 +3575,7 @@ var sfx = {
   crash: function () { tone(160, 0.5, 'sawtooth', 0.12, 40); tone(90, 0.6, 'square', 0.08, 30); },
   checkpoint: function () { tone(600, 0.2, 'square', 0.05); tone(800, 0.2, 'square', 0.05); },
   fine: function () { tone(300, 0.3, 'sawtooth', 0.08, 150); },
+  siren: function () { tone(700, 0.2, 'square', 0.045); setTimeout(function () { tone(950, 0.2, 'square', 0.045); }, 220); },
   fuelLow: function () { tone(500, 0.15, 'square', 0.05); tone(400, 0.15, 'square', 0.05); },
   bridge: function () { tone(200, 0.5, 'triangle', 0.04, 400); }
 };
@@ -4326,6 +4338,7 @@ function startGame(keepScore) {
   clearWorld();
   addLegGate();
   hp = hpStore; invT = 0; finalDead = false;
+  heat = 0; bustedFine = 0; try { chaseStop(); } catch (e) {}
   dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0; skidX = 0; skidV = 0; skidT = 0;
   if (keepScore && carryScore > 0) { score = carryScore; } else { score = 0; }
   carryScore = 0;
@@ -4359,8 +4372,49 @@ function startGame(keepScore) {
 }
 function pauseGame() { if (state === 'play') { state = 'pause'; document.body.dataset.ui = 'pause'; $('pause').classList.remove('hidden'); try { engineStop(); } catch (e) {} try { radioTick(); } catch (e) {} } }
 function resumeGame() { if (state === 'pause') { state = 'play'; document.body.dataset.ui = 'play'; $('pause').classList.add('hidden'); last = performance.now(); try { engineStart(); } catch (e) {} try { radioTick(); } catch (e) {} } }
+/* ---------- police chase: checkpoint-e overspeed → dhawa → crash = dhora ---------- */
+var heat = 0, heatT = 0, graceT = 0, sirenT = 0, bustedFine = 0;
+function chaseStart() {
+  if (heat > 0) return;
+  heat = 1; heatT = 0; graceT = 2; sirenT = 0;
+  try {
+    var cp = $('chasePill'); if (cp) cp.style.display = 'flex';
+    toast(elLoc, T('chase_start'), 3000); sfx.siren();
+    logEv('chase_start', {});
+  } catch (e) {}
+}
+function chaseStop() {
+  heat = 0; heatT = 0;
+  try { var cp = $('chasePill'); if (cp) cp.style.display = 'none'; } catch (e) {}
+}
+function chaseTick(dt) {
+  if (heat <= 0 || state !== 'play') return;
+  heatT += dt;
+  if (graceT > 0) graceT -= dt;
+  sirenT -= dt;
+  if (sirenT <= 0) { sirenT = 0.5; try { sfx.siren(); } catch (e) {} }
+  try { var ct = $('chaseTxt'); if (ct) ct.textContent = Math.max(0, Math.ceil(10 - heatT)) + 's'; } catch (e) {}
+  if (heatT >= 10) { // escape!
+    chaseStop();
+    bankCoins += 200;
+    try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
+    cloudSave();
+    try { toast(elLoc, T('chase_esc'), 3000); sfx.power(); logEv('chase_escape', {}); } catch (e) {}
+  }
+}
+function chaseBusted() { // die() theke — grace sesh hole dhora + fine
+  if (heat <= 0 || graceT > 0) return false;
+  bustedFine = Math.min(300, Math.max(50, Math.floor(bankCoins * 0.10)));
+  bankCoins = Math.max(0, bankCoins - bustedFine);
+  try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
+  endReason = 'busted'; finalDead = true;
+  chaseStop();
+  try { sfx.fine(); logEv('chase_busted', { fine: bustedFine }); } catch (e) {}
+  return true;
+}
 function die() {
   if (state !== 'play' || invT > 0) return;
+  try { chaseBusted(); } catch (e) {}
   hp -= bikeStat().dmg; // bike damage — morbena, damage hobe
   state = 'crash'; crashT = 0; shake = 1;
   // crash slow-mo: 0.6s slow motion + parcel bhanga toast
@@ -4380,11 +4434,12 @@ function die() {
 function endRun() {
   hpStore = hp;
   var ot = $('overTitle'), os = $('overSub');
-  if (ot && os) {
-    if (endReason === 'arrive') { ot.textContent = F('over_arrive_t', arrivedName); os.textContent = T('over_arrive_s'); }
-    else if (endReason === 'fuel') { ot.textContent = T('over_fuel_t'); os.textContent = T('over_fuel_s'); }
-    else { ot.textContent = T('crash_t'); os.textContent = T('crash_s'); }
-  }
+    if (ot && os) {
+      if (endReason === 'arrive') { ot.textContent = F('over_arrive_t', arrivedName); os.textContent = T('over_arrive_s'); }
+      else if (endReason === 'fuel') { ot.textContent = T('over_fuel_t'); os.textContent = T('over_fuel_s'); }
+      else if (endReason === 'busted') { ot.textContent = T('over_busted_t'); os.textContent = F('over_busted_s', bustedFine); }
+      else { ot.textContent = T('crash_t'); os.textContent = T('crash_s'); }
+    }
   var s = Math.floor(score), isBest = s > best;
   if (isBest) { best = s; try { localStorage.setItem('rangpurRushBest', String(best)); } catch (e) {} }
   // bank + xp save
@@ -4786,11 +4841,13 @@ function update(dt) {
     score += speed * dt * (doubleT > 0 ? 2 * scoreXK : scoreXK);
     if (missionInfo().id === 'score') addMissionProgress(speed * dt * (doubleT > 0 ? 2 * scoreXK : scoreXK));
     if (missionInfo().id === 'distance') addMissionProgress(speed * dt);
+    try { chaseTick(dt); } catch (e) {}
     // gontobye pouchano?
     if (!arrived && dist >= leg().len) {
       arrived = true; endReason = 'arrive'; arrivedName = legName(leg());
       var ab = Math.round((500 + selLeg * 200) * (evP().bonusX || 1));
       score += ab; xp += 200; bankCoins += 100;
+      if (heat > 0) { chaseStop(); bankCoins += 200; try { logEv('chase_escape', {}); } catch (e) {} } // dhawa theke pouche gele escape!
       sfx.deliver();
       if (selLeg === LEGS.length - 1) {
         justFinished = selLeg;
@@ -4890,6 +4947,7 @@ function update(dt) {
           score = Math.max(0, score - fine);
           sfx.crash();
           toast(elLoc, F('check_fine', fine), 2600);
+          if (speed > 24) chaseStart(); // best speed-e par — police dhawa!
         } else {
           score += 20; xp += 10;
           sfx.deliver();
