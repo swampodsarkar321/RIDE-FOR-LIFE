@@ -3576,6 +3576,7 @@ function setLang(l) {
     for (var k in legSignMats) delete legSignMats[k];
     for (var k2 in legGateMats) delete legGateMats[k2];
     gateTex = null; checkTex = null; pickupTex = null; pickupMat = null; steadTex = null;
+    svcTexF = null; svcTexM = null; svcTexG = null;
     buildSignMats();
     steadTex = createTextTexture();
     if (typeof bikeLogoMat !== 'undefined' && bikeLogoMat) { bikeLogoMat.map = steadTex; bikeLogoMat.needsUpdate = true; }
@@ -4418,11 +4419,14 @@ function spawnTrain(z) {
   gates.push({ mesh: g, kind: 'train', lane: -1, z: z, done: false, t: 0 });
   try { toast(elHint, lang === 'bn' ? '🚨 ট্রেন আসছে! ডান লেন নাও!' : '🚨 TRAIN COMING! Take right lane!', 2600); sfx.checkpoint(); } catch (e) {}
 }
+var svcTexF = null, svcTexM = null, svcTexG = null;
 function makeSvcGate(kind) {
   var g = new THREE.Group();
   var col = kind === 'fuel' ? '#ff8c1a' : '#2d7a4f';
   box(0.25, 3.2, 0.25, 0x333333, -4.6, 1.6, 0, g); box(0.25, 3.2, 0.25, 0x333333, 4.6, 1.6, 0, g);
-  var t = new THREE.Mesh(PG(5.2, 0.9), new THREE.MeshBasicMaterial({ map: textTex(kind === 'fuel' ? (lang === 'bn' ? '⛽ তেল নাও' : '⛽ FUEL STOP') : (lang === 'bn' ? '🔧 মেরামত' : '🔧 REPAIR'), 512, 128, col, '#ffffff', '#333333') }));
+  if (kind === 'fuel') { if (!svcTexF) svcTexF = textTex(lang === 'bn' ? '⛽ তেল নাও' : '⛽ FUEL STOP', 512, 128, col, '#ffffff', '#333333'); }
+  else if (!svcTexM) svcTexM = textTex(lang === 'bn' ? '🔧 মেরামত' : '🔧 REPAIR', 512, 128, col, '#ffffff', '#333333');
+  var t = new THREE.Mesh(PG(5.2, 0.9), new THREE.MeshBasicMaterial({ map: kind === 'fuel' ? svcTexF : svcTexM }));
   t.position.set(0, 3.0, 0.12); g.add(t);
   var mc = kind === 'fuel' ? 0xff8c1a : 0x2d7a4f;
   box(0.13, 0.1, 0.24, 0x1a1a1a, 3.7, 0.05, 0.52, g); box(0.13, 0.1, 0.24, 0x1a1a1a, 3.9, 0.05, 0.52, g); // juta
@@ -4433,13 +4437,31 @@ function makeSvcGate(kind) {
   box(0.11, 0.12, 0.12, SKIN, 3.55, 0.6, 0.5, g); box(0.11, 0.12, 0.12, SKIN, 4.05, 0.6, 0.5, g); // hat
   ell(0.16, 0.18, 0.16, SKIN, 3.8, 1.42, 0.5, g); // matha
   box(0.22, 0.09, 0.22, 0x1a3c5a, 3.8, 1.58, 0.5, g); // cap
-  if (kind === 'fuel') { // fuelman: pump + nozzle hate
-    box(0.5, 1.1, 0.4, 0xc23b3b, 4.6, 0.55, 1.2, g); // fuel pump
-    box(0.52, 0.2, 0.42, 0xffffff, 4.6, 0.9, 1.2, g); // pump band
-    var nz = box(0.08, 0.3, 0.08, 0x1a1a1a, 4.05, 0.75, 0.9, g); nz.rotation.x = 0.5; // nozzle
-  } else { // mechanic: toolbox
-    box(0.4, 0.3, 0.25, 0xc23b3b, 3.8, 0.15, 1.1, g); // toolbox
-    box(0.42, 0.05, 0.27, 0x888888, 3.8, 0.32, 1.1, g); // box handle
+  var bx = 8.5; // roadside building
+  if (kind === 'fuel') { // fuel station: canopy + pump + fuelman
+    [[-1.6], [1.6]].forEach(function (px) { box(0.22, 3.0, 0.22, 0xdddddd, bx + px[0], 1.5, 0, g); box(0.22, 3.0, 0.22, 0xdddddd, bx + px[0], 1.5, 2.2, g); });
+    box(4.4, 0.3, 3.4, 0xff8c1a, bx, 3.15, 1.1, g); // canopy roof
+    box(4.5, 0.5, 0.1, 0xc23b3b, bx, 2.8, 2.85, g); // fascia board
+    box(0.6, 1.2, 0.45, 0xc23b3b, bx - 0.8, 0.6, 1.0, g); // pump 1
+    box(0.62, 0.22, 0.47, 0xffffff, bx - 0.8, 0.95, 1.0, g);
+    box(0.6, 1.2, 0.45, 0xc23b3b, bx + 0.8, 0.6, 1.0, g); // pump 2
+    box(0.62, 0.22, 0.47, 0xffffff, bx + 0.8, 0.95, 1.0, g);
+    box(2.6, 1.8, 2.0, 0xf0ead8, bx, 0.9, 3.6, g); // kiosk
+    box(2.7, 0.25, 2.1, 0x1a3c5a, bx, 1.92, 3.6, g);
+    var nz = box(0.08, 0.3, 0.08, 0x1a1a1a, 4.05, 0.75, 0.9, g); nz.rotation.x = 0.5; // nozzle hate
+  } else { // garage shop: deyal + roof + mechanic + toolbox + tyre
+    box(3.6, 2.4, 2.6, 0xe8dcc0, bx, 1.2, 1.0, g); // shop room
+    box(3.8, 0.3, 2.8, 0x8a3b3b, bx, 2.55, 1.0, g); // roof
+    box(1.6, 1.6, 0.1, 0x1a1a1a, bx - 0.6, 0.8, -0.32, g); // khola shutter (andhokar mukh)
+    if (!svcTexG) svcTexG = textTex(lang === 'bn' ? '🔧 মিলন গ্যারেজ' : '🔧 MILON GARAGE', 512, 128, '#2d7a4f', '#ffffff', '#ffc83d');
+    var gb = new THREE.Mesh(PG(2.4, 0.5), new THREE.MeshBasicMaterial({ map: svcTexG }));
+    gb.position.set(bx, 2.9, -0.35); g.add(gb); // signboard
+    box(0.4, 0.3, 0.25, 0xc23b3b, 5.6, 0.15, 0.2, g); // toolbox
+    box(0.42, 0.05, 0.27, 0x888888, 5.6, 0.32, 0.2, g);
+    [[0.35], [0.75]].forEach(function (ty) { // purono tyre stack
+      var tr2 = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.12, 8, 14), M(0x1c1c1c));
+      tr2.position.set(6.2, ty[0], 1.8); tr2.castShadow = true; g.add(tr2);
+    });
   }
   return g;
 }
