@@ -1428,6 +1428,7 @@ function makeCoconutPalm(x, z, parent) {
   ell(0.14, 0.16, 0.14, 0x4a3a20, 0.16, 6.05, 0.1, g); // narikel
   ell(0.13, 0.15, 0.13, 0x4a3a20, -0.12, 6.0, -0.14, g);
   parent.add(g);
+  try { swayTrees.push({ g: g, base: 0, ph: Math.random() * 6 }); if (swayTrees.length > 140) swayTrees.shift(); } catch (e) {}
 }
 function makeHaystack(x, z, parent) {
   var g = new THREE.Group(); g.position.set(x, 0, z);
@@ -1446,6 +1447,7 @@ function makeMangoTree(x, z, parent) { // aam gach: mota guri + jhopalo dal + aa
   ell(1.0, 0.8, 1.0, leafMat, -1.1, 3.9, -0.5, g);
   for (var i = 0; i < 6; i++) ell(0.09, 0.11, 0.09, 0xff9d1a, rnd(-1.2, 1.2), rnd(3.4, 4.2), rnd(-1.2, 1.2), g); // paka aam
   parent.add(g);
+  try { swayTrees.push({ g: g, base: 0, ph: Math.random() * 6 }); if (swayTrees.length > 140) swayTrees.shift(); } catch (e) {}
 }
 var FLOWER_COLS = [0xe63946, 0xffb703, 0xff5da2, 0xffffff, 0x9b5de5];
 function makeFlowers(x, z, parent) { // rasta-dhar phul
@@ -3371,7 +3373,7 @@ en: {
   over_busted_s: 'Fine −৳{0} · Drive safe next time',
   combo: '🔥 Combo x{0} ({1})',
   phase: '{0} {1} time',
-  w_cloud: '☁️ Cloudy sky', w_rain: '🌧️ Rain! Wet road, careful', w_heavy: '⛈️ Heavy rain! Very slippery!', w_fog: '🌫️ Fog! Hard to see ahead', w_clear: '☀️ Sun is out!',
+  w_cloud: '☁️ Cloudy sky', w_rain: '🌧️ Rain! Wet road, careful', w_heavy: '⛈️ Heavy rain! Very slippery!', w_fog: '🌫️ Fog! Hard to see ahead', w_storm: '⛈️ STORM! Lightning — careful!', w_clear: '☀️ Sun is out!',
   ev_short: '⚡ Found a shortcut! Magnet on', ev_happy: '📞 Customer happy! +50', ev_block: '🚧 Road blocked ahead! Careful', ev_fest: '🎉 Festival offer! Double score',
   fin_all: '<b>🏁 Rangpur Division complete!</b><small>Bonus +{0} + ৳500 + special ৳1000!</small>',
   fin_leg: '<b>🏁 Reached {0}!</b><small>📍 {0} → {2} · Bonus +{1}</small>',
@@ -3472,7 +3474,7 @@ bn: {
   over_busted_s: 'জরিমানা −৳{0} · পরের বার সামলে চালাও',
   combo: '🔥 কম্বো x{0} ({1})',
   phase: '{0} {1} হয়ে গেছে',
-  w_cloud: '☁️ মেঘলা আকাশ', w_rain: '🌧️ বৃষ্টি! ভেজা রাস্তা, সাবধানে', w_heavy: '⛈️ মুষলধারে বৃষ্টি! খুব পিচ্ছিল!', w_fog: '🌫️ কুয়াশা! সামনে দেখা কঠিন', w_clear: '☀️ রোদ উঠেছে!',
+  w_cloud: '☁️ মেঘলা আকাশ', w_rain: '🌧️ বৃষ্টি! ভেজা রাস্তা, সাবধানে', w_heavy: '⛈️ মুষলধারে বৃষ্টি! খুব পিচ্ছিল!', w_fog: '🌫️ কুয়াশা! সামনে দেখা কঠিন', w_storm: '⛈️ ঝড়! বজ্রপাত — সাবধানে!', w_clear: '☀️ রোদ উঠেছে!',
   ev_short: '⚡ শর্টকাট পেলে! চুম্বক চালু', ev_happy: '📞 কাস্টমার খুশি! +50', ev_block: '🚧 সামনে রাস্তা বন্ধ! সাবধান', ev_fest: '🎉 উৎসব ছাড়! দ্বিগুণ স্কোর',
   fin_all: '<b>🏁 রংপুর বিভাগ সম্পূর্ণ!</b><small>বোনাস +{0} + ৳500 + বিশেষ ৳1000!</small>',
   fin_leg: '<b>🏁 {0} পৌঁছে গেছ!</b><small>📍 {0} → {2} · বোনাস +{1}</small>',
@@ -3862,6 +3864,7 @@ function timePhase(t) { // 6 bela — lighting-er sathe milano
   return { bn: 'সকাল', en: 'Morning', ico: '🌅' }; // 0.70–0.92
 }
 var weather = 'clear', weatherT = 25, rainPts, rainVel = null;
+var swayTrees = [], boltT = 2, blackoutT = 7, blackoutOn = false, blackoutDur = 0, annT = 80;
 /* engine sound + slow-mo */
 var engOsc = null, engGain = null, timeScale = 1, slowT = 0;
 var obstacles = [], pickups = [], gates = [];
@@ -4385,9 +4388,22 @@ function spawnTrain(z) {
   box(0.3, 2.4, 0.3, 0x333333, -4.8, 1.2, 0, g); box(0.3, 2.4, 0.3, 0x333333, 4.8, 1.2, 0, g);
   for (var i = 0; i < 5; i++) box(1.15, 0.3, 0.16, 0xdd2222, -4.2 + i * 1.2, 1.9, 0, g); // barrier: dan lane khola
   var tr = new THREE.Group();
-  box(1.8, 1.6, 9.0, 0x1a3c5a, 0, 1.3, 0, tr);
-  box(1.82, 0.4, 9.02, 0xffc83d, 0, 1.9, 0, tr);
-  for (var w = -3; w <= 3; w += 2) { box(0.3, 0.5, 0.3, 0x111111, -0.9, 0.25, w, tr); box(0.3, 0.5, 0.3, 0x111111, 0.9, 0.25, w, tr); }
+  var BRG = 0x006a4e, BRR = 0xf42a41; // Bangladesh Railway green/red
+  for (var slp = -13; slp <= 13; slp += 2) box(0.5, 0.1, 3.0, 0x5c4033, slp, 0.05, 0, tr); // sleepers
+  box(28, 0.12, 0.22, 0x999999, 0, 0.16, -1.0, tr); box(28, 0.12, 0.22, 0x999999, 0, 0.16, 1.0, tr); // steel rails
+  box(4.6, 2.4, 1.9, BRG, 3.2, 1.9, 0, tr); // engine body
+  box(4.62, 0.5, 1.92, BRR, 3.2, 1.2, 0, tr); // red stripe
+  box(2.0, 0.9, 0.06, 0x112233, 2.6, 2.7, 0.96, tr); box(2.0, 0.9, 0.06, 0x112233, 2.6, 2.7, -0.96, tr); // cab windows
+  box(0.3, 0.5, 2.0, 0xffcc00, 5.6, 0.8, 0, tr); // yellow bumper
+  var thl = new THREE.Mesh(new THREE.CircleGeometry(0.3, 12), new THREE.MeshBasicMaterial({ color: 0xffffcc })); thl.rotation.y = Math.PI / 2; thl.position.set(5.56, 2.2, 0); tr.add(thl); // headlight
+  box(5.5, 2.5, 1.9, BRG, -3.6, 1.95, 0, tr); // coach
+  box(5.52, 0.45, 1.92, BRR, -3.6, 2.55, 0, tr); // red band
+  for (var wxi = 0; wxi < 3; wxi++) { box(0.9, 0.8, 0.06, 0x112233, -5.4 + wxi * 1.8, 2.2, 0.96, tr); box(0.9, 0.8, 0.06, 0x112233, -5.4 + wxi * 1.8, 2.2, -0.96, tr); } // coach windows
+  box(5.6, 0.15, 2.0, 0x333333, -3.6, 3.28, 0, tr); // roof
+  [[1.6], [4.8], [-1.8], [-5.4]].forEach(function (wx) { // bogie wheels
+    var w1 = cyl(0.4, 0.25, 0.4, 0x222222, wx[0], 0.5, 0.85, tr); w1.rotation.x = Math.PI / 2;
+    var w2 = cyl(0.4, 0.25, 0.4, 0x222222, wx[0], 0.5, -0.85, tr); w2.rotation.x = Math.PI / 2;
+  });
   tr.position.set(-32, 0, 0); g.add(tr);
   g.userData.train = tr;
   g.position.z = z; scene.add(g);
@@ -4658,7 +4674,7 @@ function die() {
   // crash slow-mo: 0.6s slow motion + parcel bhanga toast
   slowT = 0.6; timeScale = 0.3;
   combo = 0; comboT = 0;
-  $('flash').style.transition = 'none'; $('flash').style.opacity = 0.45;
+  $('flash').style.transition = 'none'; $('flash').style.background = '#b5651d'; $('flash').style.opacity = 0.45;
   requestAnimationFrame(function () { $('flash').style.transition = 'opacity .6s'; $('flash').style.opacity = 0; });
   sfx.crash();
   sliding = false;
@@ -5062,8 +5078,8 @@ function animatePlayer(dt) {
 function update(dt) {
   var i;
   if (state === 'play') {
-    var wetK = weather === 'heavy' ? 0.75 : weather === 'rain' ? 0.85 : 1; // veja/pichil rasta slow
-    var gripK = weather === 'heavy' ? 0.55 : weather === 'rain' ? 0.75 : 1; // pichil rasta kom grip
+    var wetK = weather === 'storm' ? 0.65 : weather === 'heavy' ? 0.75 : weather === 'rain' ? 0.85 : 1; // veja/pichil rasta slow
+    var gripK = weather === 'storm' ? 0.4 : weather === 'heavy' ? 0.55 : weather === 'rain' ? 0.75 : 1; // jhore khub pichil
     var fuelK = fuel > 0 ? 1 : 0.5; // tel shese gati ardheke
     var bst = bikeStat();
     var L0 = (typeof leg === 'function' ? leg().len : 6000) || 6000;
@@ -5495,6 +5511,10 @@ function update(dt) {
     var braking2 = state === 'play' && (keyBrake || btnBrake || brakeT > 0);
     playerTailGlowMat.opacity = braking2 ? 1 : clamp(0.25 + (nightK - 0.12) * 1.5, 0, 1) * 0.9;
   } catch (e) {}
+  if (blackoutOn) { // jhorer blackout: sob alo nive jay
+    try { lampGlowMat.opacity *= 0.05; bulbMat.opacity *= 0.2; winGlowMat.opacity *= 0.1; headGlowMat.opacity *= 0.1; tailGlowMat.opacity *= 0.1; } catch (e) {}
+    try { fillLight.intensity *= 0.1; } catch (e) {}
+  }
   dustMat.opacity = (0.25 + Math.min(0.35, speed / 42 * 0.35)) * (1 - nightK * 0.4);
   var skyStep = Math.round(nightK * 12);
   if (skyStep !== lastSkyStep) { lastSkyStep = skyStep; paintSky(skyStep / 12); }
@@ -5520,21 +5540,23 @@ function update(dt) {
       var fogW = (thw === 'tea') ? 0.22 : 0.12; // shitkale uttore kuasha beshi
       if (wr < 0.35) weather = 'clear';
       else if (wr < 0.52) weather = 'cloudy';
-      else if (wr < 0.72) weather = 'rain';
-      else if (wr < 0.72 + 0.08) weather = 'heavy';
-      else if (wr < 0.80 + fogW) weather = 'fog';
+      else if (wr < 0.70) weather = 'rain';
+      else if (wr < 0.70 + 0.08) weather = 'heavy';
+      else if (wr < 0.78 + fogW) weather = 'fog';
+      else if (wr < 0.78 + fogW + 0.07) weather = 'storm';
       else weather = 'clear';
       weatherT = rnd(22, 40);
       if (weather === 'cloudy') toast(elHint, T('w_cloud'), 1800);
       else if (weather === 'rain') toast(elHint, T('w_rain'), 2000);
       else if (weather === 'heavy') toast(elHint, T('w_heavy'), 2200);
       else if (weather === 'fog') toast(elHint, T('w_fog'), 2000);
+      else if (weather === 'storm') toast(elHint, T('w_storm'), 2400);
       else if (weather === 'clear' && Math.random() < 0.4) toast(elHint, T('w_clear'), 1500);
-      if (rainPts) rainPts.visible = (weather === 'rain' || weather === 'heavy');
+      if (rainPts) rainPts.visible = (weather === 'rain' || weather === 'heavy' || weather === 'storm');
     }
   }
-  var heavyK = (weather === 'heavy') ? 1.6 : 1;
-  if (rainPts) rainPts.material.opacity = weather === 'heavy' ? 0.9 : 0.7;
+  var heavyK = (weather === 'heavy') ? 1.6 : (weather === 'storm' ? 2.1 : 1);
+  if (rainPts) rainPts.material.opacity = weather === 'storm' ? 0.95 : weather === 'heavy' ? 0.9 : 0.7;
   if (rainPts && rainPts.visible && state === 'play') {
     var rp = rainPts.geometry.attributes.position.array;
     for (var ri = 0; ri < rp.length; ri += 6) {
@@ -5549,12 +5571,49 @@ function update(dt) {
     rainPts.geometry.attributes.position.needsUpdate = true;
   }
   if (weather === 'fog') { scene.fog.near = 15; scene.fog.far = 80; }
+  else if (weather === 'storm') { scene.fog.near = 12; scene.fog.far = 70; }
   else { scene.fog.near = 40; scene.fog.far = 145; }
   if (weather === 'cloudy') sunLight.intensity *= 0.7;
   if (weather === 'heavy' || weather === 'rain') sunLight.intensity *= 0.55;
+  if (weather === 'storm') sunLight.intensity *= 0.4;
+  /* storm fx: lightning + blackout + gach dola */
+  if (weather === 'storm' && (state === 'play' || state === 'menu')) {
+    boltT -= dt;
+    if (boltT <= 0) {
+      boltT = rnd(1.5, 5);
+      try {
+        var fl = $('flash');
+        fl.style.transition = 'none'; fl.style.background = '#ffffff'; fl.style.opacity = 0.75;
+        requestAnimationFrame(function () { fl.style.transition = 'opacity .45s'; fl.style.opacity = 0; });
+      } catch (e) {}
+      var bdl = rnd(0.4, 1.4);
+      setTimeout(function () { try { tone(55, 0.9, 'sawtooth', 0.11, 28); } catch (e) {} }, bdl * 1000);
+    }
+    blackoutT -= dt;
+    if (blackoutT <= 0) { blackoutOn = true; blackoutDur = 1.5; blackoutT = rnd(6, 11); }
+    if (blackoutOn) { blackoutDur -= dt; if (blackoutDur <= 0) blackoutOn = false; }
+    for (var swi = 0; swi < swayTrees.length; swi++) { try { var swo = swayTrees[swi]; swo.g.rotation.z = swo.base + Math.sin(time * 6 + swo.ph) * 0.07; } catch (e) {} }
+  } else if (blackoutOn) { blackoutOn = false; }
+  /* traffic radio announcement */
+  if (state === 'play') {
+    annT -= dt;
+    if (annT <= 0) {
+      annT = rnd(90, 150);
+      if (musicOn && !muted) {
+        try {
+          var nx = LEGS[Math.min(selLeg + 1, LEGS.length - 1)];
+          var msg = lang === 'bn'
+            ? '🚦 ট্রাফিক আপডেট: ' + legName(leg()) + '–' + legName(nx) + ' রোডে ভিড়!'
+            : '🚦 Traffic: heavy rush on ' + legName(leg()) + '–' + legName(nx) + ' road!';
+          toast(elHint, msg, 2800);
+          if (Math.random() < 0.35) nextGap = Math.min(nextGap, 10);
+        } catch (e) {}
+      }
+    }
+  }
 
   /* engine sound + music + rain noise */
-  engineUpdate(); musicUpdate(dt); rainNoise((weather === 'rain' || weather === 'heavy') && state === 'play');
+  engineUpdate(); musicUpdate(dt); rainNoise((weather === 'rain' || weather === 'heavy' || weather === 'storm') && state === 'play');
 
   /* random events */
   if (state === 'play') {
