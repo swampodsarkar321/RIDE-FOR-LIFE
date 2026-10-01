@@ -899,14 +899,14 @@ catch (e) {
   $('loading').textContent = 'WebGL not supported on this device/browser.';
   return;
 }
-renderer.setPixelRatio(LOW ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 2));
+renderer.setPixelRatio(LOW ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 2.5));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = !LOW;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 try {
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.28;
+  renderer.toneMappingExposure = 1.14;
 } catch (e) {}
 $('stage').appendChild(renderer.domElement);
 
@@ -951,7 +951,7 @@ var hemi = new THREE.HemisphereLight(0xfff6de, 0x4a6b30, 0.85); scene.add(hemi);
 var sunLight = new THREE.DirectionalLight(0xfff0cc, 1.0);
 sunLight.position.set(-14, 26, 12);
 sunLight.castShadow = true;
-sunLight.shadow.mapSize.set(LOW ? 256 : 2048, LOW ? 256 : 2048);
+sunLight.shadow.mapSize.set(LOW ? 1024 : 4096, LOW ? 1024 : 4096);
 sunLight.shadow.camera.left = -30; sunLight.shadow.camera.right = 30;
 sunLight.shadow.camera.top = 30; sunLight.shadow.camera.bottom = -30;
 sunLight.shadow.camera.near = 5; sunLight.shadow.camera.far = 60;
@@ -959,6 +959,58 @@ sunLight.shadow.bias = -0.0009;
 sunLight.shadow.radius = 7; // soft edge
 scene.add(sunLight);
 var sunTarget = new THREE.Object3D(); scene.add(sunTarget); sunLight.target = sunTarget;
+
+/* ===== HD GRAPHICS PACK: PBR materials + sky IBL reflections + sharp textures + sharper shadows + colour grade ===== */
+var HDMATS = new Set(), HDLAST = 1;
+function HDsetEnv(k) { // raate environment light kombe jay
+  k = Math.max(0.04, k);
+  if (Math.abs(k - HDLAST) < 0.03) return;
+  HDLAST = k;
+  HDMATS.forEach(function (m) { m.envMapIntensity = (m.userData.hdBase || 1) * k; });
+}
+(function () {
+  function reg(m, base) {
+    m.userData.hdBase = base; m.envMapIntensity = base * HDLAST; HDMATS.add(m);
+    m.addEventListener('dispose', function () { HDMATS.delete(m); });
+  }
+  var aniso = 4; try { aniso = Math.min(LOW ? 4 : 16, renderer.capabilities.getMaxAnisotropy()); } catch (e) {}
+  try { // texture gulo sharp (dure-o jhapsa hoy na)
+    var _CT = THREE.CanvasTexture;
+    var CT2 = class extends _CT { constructor() { super(...arguments); this.anisotropy = aniso; } };
+    THREE.CanvasTexture = CT2;
+  } catch (e) {}
+  try { // procedural sky theke realistic ambient light + reflection (IBL)
+    var ec = document.createElement('canvas'); ec.width = 512; ec.height = 256;
+    var ex = ec.getContext('2d'), eg = ex.createLinearGradient(0, 0, 0, 256);
+    eg.addColorStop(0, '#3d7fd2'); eg.addColorStop(0.4, '#9ccff6'); eg.addColorStop(0.495, '#fff0cf');
+    eg.addColorStop(0.505, '#6f8a55'); eg.addColorStop(1, '#3a5428');
+    ex.fillStyle = eg; ex.fillRect(0, 0, 512, 256);
+    var sg = ex.createRadialGradient(150, 62, 2, 150, 62, 70);
+    sg.addColorStop(0, 'rgba(255,252,230,1)'); sg.addColorStop(1, 'rgba(255,240,200,0)');
+    ex.fillStyle = sg; ex.fillRect(0, 0, 512, 256);
+    var et = new THREE.CanvasTexture(ec); et.mapping = THREE.EquirectangularReflectionMapping; et.encoding = THREE.sRGBEncoding;
+    scene.environment = new THREE.PMREMGenerator(renderer).fromEquirectangular(et).texture;
+  } catch (e) {}
+  try { // Lambert -> PBR Standard (sob gaach, bari, rasta, manush ekdom realistic shading pabe)
+    var _LM = THREE.MeshLambertMaterial, _SM = THREE.MeshStandardMaterial;
+    var SM2 = class extends _SM { constructor(p) { super(p); if (!p || !p.envMap) reg(this, 1); } };
+    THREE.MeshStandardMaterial = SM2;
+    var LM2 = function (p) {
+      var q = {}; p = p || {};
+      for (var k in p) if (k !== 'shading' && k !== 'combine' && k !== 'reflectivity' && k !== 'refractionRatio') q[k] = p[k];
+      if (q.roughness === undefined) q.roughness = 0.84;
+      if (q.metalness === undefined) q.metalness = 0.02;
+      var m = new SM2(q); reg(m, 0.6); return m;
+    };
+    LM2.prototype = _LM.prototype; THREE.MeshLambertMaterial = LM2;
+  } catch (e) {}
+  try { // shadow aro sharp + acne bondho
+    sunLight.shadow.normalBias = 0.03; sunLight.shadow.radius = 4;
+  } catch (e) {}
+  try { // cinema colour grade (mobile-e off, performance er jonno)
+    if (!LOW) renderer.domElement.style.filter = 'contrast(1.06) saturate(1.14)';
+  } catch (e) {}
+})();
 /* shared night-glow materials — raate opacity barano hoy (1 draw state, sosta) */
 var GLOWTEX = (function () {
   var c = document.createElement('canvas'); c.width = c.height = 64;
@@ -4592,10 +4644,10 @@ bindSetting('setCode', function () {
 });
 function applyQuality(q) {
   quality = q;
-  renderer.setPixelRatio(q === 'high' ? Math.min(window.devicePixelRatio || 1, LOW ? 1.5 : 2) : 1);
+  renderer.setPixelRatio(q === 'high' ? Math.min(window.devicePixelRatio || 1, LOW ? 1.5 : 2.5) : 1);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = q === 'high';
-  var sz = q === 'high' ? (LOW ? 1024 : 2048) : 256;
+  var sz = q === 'high' ? (LOW ? 1024 : 4096) : 256;
   sunLight.shadow.mapSize.set(sz, sz);
   if (sunLight.shadow.map) { sunLight.shadow.map.dispose(); sunLight.shadow.map = null; }
   scene.traverse(function (o) { if (o.material) o.material.needsUpdate = true; });
@@ -4997,6 +5049,7 @@ function update(dt) {
       if (!firstPh && state === 'play') toast(elHint, F('phase', ph.ico, phN), 1800);
     }
   } catch (e) {}
+  try { HDsetEnv(1 - nightK * 0.93); } catch (e) {}
   scene.fog.color.setRGB(0.85 - nightK * 0.80, 0.93 - nightK * 0.88, 0.82 - nightK * 0.70);
   var toen2 = 'Noon'; try { toen2 = timePhase(dayT).en; } catch (e) {}
   if (toen2 === 'Morning') { // sokal: norom golapi-sonali alo
