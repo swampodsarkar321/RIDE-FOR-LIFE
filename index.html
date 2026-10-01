@@ -706,6 +706,7 @@
     <div class="mpage" id="pageBoard">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
       <div class="sec" data-i18n="sec_board">🏆 Leaderboard</div>
+      <div class="board"><div class="stats" id="statGrid" style="grid-template-columns:1fr 1fr 1fr;margin:0;"></div></div>
       <div class="board" id="lbList"></div>
     </div>
     <div class="mpage" id="pageProfile">
@@ -3601,6 +3602,12 @@ var playerName = '', selBike = 0, playerDiv = '', tParcels = 0, tStars = 0, tCra
 try { tStars = +localStorage.getItem('rrStars') || 0; } catch (e) {}
 try { tCrash = +localStorage.getItem('rrCrash') || 0; } catch (e) {}
 try { nmTotal = +localStorage.getItem('rrNm') || 0; } catch (e) {}
+var tDist = 0, tEarn = 0, tPerfect = 0, tNight = 0, tRain = 0;
+try { tDist = +localStorage.getItem('rrDist') || 0; } catch (e) {}
+try { tEarn = +localStorage.getItem('rrEarn') || 0; } catch (e) {}
+try { tPerfect = +localStorage.getItem('rrPerfect') || 0; } catch (e) {}
+try { tNight = +localStorage.getItem('rrNightR') || 0; } catch (e) {}
+try { tRain = +localStorage.getItem('rrRainR') || 0; } catch (e) {}
 var BIKE_PRICE = [0, 1000, 2000, 3000, 4500, 7000]; // joto valo ability toto dam (0 = free)
 var ownedBikes = [0]; // new user: normal bike free
 var DIVS = [
@@ -3953,6 +3960,47 @@ try {
   unlockLeg = Math.min(unlockLeg, LEGS.length - 1);
 } catch (e) {}
 function dropName(l) { return lang === 'bn' ? (l.db || l.bn) : (l.de || l.en); }
+/* ---------- district completion reward: +500 XP · +৳1000 · 🎁 free bike ---------- */
+function distClaimed() { try { return JSON.parse(localStorage.getItem('rrDistDone') || '[]'); } catch (e) { return []; } }
+function distLastIdx(d) { var nx = (d + 1 < DIST_HEADS.length) ? DIST_HEADS[d + 1].n : LEGS.length; return nx - 1; }
+function grantDistrict(d, silent) {
+  try {
+    var got = distClaimed();
+    if (got.indexOf(d) >= 0) return null;
+    got.push(d);
+    try { localStorage.setItem('rrDistDone', JSON.stringify(got)); } catch (e) {}
+    xp += 500; bankCoins += 1000;
+    var gift = -1;
+    for (var i = 0; i < BIKE_PRICE.length; i++) if (ownedBikes.indexOf(i) < 0) { gift = i; break; }
+    var extra = '';
+    if (gift >= 0) {
+      ownedBikes.push(gift);
+      try { localStorage.setItem('rrOwned', JSON.stringify(ownedBikes)); } catch (e) {}
+      cloudSave();
+    } else { bankCoins += 500; extra = ' +৳500'; }
+    try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
+    var info = { d: d, gift: gift, extra: extra };
+    if (!silent) distToast(info);
+    return info;
+  } catch (e) { return null; }
+}
+function distToast(info) {
+  try {
+    if (!info) return;
+    var dh = DIST_HEADS[info.d], bn = lang === 'bn';
+    var gtxt = info.gift >= 0 ? ((bn ? '<br>🎁 ফ্রি বাইক: ' : '<br>🎁 Free bike: ') + bikeName(info.gift)) : '';
+    toast(elLoc, '<b>🏆 ' + (bn ? dh.bn : dh.en) + (bn ? ' সম্পূর্ণ!' : ' Complete!') + '</b><small>+500 XP · +৳1000' + info.extra + gtxt + '</small>', 4500);
+    confettiBurst(); sfx.power();
+  } catch (e) {}
+}
+function checkDistRewards(silent) {
+  var last = null;
+  for (var d = 0; d < DIST_HEADS.length; d++) {
+    if (unlockLeg > distLastIdx(d)) { var r = grantDistrict(d, silent); if (r) last = r; }
+  }
+  try { renderDest(); } catch (e) {}
+  return last;
+}
 function confettiBurst() {
   for (var ci = 0; ci < 5; ci++) sparks(player.position.x + rnd(-2, 2), py + rnd(1, 3), rnd(-3, 1), 14);
   pop('🎉', player.position.x, py + 3, 0, '#ffe066');
@@ -4444,6 +4492,10 @@ function endRun() {
   if (isBest) { best = s; try { localStorage.setItem('rangpurRushBest', String(best)); } catch (e) {} }
   // bank + xp save
   bankCoins += coinCount;
+  tDist += Math.floor(dist); tEarn += coinCount;
+  if (isNight) tNight++;
+  if (weather === 'rain' || weather === 'heavy') tRain++;
+  try { localStorage.setItem('rrDist', String(tDist)); localStorage.setItem('rrEarn', String(tEarn)); localStorage.setItem('rrNightR', String(tNight)); localStorage.setItem('rrRainR', String(tRain)); } catch (e) {}
   try { localStorage.removeItem('rrRun'); } catch (e) {} // run sesh — snapshot ar lagbe na
   if (runCrash === 0 && parcelCount > 0) pendingClean = true; // crash-free run badge
   checkAch(); // achievement reward bank-e dhukbe, nicher save-e jabe
@@ -4858,8 +4910,12 @@ function update(dt) {
         confettiBurst();
       } else {
         justFinished = selLeg;
-        if (unlockLeg < selLeg + 1) { unlockLeg = selLeg + 1; try { localStorage.setItem('rrUnlock', String(unlockLeg)); } catch (e) {} }
+        if (unlockLeg < selLeg + 1) { unlockLeg = selLeg + 1; try { localStorage.setItem('rrUnlock', String(selLeg + 1)); } catch (e) {} }
         toast(elLoc, F('fin_leg', legName(leg()), ab, legName(LEGS[selLeg + 1])), 4000);
+        try {
+          var _di = checkDistRewards(true);
+          if (_di) setTimeout(function () { distToast(_di); }, 4300);
+        } catch (e) {}
         carryScore = Math.floor(score); // porer map-e score niye jao — reset hobe na
         selLeg = selLeg + 1; try { localStorage.setItem('rrLeg', String(selLeg)); } catch (e2) {}
       }
@@ -4966,6 +5022,7 @@ function update(dt) {
             pay2 = Math.round(orderReward * xMult);
           }
           if (missionInfo().id === 'order') addMissionProgress(1); // order complete (sudhu order mission-e)
+          if (!orderCrash) { tPerfect++; try { localStorage.setItem('rrPerfect', String(tPerfect)); } catch (e) {} }
           // special parcel rules
           var spNote = '';
           if (spType === 'med') { pay2 = Math.round(pay2 * 2); spNote = '🚨'; } // emergency: double pay
@@ -5587,7 +5644,9 @@ function renderDest() {
       while (headK < DIST_HEADS.length - 1 && i >= DIST_HEADS[headK + 1].n) headK++;
       if (i === DIST_HEADS[headK].n) {
         var dh = DIST_HEADS[headK];
-        html += '<div class="legRow" style="border-color:var(--gold);background:rgba(255,200,61,.1);cursor:default;"><span>' + dh.dot + ' <b>' + (lang === 'bn' ? dh.bn : dh.en) + '</b></span><span class="km">~2 min/upazila</span></div>';
+        var doneMark = '';
+        try { if (distClaimed().indexOf(headK) >= 0) doneMark = ' ✅'; } catch (e) {}
+        html += '<div class="legRow" style="border-color:var(--gold);background:rgba(255,200,61,.1);cursor:default;"><span>' + dh.dot + ' <b>' + (lang === 'bn' ? dh.bn : dh.en) + '</b>' + doneMark + '</span><span class="km">~2 min/upazila</span></div>';
       }
       var g = LEGS[i], lk = i > unlockLeg, dn = i < unlockLeg || (i === LEGS.length - 1 && unlockLeg >= LEGS.length);
       var cls = 'legRow' + (i === selLeg ? ' sel' : '') + (lk ? ' lock' : ' done');
@@ -5794,7 +5853,24 @@ function fetchWarWeek() {
     }, function () { warFetching = false; });
   } catch (e) { warFetching = false; }
 }
+function renderStats() {
+  try {
+    var el = $('statGrid'); if (!el) return;
+    var bn = lang === 'bn';
+    function st(ico, t, v) { return '<div class="stat"><small>' + ico + ' ' + t + '</small><b>' + v + '</b></div>'; }
+    el.innerHTML =
+      st('📦', bn ? 'ডেলিভারি' : 'Deliveries', tParcels) +
+      st('🛣️', bn ? 'দূরত্ব' : 'Distance', (tDist / 1000).toFixed(1) + 'km') +
+      st('🏆', bn ? 'সেরা' : 'Best', best) +
+      st('💰', bn ? 'আয়' : 'Earned', '৳' + tEarn) +
+      st('💥', bn ? 'ক্র্যাশ' : 'Crashes', tCrash) +
+      st('✨', bn ? 'পারফেক্ট' : 'Perfect', tPerfect) +
+      st('🌙', bn ? 'রাত' : 'Night', tNight) +
+      st('🌧️', bn ? 'বৃষ্টি' : 'Rain', tRain);
+  } catch (e) {}
+}
 function renderBoard() {
+  try { renderStats(); } catch (e) {}
   var html = '';
   html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">' + (lang === 'bn' ? '⚔️ যুদ্ধ' : '⚔️ War') + '</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">' + (lang === 'bn' ? '📅 সপ্তাহ' : '📅 Week') + '</button></div>';
   if (myRankCache) html += '<div class="best">🏅 #' + myRankCache.rank + ' / ' + myRankCache.tot + '</div>';
@@ -6239,6 +6315,7 @@ function boot() {
     sfx.coin();
   });
   try { renderDaily(); } catch (e) {}
+  try { checkDistRewards(true); } catch (e) {} // ager sesh district thakle silent reward
   renderAvatarPicker();
   state = 'menu'; speed = 9;
   loadProgress('Done!');
