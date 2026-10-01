@@ -4785,6 +4785,7 @@ function showTut(ks) {
   } catch (e) {}
 }
 function startGame(keepScore) {
+  try { clampLeg(); } catch (e) {} // strict: last city thekei suru
   try { if (!localStorage.getItem('rrTut')) { showTut(keepScore); return; } } catch (e) {}
   if (state === 'menu') { justFinished = -1; carryScore = 0; }
   var emergency = '';
@@ -4992,6 +4993,7 @@ $('menuBtn').addEventListener('click', function (e) {
   $('pause').classList.add('hidden');
   $('menu').classList.remove('hidden');
   state = 'menu'; document.body.dataset.ui = 'menu';
+  try { clampLeg(); } catch (e) {}
   showPage('pageMain'); renderGarage(); renderBoard(); renderDest();
   speed = 9; last = performance.now();
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
@@ -6245,9 +6247,14 @@ function renderDest() {
     });
   }
 }
+function clampLeg() { // strict: sobsomoy last city-te thakbe
+  try {
+    selLeg = Math.max(0, Math.min(selLeg, unlockLeg, LEGS.length - 1));
+    localStorage.setItem('rrLeg', String(selLeg));
+  } catch (e) {}
+}
 function cycleDest(dirn) {
-  selLeg = (selLeg + dirn + LEGS.length) % LEGS.length;
-  if (selLeg > unlockLeg) selLeg = dirn > 0 ? 0 : unlockLeg; // lock পার হওয়া যাবে না
+  selLeg = Math.max(0, Math.min(selLeg + dirn, unlockLeg, LEGS.length - 1)); // wrap nai — last city chara jabe na
   try { localStorage.setItem('rrLeg', String(selLeg)); } catch (e) {}
   sfx.move(); renderDest();
   try { toast(elHint, F('map_picked', legName(LEGS[selLeg])), 1800); } catch (e) {}
