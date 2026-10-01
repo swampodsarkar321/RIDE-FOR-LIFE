@@ -4393,23 +4393,36 @@ function spawnTrain(z) {
   var g = new THREE.Group();
   box(0.3, 2.4, 0.3, 0x333333, -4.8, 1.2, 0, g); box(0.3, 2.4, 0.3, 0x333333, 4.8, 1.2, 0, g);
   for (var i = 0; i < 5; i++) box(1.15, 0.3, 0.16, 0xdd2222, -4.2 + i * 1.2, 1.9, 0, g); // barrier: dan lane khola
-  for (var slp = -13; slp <= 13; slp += 2) box(0.5, 0.1, 3.0, 0x5c4033, slp, 0.05, 0, g); // sleepers (track thakbe)
-  box(28, 0.12, 0.22, 0x999999, 0, 0.16, -1.0, g); box(28, 0.12, 0.22, 0x999999, 0, 0.16, 1.0, g); // steel rails (track thakbe)
+  box(46, 0.12, 4.6, 0x6b5a48, 0, 0.0, 0, g); // ballast bed (track lomba + choura)
+  for (var slp = -20; slp <= 20; slp += 2) box(0.5, 0.1, 3.4, 0x5c4033, slp, 0.1, 0, g); // sleepers (track thakbe)
+  box(42, 0.12, 0.22, 0x999999, 0, 0.2, -1.1, g); box(42, 0.12, 0.22, 0x999999, 0, 0.2, 1.1, g); // steel rails (track thakbe)
   var tr = new THREE.Group();
   var BRG = 0x006a4e, BRR = 0xf42a41; // Bangladesh Railway green/red
-  box(4.6, 2.4, 1.9, BRG, 5.2, 1.9, 0, tr); // engine body
-  box(4.62, 0.5, 1.92, BRR, 5.2, 1.2, 0, tr); // red stripe
-  box(2.0, 0.9, 0.06, 0x112233, 4.6, 2.7, 0.96, tr); box(2.0, 0.9, 0.06, 0x112233, 4.6, 2.7, -0.96, tr); // cab windows
-  box(0.3, 0.5, 2.0, 0xffcc00, 7.6, 0.8, 0, tr); // yellow bumper
-  var thl = new THREE.Mesh(new THREE.CircleGeometry(0.3, 12), new THREE.MeshBasicMaterial({ color: 0xffffcc })); thl.rotation.y = Math.PI / 2; thl.position.set(7.56, 2.2, 0); tr.add(thl); // headlight
+  box(4.6, 2.4, 1.9, BRG, 5.2, 2.0, 0, tr); // engine body
+  box(4.62, 0.5, 1.92, BRR, 5.2, 1.3, 0, tr); // red stripe
+  box(2.0, 0.9, 0.06, 0x112233, 4.6, 2.8, 0.96, tr); box(2.0, 0.9, 0.06, 0x112233, 4.6, 2.8, -0.96, tr); // cab windows
+  box(0.06, 0.9, 1.4, 0x112233, 7.51, 2.8, 0, tr); // front windshield
+  box(4.7, 0.18, 2.0, 0x333333, 5.2, 3.28, 0, tr); // roof
+  cyl(0.16, 0.7, 0.16, 0x222222, 4.4, 3.6, 0, tr); // exhaust stack
+  box(0.5, 0.18, 0.3, 0x222222, 6.0, 3.4, 0, tr); // horn
+  for (var vgi = 0; vgi < 3; vgi++) { box(0.5, 0.5, 0.06, 0x1a1a1a, 5.9, 1.7, 0.96, tr); box(0.5, 0.5, 0.06, 0x1a1a1a, 5.9, 1.7, -0.96, tr); } // side grilles
+  box(0.3, 0.5, 2.0, 0xffcc00, 7.6, 0.9, 0, tr); // yellow bumper
+  box(0.5, 0.25, 0.3, 0x222222, 7.7, 0.45, 0.6, tr); box(0.5, 0.25, 0.3, 0x222222, 7.7, 0.45, -0.6, tr); // buffers
+  box(0.3, 0.35, 0.5, 0xffffff, 7.62, 1.5, 0, tr); // number plate
+  var thl = new THREE.Mesh(new THREE.CircleGeometry(0.3, 12), new THREE.MeshBasicMaterial({ color: 0xffffcc })); thl.rotation.y = Math.PI / 2; thl.position.set(7.56, 2.3, 0); tr.add(thl); // headlight
   function brCoach(cx) {
-    box(5.5, 2.5, 1.9, BRG, cx, 1.95, 0, tr); // coach
-    box(5.52, 0.45, 1.92, BRR, cx, 2.55, 0, tr); // red band
-    for (var wxi = 0; wxi < 3; wxi++) { box(0.9, 0.8, 0.06, 0x112233, cx - 1.8 + wxi * 1.8, 2.2, 0.96, tr); box(0.9, 0.8, 0.06, 0x112233, cx - 1.8 + wxi * 1.8, 2.2, -0.96, tr); } // windows
-    box(5.6, 0.15, 2.0, 0x333333, cx, 3.28, 0, tr); // roof
+    box(5.5, 2.5, 1.9, BRG, cx, 2.05, 0, tr); // coach
+    box(5.52, 0.45, 1.92, BRR, cx, 2.65, 0, tr); // red band
+    for (var wxi = 0; wxi < 3; wxi++) { box(0.9, 0.8, 0.06, 0x112233, cx - 1.8 + wxi * 1.8, 2.3, 0.96, tr); box(0.9, 0.8, 0.06, 0x112233, cx - 1.8 + wxi * 1.8, 2.3, -0.96, tr); } // windows
+    box(0.06, 1.6, 1.2, 0x4a2a1a, cx - 2.5, 1.7, 0, tr); box(0.06, 1.6, 1.2, 0x4a2a1a, cx + 2.5, 1.7, 0, tr); // doors
+    box(5.6, 0.15, 2.0, 0x333333, cx, 3.38, 0, tr); // roof
+    box(1.2, 0.25, 0.5, 0x888888, cx - 1.0, 3.5, 0, tr); box(1.2, 0.25, 0.5, 0x888888, cx + 1.0, 3.5, 0, tr); // roof vents
+    box(2.0, 0.5, 1.4, 0x222222, cx, 0.6, 0, tr); // under-box
   }
   brCoach(-1.6); brCoach(-7.4); // 2 coach — lomba train
-  [3.6, 6.8, 0.2, -3.4, -5.2, -9.2].forEach(function (wx) { // bogie wheels
+  box(0.5, 0.4, 0.6, 0x1a1a1a, 0.4, 1.0, 0, tr); // coupler
+  [3.6, 6.8, 0.2, -3.4, -5.2, -9.2].forEach(function (wx) { // bogies: frame + wheels
+    box(1.6, 0.3, 1.9, 0x1a1a1a, wx, 0.85, 0, tr);
     var w1 = cyl(0.4, 0.25, 0.4, 0x222222, wx, 0.5, 0.85, tr); w1.rotation.x = Math.PI / 2;
     var w2 = cyl(0.4, 0.25, 0.4, 0x222222, wx, 0.5, -0.85, tr); w2.rotation.x = Math.PI / 2;
   });
