@@ -418,6 +418,25 @@
   #radioPill .live-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 8px #ff3b30; animation: liveBlink 1.1s ease-in-out infinite; flex-shrink: 0; }
   #radioPill.off .live-dot { background: #888; box-shadow: none; animation: none; }
   #chasePill { border: 2px solid #ff3b30; animation: chasePulse .5s ease-in-out infinite alternate; }
+  /* ===== GTA radio wheel ===== */
+  #radioWheel { position: fixed; inset: 0; z-index: 70; display: none; background: rgba(0,0,0,.55); touch-action: none; }
+  #radioWheel.on { display: block; }
+  .rw-seg {
+    position: absolute; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%;
+    background: rgba(10,16,28,.9); border: 2px solid rgba(255,255,255,.3); color: #fff;
+    font-size: 24px; cursor: pointer; font-family: inherit; pointer-events: auto;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1;
+  }
+  .rw-seg small { font-size: 9px; font-weight: 800; color: var(--gold); margin-top: 2px; }
+  .rw-seg:active { transform: scale(1.12); }
+  .rw-seg.sel { border-color: var(--gold); box-shadow: 0 0 16px rgba(255,200,61,.7); }
+  #rwCenter {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center;
+    color: #fff; pointer-events: auto; cursor: pointer; font-family: inherit;
+    background: rgba(10,16,28,.9); border: 3px solid var(--gold); border-radius: 50%;
+    width: 110px; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #rwCenter b { font-size: 15px; } #rwCenter small { font-size: 11px; color: var(--panel-soft); }
   @keyframes chasePulse { from { box-shadow: 0 0 0 0 rgba(255,59,48,0); } to { box-shadow: 0 0 14px 4px rgba(255,59,48,.7); } }
   @keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
   .stCard {
@@ -625,6 +644,7 @@
 <button class="brake" id="brakeBtn" data-i18n-aria="brake" aria-label="Brake">🛑<br><span data-i18n="brake">Brake</span></button>
 <div id="pops"></div>
 <div id="flash"></div>
+<div id="radioWheel"><div id="rwCenter"><b id="rwName">FM</b><small id="rwHint">tap ✕</small></div></div>
 
 <div class="overlay" id="menu">
   <div class="card" id="menuCard">
@@ -2174,17 +2194,28 @@ function crashBurst(x, y) {
 
 /* ---------- radio FM: 3 station (bangla / hindi / english) ---------- */
 var STATIONS = [
-  { id: 'ban', flag: '🇧🇩', tag: 'BAN', name: 'Bangla FM', desc: 'Folk groove · dotara vibe', tempo: 0.26,
+  { id: 'ban', flag: '🇧🇩', tag: 'BAN', name: 'Bangla FM', desc: 'Folk groove · dotara vibe', tempo: 0.26, groove: 0, shift: 1,
     bass: [110, 0, 130, 0, 98, 0, 130, 146], lead: [0, 587, 0, 659, 784, 0, 659, 0, 587, 0, 523, 0, 587, 659, 0, 0], tracks: [] },
-  { id: 'hin', flag: '🇮🇳', tag: 'HIN', name: 'Hindi FM', desc: 'Filmy beat · dhol vibe', tempo: 0.21,
+  { id: 'hin', flag: '🇮🇳', tag: 'HIN', name: 'Hindi FM', desc: 'Filmy beat · dhol vibe', tempo: 0.21, groove: 1, shift: 1,
     bass: [130, 0, 146, 0, 110, 0, 146, 164], lead: [0, 659, 784, 0, 880, 0, 784, 659, 0, 587, 659, 0, 784, 0, 659, 0],
     tracks: ['radio/Tum Mile Full Video - Title Track _ Emraan Hashmi, Soha Ali _ Pritam_ Neeraj Shridhar _ Kumaar _ 4K.mp3'] },
-  { id: 'eng', flag: '🇬🇧', tag: 'ENG', name: 'English FM', desc: 'Your songs from radio folder', tempo: 0.23,
+  { id: 'eng', flag: '🇬🇧', tag: 'ENG', name: 'English FM', desc: 'Your songs from radio folder', tempo: 0.23, groove: 2, shift: 1,
     bass: [98, 0, 110, 0, 87, 0, 110, 123], lead: [0, 523, 0, 587, 659, 0, 587, 0, 523, 0, 440, 0, 523, 587, 0, 0],
     tracks: ['radio/Playdate (Violin) Slowed - Edit Audio By (Lindsey Stirling).mp3'] }
 ];
-var radioIdx = 0, radioTrack = 0, radioEl = null, radioBad = {};
-try { radioIdx = +localStorage.getItem('rrRadio') || 0; if (radioIdx < 0 || radioIdx > 2) radioIdx = 0; } catch (e) {}
+STATIONS.push(
+  { id: 'folk', flag: '🎻', tag: 'FLK', name: 'Folk FM', desc: 'Dotara folk · dummy', tempo: 0.28, groove: 0, shift: 0.89, tracks: [] },
+  { id: 'pop', flag: '🎧', tag: 'POP', name: 'Pop Hits', desc: 'Top hits · dummy', tempo: 0.19, groove: 2, shift: 1.12, tracks: [] },
+  { id: 'lofi', flag: '🌙', tag: 'LOF', name: 'Lofi Night', desc: 'Chill beats · dummy', tempo: 0.30, groove: 2, shift: 0.80, tracks: [] },
+  { id: 'retro', flag: '📻', tag: 'RET', name: 'Retro Gold', desc: 'Old classics · dummy', tempo: 0.24, groove: 1, shift: 0.84, tracks: [] },
+  { id: 'jazz', flag: '🎷', tag: 'JAZ', name: 'Jazz Road', desc: 'Smooth jazz · dummy', tempo: 0.22, groove: 0, shift: 1.06, tracks: [] },
+  { id: 'baul', flag: '🪘', tag: 'BAU', name: 'Baul Beats', desc: 'Baul folk · dummy', tempo: 0.18, groove: 1, shift: 1.19, tracks: [] },
+  { id: 'game', flag: '🎮', tag: 'GAM', name: 'Gamer FM', desc: 'Fast energy · dummy', tempo: 0.16, groove: 2, shift: 1.26, tracks: [] },
+  { id: 'trf', flag: '🚦', tag: 'TRF', name: 'Traffic Radio', desc: 'Traffic news · frequent updates', tempo: 0.25, groove: 0, shift: 1.0, traffic: true, tracks: [] }
+);
+var radioIdx = 0, radioTrack = 0, radioEl = null, radioBad = {}, wheelOpen = false;
+try { radioIdx = +localStorage.getItem('rrRadio') || 0; if (radioIdx < 0 || radioIdx >= STATIONS.length) radioIdx = 0; } catch (e) {}
+function grooveOf(st) { return STATIONS[st.groove || 0] || STATIONS[0]; }
 function radioStation() { return STATIONS[radioIdx % STATIONS.length]; }
 function radioEnsureEl() {
   if (radioEl) return radioEl;
@@ -2265,6 +2296,41 @@ function renderStations() {
     });
   } catch (e) {}
 }
+function renderWheel() { // GTA-style radio wheel
+  try {
+    var w = $('radioWheel'); if (!w) return;
+    Array.prototype.forEach.call(w.querySelectorAll('.rw-seg'), function (x) { try { w.removeChild(x); } catch (e) {} });
+    var n = STATIONS.length;
+    for (var i = 0; i < n; i++) {
+      (function (idx) {
+        var a = (-90 + idx * (360 / n)) * Math.PI / 180;
+        var b = document.createElement('button');
+        b.className = 'rw-seg' + (idx === radioIdx ? ' sel' : '');
+        b.style.left = (50 + 35 * Math.cos(a)) + '%';
+        b.style.top = (50 + 35 * Math.sin(a)) + '%';
+        b.innerHTML = STATIONS[idx].flag + '<small>' + STATIONS[idx].tag + '</small>';
+        b.addEventListener('click', function (e) { e.stopPropagation(); setStation(idx); closeWheel(); });
+        w.appendChild(b);
+      })(i);
+    }
+    var st = radioStation();
+    if ($('rwName')) $('rwName').textContent = st.flag + ' ' + st.name;
+  } catch (e) {}
+}
+function openWheel() {
+  try {
+    wheelOpen = true;
+    renderWheel();
+    $('radioWheel').classList.add('on');
+    try { sfx.move(); } catch (e) {}
+  } catch (e) {}
+}
+function closeWheel() {
+  try {
+    wheelOpen = false;
+    $('radioWheel').classList.remove('on');
+  } catch (e) {}
+}
 /* ---------- background music: station groove (mp3 na thakle procedural) ---------- */
 var musicT = 0, musicStep = 0;
 function musicUpdate(dt) {
@@ -2275,10 +2341,11 @@ function musicUpdate(dt) {
   musicT -= dt;
   if (musicT > 0) return;
   musicT = clamp(st.tempo - speed * 0.0016, 0.16, 0.28);
-  var f = st.bass[musicStep % st.bass.length], mel = st.lead[musicStep % st.lead.length];
+  var gr = grooveOf(st), sh = st.shift || 1;
+  var f = gr.bass[musicStep % gr.bass.length], mel = gr.lead[musicStep % gr.lead.length];
   try {
-    if (f) tone(f, 0.2, 'triangle', 0.035);
-    if (mel) tone(mel, 0.3, 'sine', 0.028);
+    if (f) tone(f * sh, 0.2, 'triangle', 0.035);
+    if (mel) tone(mel * sh, 0.3, 'sine', 0.028);
     if (musicStep % 4 === 0) tone(95, 0.13, 'sine', 0.07, 48);
     if (musicStep % 8 === 6) tone(170, 0.09, 'triangle', 0.05, 90);
     if (musicStep % 2 === 0) tone(6000, 0.03, 'square', 0.006);
@@ -5762,7 +5829,7 @@ function update(dt) {
   if (state === 'play') {
     annT -= dt;
     if (annT <= 0) {
-      annT = rnd(90, 150);
+      annT = (radioStation().traffic ? rnd(30, 60) : rnd(90, 150)); // traffic channel-e ghono khobor
       if (musicOn && !muted) {
         try {
           var nx = LEGS[Math.min(selLeg + 1, LEGS.length - 1)];
@@ -5992,7 +6059,7 @@ function frame(now) {
     return;
   }
   stillRendered = false;
-  if (slowT > 0) { slowT -= dt; timeScale = 0.3; } else timeScale = 1;
+  if (slowT > 0 || wheelOpen) { if (slowT > 0) slowT -= dt; timeScale = 0.3; } else timeScale = 1;
   time += dt * timeScale;
   update(dt * timeScale);
   autoQuality(dt);
@@ -6800,10 +6867,27 @@ function boot() {
   $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
   $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, '💎 ' + gems + (lang === 'bn' ? ' · গ্যারেজে খরচ করো' : ' · spend in Garage'), 1800); });
   $('coinPlus').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
-  // radio FM: HUD pill tap = next station · prothom touch-e audio unlock
+  // radio FM: tap = next station · hold = GTA wheel · prothom touch-e audio unlock
   (function () {
-    var rp = $('radioPill');
-    if (rp) rp.addEventListener('click', function (e) { e.stopPropagation(); try { nextStation(); sfx.move(); } catch (e2) {} });
+    var rp = $('radioPill'), holdT = null, held = false;
+    if (rp) {
+      rp.addEventListener('pointerdown', function () {
+        held = false;
+        holdT = setTimeout(function () { held = true; try { openWheel(); } catch (e) {} }, 550);
+      });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
+        rp.addEventListener(ev, function (e) {
+          if (holdT) { clearTimeout(holdT); holdT = null; }
+          if (ev === 'pointerup' && !held) { e.stopPropagation(); try { nextStation(); sfx.move(); } catch (e2) {} }
+          held = false;
+        });
+      });
+      rp.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    }
+    var wc = $('rwCenter');
+    if (wc) wc.addEventListener('click', function (e) { e.stopPropagation(); closeWheel(); });
+    var w = $('radioWheel');
+    if (w) w.addEventListener('click', function (e) { if (e.target === w) closeWheel(); });
     function unlock() { try { radioEnsureEl(); radioTick(); } catch (e) {} }
     window.addEventListener('pointerdown', unlock, { once: true });
     try { updateRadioUI(); } catch (e) {}
