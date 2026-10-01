@@ -2650,8 +2650,7 @@ function makeBullCart() {
   var tail = cyl(0.03, 0.8, 0.03, WD, 0, 1.1, 1.0, g); tail.rotation.x = 0.25;
   ell(0.06, 0.1, 0.06, 0x3a3230, 0, 0.68, 0.9, g);
   g.scale.set(1.15, 1.15, 1.1);
-  return { mesh: wrap(g), hw: 0.85, hd: 2.3, y0: 0, y1: 3.6 };
-}
+  return { mesh: g, hw: 0.85, hd: 2.3, y0: 0, y1: 3.6 }; // wrap nai — goru player-er dike mukh (+z), bakider moto
 function makeBullLoose() {
   var g = new THREE.Group(), W = 0xb09a80, WD = 0x8a7a64;
   var body = cyl(0.42, 1.5, 0.42, W, 0, 1.05, 0, g); body.rotation.x = Math.PI / 2;
