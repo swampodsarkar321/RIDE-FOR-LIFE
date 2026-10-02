@@ -825,14 +825,14 @@
       <div class="board" id="lbList"></div>
     </div>
     <div class="mpage" id="pageProfile">
-      <button class="backBtn" data-back data-i18n="back">‹ Back</button>
+      <button class="backBtn" data-back data-i18n="back" style="display:block;width:100%;box-sizing:border-box;">‹ Back</button>
       <div class="sec" data-i18n="sec_profile">👤 Profile</div>
       <div class="board" style="text-align:center;">
-        <div style="font-size:44px;" id="profAvatar">🏍️</div>
-        <div id="profName" style="font-size:24px;font-weight:800;"></div>
-        <div id="profDiv" style="color:var(--gold);font-weight:700;"></div>
+        <div style="font-size:44px;line-height:1;" id="profAvatar">🏍️</div>
+        <div id="profName" style="font-size:26px;font-weight:800;margin-top:4px;overflow:hidden;text-overflow:ellipsis;"></div>
+        <div id="profDiv" style="color:var(--gold);font-weight:700;font-size:15px;"></div>
         <div class="best" id="profRank" style="margin:8px 0;"></div>
-        <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin:8px 0;">
+        <div class="stats" style="grid-template-columns:1fr 1fr 1fr;margin:8px 0;gap:8px;">
           <div class="stat"><small>🏍️ Lvl</small><b id="profLvl">1</b></div>
           <div class="stat"><small>🏆 Best</small><b id="profBest">0</b></div>
           <div class="stat"><small>৳ Bank</small><b id="profBank">0</b></div>
@@ -843,13 +843,11 @@
         <div style="font-size:13px;color:var(--panel-soft);">XP <span id="profXpTxt"></span></div>
         <div class="speedo-bar" style="width:100%;margin:2px 0 8px;"><u id="profXpFill"></u></div>
         <div class="best">🔑 <span id="invMyTxt">My code:</span> <b id="invMyCode">------</b></div>
-        <div style="display:flex;gap:8px;margin:8px 0;">
-          <input id="invInput" maxlength="6" placeholder="FRIEND CODE" style="flex:1;min-width:0;font-family:inherit;font-size:18px;font-weight:700;text-align:center;border-radius:12px;border:2px solid var(--gold);padding:6px 8px;box-sizing:border-box;text-transform:uppercase;">
-          <button class="backBtn" id="invBtn" style="margin:0;white-space:nowrap;">🎁 Invite</button>
-        </div>
+        <input id="invInput" maxlength="6" placeholder="FRIEND CODE" style="width:100%;font-family:inherit;font-size:18px;font-weight:700;text-align:center;border-radius:12px;border:2px solid var(--gold);padding:8px;box-sizing:border-box;text-transform:uppercase;margin:8px 0;">
+        <button class="backBtn" id="invBtn" style="margin:0 0 4px;width:100%;box-sizing:border-box;">🎁 Invite</button>
         <div class="best" id="invMsg" style="min-height:18px;"></div>
-        <h3 style="margin:6px 0;color:var(--gold);">🏅 Achievements</h3>
-        <div id="profAch" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+        <h3 style="margin:8px 0 6px;color:var(--gold);">🏅 Achievements</h3>
+        <div id="profAch" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>
         <div style="margin:8px 0 4px;"><button class="backBtn" id="titleBtn" style="margin:0;">🎖️ Title</button></div>
         <h3 style="margin:6px 0;color:var(--gold);">🏵️ Sticker Book</h3>
         <div id="profStickers" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
@@ -8130,7 +8128,7 @@ function renderProfile() {
     }
     var pa = $('profAch');
     if (pa) pa.innerHTML = achList().map(function (a) {
-      return '<div style="padding:8px 6px;border-radius:10px;font-size:13px;font-weight:800;text-align:center;'
+      return '<div style="padding:8px 4px;border-radius:10px;font-size:12px;font-weight:800;text-align:center;overflow:hidden;text-overflow:ellipsis;'
         + (a.got ? 'background:linear-gradient(135deg,#2d9c42,#1a6b2a);border:2px solid #7fe0a0;color:#fff;'
           : 'background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);color:#888;')
         + '">' + (a.got ? a.ico : '🔒') + '<br>' + a.t + '</div>';
