@@ -43,9 +43,9 @@
       }
     },
     "duel_rooms": {
+      ".read": true,
       ".indexOn": ["created"],
       "$code": {
-        ".read": true,
         ".write": true
       }
     },
