@@ -2210,6 +2210,15 @@ var spTex = (function () {
 })();
 var spMat = new THREE.PointsMaterial({ color: 0xffffff, map: spTex, size: 0.3, transparent: true, opacity: 1, depthWrite: false, alphaTest: 0.02, vertexColors: true });
 var spPts = new THREE.Points(spGeo, spMat); spPts.frustumCulled = false; scene.add(spPts);
+/* dure akasher atoshbazi pool (no size-attenuation — 100m dureo boro dekha jay, fog ignore) */
+var FW_N = 150, fwPos = new Float32Array(FW_N * 3), fwVel = new Float32Array(FW_N * 3), fwLife = new Float32Array(FW_N), fwI = 0, fwActive = 0;
+var fwCol = new Float32Array(FW_N * 3);
+for (var fwi = 0; fwi < FW_N; fwi++) { fwPos[fwi * 3 + 1] = -9999; fwCol[fwi * 3] = 1; fwCol[fwi * 3 + 1] = 0.85; fwCol[fwi * 3 + 2] = 0.4; }
+var fwGeo = new THREE.BufferGeometry();
+fwGeo.setAttribute('position', new THREE.BufferAttribute(fwPos, 3));
+fwGeo.setAttribute('color', new THREE.BufferAttribute(fwCol, 3));
+var fwMat = new THREE.PointsMaterial({ color: 0xffffff, map: spTex, size: 7, sizeAttenuation: false, transparent: true, opacity: 1, depthWrite: false, fog: false, vertexColors: true });
+var fwPts = new THREE.Points(fwGeo, fwMat); fwPts.frustumCulled = false; scene.add(fwPts);
 var headSpot = new THREE.SpotLight(0xfff0c8, 0, 42, 0.55, 0.65, 1.2);
 headSpot.position.set(0, 1.2, -0.6); scene.add(headSpot);
 var fillLight = new THREE.PointLight(0xffd9a0, 0, 17, 2); // raate bike readable — gorom fill alo
@@ -4287,6 +4296,14 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
 function evTxt(id, k) { try { var _o = OVERRIDDEN_EV[id]; if (_o) return lang === 'bn' ? (_o.bn[k] || _o.en[k]) : (_o.en[k] || _o.bn[k]); } catch (e) {} for (var i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === id) return lang === 'bn' ? EVENTS[i].bn[k] : EVENTS[i].en[k]; for (var j = 0; j < ADMIN_EVENTS.length; j++) if (ADMIN_EVENTS[j].id === id) return lang === 'bn' ? ADMIN_EVENTS[j].bn[k] : ADMIN_EVENTS[j].en[k]; return ''; }
 function evName(id) { return evTxt(id, 0); }
 function evDesc(id) { return evTxt(id, 1); }
+function evFw(id) { // event-e fireworks ache? (override soho)
+  try {
+    if (OVERRIDDEN_EV[id] && OVERRIDDEN_EV[id].p) return !!OVERRIDDEN_EV[id].p.fw;
+  } catch (e) {}
+  for (var i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === id) return !!((EVENTS[i].p || {}).fw);
+  for (var j = 0; j < ADMIN_EVENTS.length; j++) if (ADMIN_EVENTS[j].id === id) return !!((ADMIN_EVENTS[j].p || {}).fw);
+  return false;
+}
 function renderEvents() {
   var el = $('eventList'); if (!el) return;
   var html = '';
@@ -4300,7 +4317,7 @@ function renderEvents() {
     var nm = lang === 'bn' ? ev.bn[0] : ev.en[0], ds = lang === 'bn' ? ev.bn[1] : ev.en[1];
     var isLive = activeEventId && activeEventId === ev.id;
     var isLocked = activeEventId && activeEventId !== ev.id;
-    html += '<button class="legRow' + (eventMode === ev.id ? ' sel' : '') + (isLocked ? ' lock' : '') + '" data-ev="' + ev.id + '"' + (isLocked ? ' data-lock="1"' : '') + '><span>' + ev.ico + ' ' + nm + (isLive ? ' <b style="color:var(--gold)">● LIVE</b>' : '') + ' <small style="color:var(--panel-soft)">' + ds + '</small></span><span class="st">' + (isLocked ? '🔒' : '▶') + '</span></button>';
+    html += '<button class="legRow' + (eventMode === ev.id ? ' sel' : '') + (isLocked ? ' lock' : '') + '" data-ev="' + ev.id + '"' + (isLocked ? ' data-lock="1"' : '') + '><span>' + ev.ico + ' ' + nm + (isLive ? ' <b style="color:var(--gold)">● LIVE</b>' : '') + (evFw(ev.id) ? ' 🎆' : '') + ' <small style="color:var(--panel-soft)">' + ds + '</small></span><span class="st">' + (isLocked ? '🔒' : '▶') + '</span></button>';
   }
   el.innerHTML = html;
   Array.prototype.forEach.call(el.querySelectorAll('.legRow'), function (b) {
@@ -4695,42 +4712,40 @@ try {
   fwFlash.scale.set(14, 14, 1); fwFlash.visible = false; scene.add(fwFlash);
 } catch (e) { fwFlash = null; }
 var FW_COLS = [[1, 0.85, 0.3], [1, 0.32, 0.3], [0.42, 1, 0.55], [0.5, 0.72, 1], [1, 0.55, 1], [1, 1, 1]];
-function firework(x, y, z) { // asol atoshbazi: rocket uthbe → akashe gol burst → flash + boom
+function firework(x, y, z) { // dure akashe asol atoshbazi: gol burst + flash + deri-boom
   try {
     var col = FW_COLS[(Math.random() * FW_COLS.length) | 0];
-    for (var l = 0; l < 8; l++) { // launch trail
-      var ix = (spI++ % SP_N) * 3;
-      spPos[ix] = x + rnd(-0.3, 0.3); spPos[ix + 1] = 1 + l * 1.1; spPos[ix + 2] = z + rnd(-0.3, 0.3);
-      spVel[ix] = rnd(-0.4, 0.4); spVel[ix + 1] = rnd(8, 12); spVel[ix + 2] = rnd(-0.4, 0.4);
-      spLife[ix / 3] = 0.45;
-      spCol[ix] = 1; spCol[ix + 1] = 0.7; spCol[ix + 2] = 0.35;
+    for (var k = 0; k < 42; k++) { // gol burst — chardike choray
+      var jx = (fwI++ % FW_N) * 3;
+      var th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
+      var sp = rnd(14, 26);
+      fwPos[jx] = x; fwPos[jx + 1] = y; fwPos[jx + 2] = z;
+      fwVel[jx] = Math.sin(ph) * Math.cos(th) * sp;
+      fwVel[jx + 1] = Math.cos(ph) * sp;
+      fwVel[jx + 2] = Math.sin(ph) * Math.sin(th) * sp;
+      fwLife[jx / 3] = rnd(1.3, 2.1);
+      fwCol[jx] = col[0]; fwCol[jx + 1] = col[1]; fwCol[jx + 2] = col[2];
     }
-    try { tone(600, 0.35, 'sine', 0.035, 1400); } catch (eW) {} // sheesh whistle
-    setTimeout(function () {
-      try {
-        for (var k = 0; k < 30; k++) { // gol burst — chardike choray
-          var jx = (spI++ % SP_N) * 3;
-          var th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
-          var sp = rnd(4, 9);
-          spPos[jx] = x; spPos[jx + 1] = y; spPos[jx + 2] = z;
-          spVel[jx] = Math.sin(ph) * Math.cos(th) * sp;
-          spVel[jx + 1] = Math.cos(ph) * sp;
-          spVel[jx + 2] = Math.sin(ph) * Math.sin(th) * sp;
-          spLife[jx / 3] = rnd(1.0, 1.7);
-          spCol[jx] = col[0]; spCol[jx + 1] = col[1]; spCol[jx + 2] = col[2];
-        }
-        try { spGeo.attributes.color.needsUpdate = true; } catch (eC) {}
-        if (fwFlash) { // akash alo flash
-          fwFlash.position.set(x, y, z);
-          fwFlash.material.color.setRGB(col[0], col[1], col[2]);
-          var sc = rnd(12, 18); fwFlash.scale.set(sc, sc, 1);
-          fwFlash.visible = true; fwFlashT = 0.9;
-        }
-        try { spMat.size = 0.45; setTimeout(function () { try { spMat.size = 0.3; } catch (e) {} }, 1600); } catch (eS) {}
-        try { tone(60, 0.6, 'sawtooth', 0.09, 30); } catch (eB) {} // boom
-        setTimeout(function () { try { for (var q = 0; q < 3; q++) tone(1500 + Math.random() * 2500, 0.05, 'square', 0.02); } catch (e) {} }, 120); // photka
-      } catch (e) {}
-    }, 380);
+    for (var w = 0; w < 8; w++) { // sada core
+      var cx = (fwI++ % FW_N) * 3;
+      var th2 = Math.random() * Math.PI * 2, sp2 = rnd(4, 8);
+      fwPos[cx] = x; fwPos[cx + 1] = y; fwPos[cx + 2] = z;
+      fwVel[cx] = Math.cos(th2) * sp2; fwVel[cx + 1] = rnd(-2, 4); fwVel[cx + 2] = Math.sin(th2) * sp2;
+      fwLife[cx / 3] = rnd(0.8, 1.2);
+      fwCol[cx] = 1; fwCol[cx + 1] = 1; fwCol[cx + 2] = 1;
+    }
+    fwActive = FW_N;
+    try { fwGeo.attributes.color.needsUpdate = true; } catch (eC) {}
+    if (fwFlash) { // akash alo flash
+      fwFlash.position.set(x, y, z);
+      fwFlash.material.color.setRGB(col[0], col[1], col[2]);
+      var fsc = rnd(42, 60); fwFlash.scale.set(fsc, fsc, 1);
+      fwFlash.visible = true; fwFlashT = 1;
+    }
+    setTimeout(function () { // alo aste ase — deri-boom
+      try { tone(52, 0.8, 'sawtooth', 0.08, 26); } catch (eB) {}
+      setTimeout(function () { try { for (var q = 0; q < 4; q++) tone(1400 + Math.random() * 2600, 0.05, 'square', 0.018); } catch (e) {} }, 150);
+    }, 450);
   } catch (e) {}
 }
 function toast(el, html, ms) {
@@ -5902,28 +5917,34 @@ function shareScore() {
     var s = Math.floor(score);
     if (lastCard && lastCard.seq === runSeq && lastCard.card && lastCard.s === s) { sendCard(lastCard.card, s); return; }
     buildScoreCard(s, parcelCount, coinCount, function (card) {
-      if (!card) return;
+      if (!card) { try { toast(elHint, lang === 'bn' ? '😞 কার্ড বানানো যায়নি!' : '😞 Card failed!', 2000); } catch (e) {} return; }
       lastCard = { seq: runSeq, card: card, s: s };
       sendCard(card, s);
     });
-  } catch (e) {}
+  } catch (e) { try { toast(elHint, '😞 ?', 1800); } catch (e2) {} }
+}
+function dlCard(card, name) { // card download helper
+  try {
+    var a = document.createElement('a'); a.href = card.url; a.download = name || 'ride-for-life-score.png';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { try { document.body.removeChild(a); } catch (e2) {} }, 800);
+    return true;
+  } catch (e) { return false; }
 }
 function sendCardText(card, txt, tag) {
   try {
     if (!CG_PORTAL) {
       var f = new File([card.blob], 'ride-for-life.png', { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [f] })) {
-        navigator.share({ files: [f], title: 'Ride For Life', text: txt }).catch(function () {});
-        try { logEv('share', { t: tag || 'card' }); } catch (e) {}
+        navigator.share({ files: [f], title: 'Ride For Life', text: txt }).then(function () {
+          try { logEv('share', { t: tag || 'card' }); } catch (e) {}
+        }).catch(function () { dlCard(card); try { toast(elHint, lang === 'bn' ? '💾 কার্ড ডাউনলোড! ছবি শেয়ার করো' : '💾 Card downloaded! Share the image', 2500); } catch (e2) {} });
         return;
       }
     }
   } catch (e) {}
   try {
-    var url = card.url;
-    var a = document.createElement('a'); a.href = url; a.download = 'ride-for-life-score.png';
-    document.body.appendChild(a); a.click();
-    setTimeout(function () { try { document.body.removeChild(a); } catch (e2) {} }, 800);
+    dlCard(card);
     if (!CG_PORTAL) { try { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); } catch (e2) {} }
     else { try { toast(elHint, lang === 'bn' ? '💾 কার্ড ডাউনলোড!' : '💾 Card downloaded!', 2000); } catch (e3) {} }
   } catch (e) {}
@@ -5945,7 +5966,15 @@ function shareFB() {
 }
 function shareMsg() {
   copyLink();
-  try { window.open('fb-messenger://share/?link=' + encodeURIComponent(challengeUrl(Math.floor(score))), '_blank'); } catch (e) {}
+  try {
+    var mob = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+    if (mob) { window.open('fb-messenger://share/?link=' + encodeURIComponent(challengeUrl(Math.floor(score))), '_blank'); }
+    else {
+      toast(elHint, lang === 'bn' ? '🔗 লিংক কপি! Messenger-e paste করো' : '🔗 Link copied! Paste in Messenger', 2500);
+      window.open('https://www.messenger.com/', '_blank');
+    }
+    try { logEv('share_msg', {}); } catch (e) {}
+  } catch (e) {}
 }
 function copyLink() {
   try {
@@ -6748,11 +6777,14 @@ function update(dt) {
     if (state !== 'crash') player.position.y = py;
     runT += dt * (state === 'crash' ? 0 : speed * 0.45);
     if (evP().quota && state === 'play') orderSecs += dt;
-    if (state === 'play' && evP().fw) { // event fireworks: rocket → akashe burst
+    if (state === 'play' && evP().fw) { // dure akashe atoshbazi (sudhu fw event-e)
       fwT -= dt;
       if (fwT <= 0) {
         fwT = rnd(2.5, 4.5);
-        try { firework(rnd(-7, 7), rnd(8, 13), rnd(-28, -12)); } catch (eFw) {}
+        try {
+          firework(rnd(-45, 45), rnd(14, 24), rnd(-120, -70));
+          if (Math.random() < 0.35) setTimeout(function () { try { firework(rnd(-45, 45), rnd(14, 24), rnd(-120, -70)); } catch (e) {} }, 400);
+        } catch (eFw) {}
       }
     }
   }
@@ -7061,6 +7093,24 @@ function update(dt) {
   }
   spGeo.attributes.position.needsUpdate = true;
   try { if (fwFlashT > 0 && fwFlash) { fwFlashT -= dt * 2.2; fwFlash.material.opacity = Math.max(0, fwFlashT); fwFlash.visible = fwFlashT > 0; } } catch (eF) {}
+  try { // dure akasher burst update (nijer gravity, world-er sathe vashe na)
+    if (fwActive > 0) {
+      var alive = 0;
+      for (var fwu = 0; fwu < FW_N; fwu++) {
+        if (fwLife[fwu] > 0) {
+          alive++;
+          fwLife[fwu] -= dt;
+          fwVel[fwu * 3 + 1] -= 4 * dt;
+          fwPos[fwu * 3] += fwVel[fwu * 3] * dt;
+          fwPos[fwu * 3 + 1] += fwVel[fwu * 3 + 1] * dt;
+          fwPos[fwu * 3 + 2] += fwVel[fwu * 3 + 2] * dt;
+          if (fwLife[fwu] <= 0) fwPos[fwu * 3 + 1] = -9999;
+        }
+      }
+      fwActive = alive;
+      fwGeo.attributes.position.needsUpdate = true;
+    }
+  } catch (eFW) {}
   headSpot.position.set(player.position.x, 1.2, -0.6);
   headTgt.position.set(player.position.x, 0, -22);
     headSpot.intensity = nightK * 2.1 * (weather === 'fog' ? 1.3 : 1); // ghono ondhokare rasta porar jonno joralo headlight
