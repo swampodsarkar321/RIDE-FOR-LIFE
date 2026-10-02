@@ -8115,25 +8115,35 @@ function cycleTitle() {
 function renderProfile() {
   try {
     var bn = lang === 'bn';
-    if ($('profName')) $('profName').textContent = playerName || (bn ? 'রাইডার' : 'Rider');
-    if ($('profAvatar')) $('profAvatar').innerHTML = '<img src="' + getAvatar() + '" style="width:64px;height:64px;border-radius:50%;border:3px solid var(--gold);background:#fff;" onerror="this.style.display=\'none\';this.parentNode.textContent=\'🏍️\'">';
-    if ($('profDiv')) $('profDiv').textContent = '📍 ' + (playerDiv ? divName(playerDiv) : '') + ' · ⭐ ' + myRating() + (selTitle ? ' · ' + titleText(selTitle) : '');
-    if ($('profLvl')) $('profLvl').textContent = riderLevel;
-    if ($('profBest')) $('profBest').textContent = best;
-    if ($('profBank')) $('profBank').textContent = '৳' + bankCoins;
-    if ($('profParcel')) $('profParcel').textContent = tParcels;
-    if ($('profStars')) $('profStars').textContent = tStars;
-    if ($('profStreak')) $('profStreak').textContent = maxStreak() + '🔥';
-    if ($('profXpFill')) $('profXpFill').style.width = Math.min(100, xp / xpNeed() * 100) + '%';
-    if ($('profXpTxt')) $('profXpTxt').textContent = Math.floor(xp) + '/' + xpNeed();
-    if ($('invMyCode')) { try { $('invMyCode').textContent = myCode(); } catch (e) {} }
-    if ($('invMyTxt')) $('invMyTxt').textContent = bn ? 'আমার কোড:' : 'My code:';
-    var mv = $('mProfVal'); if (mv && myRankCache) mv.textContent = '#' + myRankCache.rank;
-    var rk = $('profRank');
-    if (rk) {
-      if (myRankCache) rk.textContent = '🏅 #' + myRankCache.rank + ' / ' + myRankCache.tot;
-      else { rk.textContent = bn ? 'র‍্যাংক আসছে…' : 'Loading rank…'; fetchMyRank(); }
-    }
+    try { if ($('profName')) $('profName').textContent = playerName || (bn ? 'রাইডার' : 'Rider'); } catch (e) {}
+    try { if ($('profAvatar')) $('profAvatar').innerHTML = '<img src="' + getAvatar() + '" style="width:64px;height:64px;border-radius:50%;border:3px solid var(--gold);background:#fff;" onerror="this.style.display=\'none\';this.parentNode.textContent=\'🏍️\'">'; } catch (e) {}
+    try {
+      var _tt = '';
+      try { _tt = titleText(selTitle); } catch (e) { _tt = ''; }
+      var _rt = '';
+      try { _rt = myRating(); } catch (e) { _rt = '5.0'; }
+      if ($('profDiv')) $('profDiv').textContent = '📍 ' + (playerDiv ? divName(playerDiv) : '') + ' · ⭐ ' + _rt + (_tt ? ' · ' + _tt : '');
+    } catch (e) {}
+    try {
+      if ($('profLvl')) $('profLvl').textContent = riderLevel;
+      if ($('profBest')) $('profBest').textContent = best;
+      if ($('profBank')) $('profBank').textContent = '৳' + bankCoins;
+      if ($('profParcel')) $('profParcel').textContent = tParcels;
+      if ($('profStars')) $('profStars').textContent = tStars;
+      if ($('profStreak')) $('profStreak').textContent = maxStreak() + '🔥';
+      if ($('profXpFill')) $('profXpFill').style.width = Math.min(100, xp / xpNeed() * 100) + '%';
+      if ($('profXpTxt')) $('profXpTxt').textContent = Math.floor(xp) + '/' + xpNeed();
+    } catch (e) {}
+    try { if ($('invMyCode')) $('invMyCode').textContent = myCode(); } catch (e) {}
+    try { if ($('invMyTxt')) $('invMyTxt').textContent = bn ? 'আমার কোড:' : 'My code:'; } catch (e) {}
+    try {
+      var mv = $('mProfVal'); if (mv && myRankCache) mv.textContent = '#' + myRankCache.rank;
+      var rk = $('profRank');
+      if (rk) {
+        if (myRankCache) rk.textContent = '🏅 #' + myRankCache.rank + ' / ' + myRankCache.tot;
+        else { rk.textContent = bn ? 'র‍্যাংক আসছে…' : 'Loading rank…'; fetchMyRank(); }
+      }
+    } catch (e) {}
     var pa = $('profAch');
     if (pa) pa.innerHTML = achList().map(function (a) {
       return '<div style="padding:8px 4px;border-radius:10px;font-size:12px;font-weight:800;text-align:center;overflow:hidden;text-overflow:ellipsis;'
