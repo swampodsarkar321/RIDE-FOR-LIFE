@@ -2896,6 +2896,7 @@ function makeFlood() { // bonnar pani: dube jawa rasta — slow, kintu morbe na
   return { mesh: g, hw: 1.5, hd: 2.8, y0: 0, y1: 0.35, slow: true };
 }
 var floodK = 1, slipT = 0, slipOn = false, stormK = 1; // frame modifiers: bonna slow, slipstream boost, kalboishakhi jhor
+var hitStop = 0; // crash hit-stop: aghat-er muhurte freeze (juice)
 function makeBanner() {
   var g = new THREE.Group();
   box(0.22, 4.0, 0.22, 0x6d5b45, -5.0, 2.0, 0, g); box(0.22, 4.0, 0.22, 0x6d5b45, 5.0, 2.0, 0, g);
@@ -5449,15 +5450,17 @@ function die() {
   if (practice) { try { toast(elHint, lang === 'bn' ? '🛡️ প্র্যাকটিস — ক্র্যাশ নেই!' : '🛡️ Practice — no crash!', 1500); } catch (e) {} return; } // practice mode: obinashi
   try { chaseBusted(); } catch (e) {}
   hp -= bikeStat().dmg; // bike damage — morbena, damage hobe
-  state = 'crash'; crashT = 0; shake = 1;
+  state = 'crash'; crashT = 0; shake = 1.7; hitStop = 0.09; // juice: jhakuni + freeze
   // crash slow-mo: 0.6s slow motion + parcel bhanga toast
   slowT = 0.6; timeScale = 0.3;
   combo = 0; comboT = 0;
-  $('flash').style.transition = 'none'; $('flash').style.background = '#b5651d'; $('flash').style.opacity = 0.45;
+  $('flash').style.transition = 'none'; $('flash').style.background = '#ff2a2a'; $('flash').style.opacity = 0.55;
   requestAnimationFrame(function () { $('flash').style.transition = 'opacity .6s'; $('flash').style.opacity = 0; });
   sfx.crash();
+  try { vibe([60, 40, 120]); } catch (eV) {}
   sliding = false;
   crashBurst(player.position.x, py + 1); // dhulo + tukro chitke
+  try { crashBurst(player.position.x - 0.5, py + 1.6); } catch (eB) {}
   if (carried > 0) { carried = Math.floor(carried / 2); } // crash-e ordhek parcel nosto (baki ordhek beche jay)
   orderCrash = true; nmStreak = 0; runCrash++; tCrash++; delStreak = 0; // rating katbe + near-miss streak reset
   try { localStorage.setItem('rrCrash', String(tCrash)); } catch (e) {}
@@ -6558,6 +6561,16 @@ function update(dt) {
           if (delStreak % 3 === 0) { streakBonus = 100; pay2 += 100; spNote += '🔥x' + delStreak; }
           bankCoins += pay2 + tip;
           try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
+          try { slowT = Math.max(slowT, 0.45); } catch (eJ) {} // reward slow-mo (juice)
+          try { confettiBurst(); } catch (eJ2) {}
+          try { sparks(player.position.x, py + 2, 0, 18); sparks(player.position.x, py + 1, -1, 12); } catch (eJ3) {} // coin fountain
+          try {
+            tone(523, 0.1, 'square', 0.05);
+            setTimeout(function () { try { tone(659, 0.1, 'square', 0.05); } catch (e) {} }, 90);
+            setTimeout(function () { try { tone(784, 0.14, 'square', 0.05); } catch (e) {} }, 180);
+            if (tier === 2) setTimeout(function () { try { tone(1046, 0.22, 'square', 0.06); confettiBurst(); } catch (e) {} }, 270);
+          } catch (eJ4) {}
+          try { vibe(tier === 2 ? [30, 50, 30, 50, 80] : [30, 40, 60]); } catch (eJ5) {}
           if (evP().quota) toast(elLoc, F('exp_done', xMult, carried, xSec, pay2) + '<br>' + tierTxt + '<br>' + starTxt + (tip > 0 ? ' +৳' + tip : '') + (spNote ? ' ' + spNote : ''), 3600);
           else toast(elLoc, F('order_done', orderNo, carried, pay2) + '<br>' + tierTxt + '<br>' + starTxt + (tip > 0 ? ' +৳' + tip : '') + (spNote ? ' ' + spNote : ''), 3200);
           orderNo++; newOrder(false);
@@ -6897,7 +6910,7 @@ function update(dt) {
 
   /* v2 fx: speed lines, sparks, headlight, wet road, brake light */
   var fxK = state === 'play' ? clamp((speed - 21) / 15, 0, 1) : 0;
-  slMat.opacity += (fxK * 0.4 * (1 - nightK * 0.55) - slMat.opacity) * Math.min(1, dt * 5);
+  slMat.opacity += (fxK * 0.55 * (1 - nightK * 0.55) - slMat.opacity) * Math.min(1, dt * 5);
   if (slMat.opacity > 0.01) {
     var fxLen = 1.5 + speed * 0.22;
     for (var fxi = 0; fxi < SL_N; fxi++) {
@@ -7076,10 +7089,10 @@ function update(dt) {
 
   /* camera */
   var sh = shake > 0 ? shake : 0; shake = Math.max(0, shake - dt * 2.4);
-  var fovNow = camCfg.fov + Math.max(0, speed - 17) * 0.32;
+  var fovNow = camCfg.fov + Math.max(0, speed - 17) * 0.45;
   if (Math.abs(fovNow - lastFov) > 0.01) { lastFov = fovNow; camera.fov = fovNow; camera.updateProjectionMatrix(); }
   var sway = Math.sin(dist * 0.008) * 1.1; // halka bak feel
-  camera.position.set(player.position.x * 0.45 + sway + curveAt(-8) * 0.3 + (Math.random() - 0.5) * sh * 0.6, camCfg.h + py * 0.25 + (Math.random() - 0.5) * sh * 0.6, camCfg.dist);
+  camera.position.set(player.position.x * 0.45 + sway + curveAt(-8) * 0.3 + (Math.random() - 0.5) * sh * 0.6, camCfg.h + py * 0.25 + Math.max(0, speed - 25) * 0.02 + (Math.random() - 0.5) * sh * 0.6, camCfg.dist + Math.max(0, speed - 25) * 0.06);
   camera.lookAt(player.position.x * 0.3 + sway * 0.7 + curveAt(-8) * 0.5, 1.5, -8);
   camera.rotateZ((targetX - player.position.x) * 0.012);
   sunLight.position.set(player.position.x - 14, 26, camera.position.z - 20 + 12);
@@ -7095,6 +7108,7 @@ function frame(now) {
     return;
   }
   stillRendered = false;
+  if (hitStop > 0) { hitStop -= dt; renderer.render(scene, camera); return; } // hit-stop freeze
   if (slowT > 0 || wheelOpen) { if (slowT > 0) slowT -= dt; timeScale = 0.3; } else timeScale = 1;
   time += dt * timeScale;
   update(dt * timeScale);
