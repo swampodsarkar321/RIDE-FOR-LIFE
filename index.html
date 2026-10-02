@@ -994,6 +994,7 @@
       <div class="setRow"><span class="lbl"><span class="ico">🌐</span><span data-i18n="set_lang">Language</span><span class="sub" data-i18n="set_lang_sub">English / বাংলা</span></span><button class="tgl on" id="setLang">English</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🔔</span><span data-i18n="set_push">Push Notification</span><span class="sub" data-i18n="set_push_sub">Daily reward reminder</span></span><button class="tgl" id="setPush">Off</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🔑</span><span data-i18n="set_code">Recovery code</span><span class="sub" data-i18n="set_code_sub">New phone progress back · tap to copy</span></span><button class="tgl on" id="setCode">------</button></div>
+      <div class="setRow"><span class="lbl"><span class="ico">🔄</span><span>Check Update</span><span class="sub">Get the newest version</span></span><button class="tgl on" id="setUpdate">Check</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🗑️</span><span data-i18n="set_reset">Erase Progress</span><span class="sub" data-i18n="set_reset_sub">All save data will be deleted</span></span><button class="tgl danger" id="setReset">Erase</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">⭐</span><span data-i18n="set_rate">Rate Game</span><span class="sub" data-i18n="set_rate_sub">Share your experience</span></span>
         <div id="rateStars" style="display:flex;gap:4px;"></div>
@@ -6411,6 +6412,17 @@ function bindSetting(id, fn) { var el = $(id); if (el) el.addEventListener('clic
 bindSetting('setSfx', function () { sfxOn = !sfxOn; try { if (!sfxOn) engineStop(); else if (state === 'play' && !muted) engineStart(); } catch (e) {} });
 bindSetting('setMusic', function () { musicOn = !musicOn; try { radioTick(); updateRadioUI(); } catch (e) {} });
 bindSetting('setLang', function () { setLang(lang === 'bn' ? 'en' : 'bn'); });
+bindSetting('setUpdate', function () {
+  toast(elHint, lang === 'bn' ? '🔄 আপডেট চেক হচ্ছে…' : '🔄 Checking for update…', 2000);
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        var p = regs.map(function (r) { try { return r.update(); } catch (e) { return null; } });
+        return Promise.all(p);
+      }).then(function () { setTimeout(function () { location.reload(); }, 1200); }).catch(function () { location.reload(); });
+    } else location.reload();
+  } catch (e) { location.reload(); }
+});
 bindSetting('setTilt', function () {
   tiltOn = !tiltOn;
   try { localStorage.setItem('rrTilt', tiltOn ? '1' : '0'); } catch (e) {}
@@ -8375,6 +8387,7 @@ function renderDivGrid() {
   });
 }
 function updateMenuBest() { try { $('menuBest').textContent = fmtBest() + (playerName ? ' · ' + playerName : '') + (playerDiv ? ' · ' + divName(playerDiv) : ''); } catch (e) {} try { updateMenuHeader(); } catch (e) {} }
+var GAME_VER = 'v52';
 function updateMenuHeader() {
   try {
     var bn = lang === 'bn';
@@ -8388,7 +8401,7 @@ function updateMenuHeader() {
     if ($('hdCoins')) $('hdCoins').textContent = bankCoins;
     if ($('hdGems')) $('hdGems').textContent = gems;
     var day = 1; try { day = dailyInfo().streak || 1; } catch (e) {}
-    if ($('mmFoot')) $('mmFoot').textContent = (bn ? 'রংপুর' : 'Rangpur') + ' • ' + (bn ? 'দিন ' : 'Day ') + day + ' • ' + (bn ? 'দৌড় শুরু' : 'Ride Begins');
+    if ($('mmFoot')) $('mmFoot').textContent = (bn ? 'রংপুর' : 'Rangpur') + ' • ' + (bn ? 'দিন ' : 'Day ') + day + ' • ' + (bn ? 'দৌড় শুরু' : 'Ride Begins') + ' • ' + GAME_VER;
   } catch (e) {}
 }
 function saveName() {
