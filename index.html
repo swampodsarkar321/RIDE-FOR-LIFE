@@ -2899,6 +2899,7 @@ function makeFlood() { // bonnar pani: dube jawa rasta — slow, kintu morbe na
 var floodK = 1, slipT = 0, slipOn = false, stormK = 1; // frame modifiers: bonna slow, slipstream boost, kalboishakhi jhor
 var hitStop = 0; // crash hit-stop: aghat-er muhurte freeze (juice)
 var lastKiller = ''; // kon obstacle marlo — analytics
+var fwT = 0; // fireworks timer (event-e thakle akashe atoshbazi)
 function makeBanner() {
   var g = new THREE.Group();
   box(0.22, 4.0, 0.22, 0x6d5b45, -5.0, 2.0, 0, g); box(0.22, 4.0, 0.22, 0x6d5b45, 5.0, 2.0, 0, g);
@@ -4194,13 +4195,13 @@ var EVENTS = [
   { id: 'fuel', ico: '⛽', en: ['Fuel Challenge', 'Fast drain, 1.5x bonus'], bn: ['ফুয়েল চ্যালেঞ্জ', 'তাড়াতাড়ি তেল শেষ, ১.৫x বোনাস'], p: { fuelX: 1.6, fuelPick: 50, bonusX: 1.5 } },
   { id: 'nitro', ico: '🚀', en: ['Nitro Rush', 'More nitro, 9s boost'], bn: ['নাইট্রো রাশ', 'বেশি নাইট্রো, ৯ সেকেন্ড বুস্ট'], p: { nitroRate: 0.15, nitroDur: 9 } },
   { id: 'express', ico: '⚡', en: ['Express Delivery', '10 parcels, faster = bigger bonus'], bn: ['এক্সপ্রেস ডেলিভারি', '১০ পার্সেল, যত তাড়াতাড়ি তত বোনাস'], p: { quota: 10, reward: 600 } },
-  { id: 'puja', ico: '🪔', en: ['Durga Puja Rush (Oct 16-21)', '12 parcels · night lights · double coins · ৳1200'], bn: ['দুর্গা পূজা রাশ (১৬-২১ অক্টোবর)', '১২ পার্সেল · রাতের আলো · দ্বিগুণ কয়েন · ৳১২০০'], p: { night: true, coinX: 2, quota: 12, reward: 1200, bonusX: 1.5 } },
-  { id: 'eid', ico: '🌙', en: ['Eid Delivery Rush', '12 parcels · double score · ৳1500'], bn: ['ঈদ ডেলিভারি রাশ', '১২ পার্সেল · দ্বিগুণ স্কোর · ৳১৫০০'], p: { scoreX: 2, quota: 12, reward: 1500, bonusX: 1.5 } },
+  { id: 'puja', ico: '🪔', en: ['Durga Puja Rush (Oct 16-21)', '12 parcels · night lights · double coins · ৳1200'], bn: ['দুর্গা পূজা রাশ (১৬-২১ অক্টোবর)', '১২ পার্সেল · রাতের আলো · দ্বিগুণ কয়েন · ৳১২০০'], p: { night: true, coinX: 2, quota: 12, reward: 1200, bonusX: 1.5, fw: 1 } },
+  { id: 'eid', ico: '🌙', en: ['Eid Delivery Rush', '12 parcels · double score · ৳1500'], bn: ['ঈদ ডেলিভারি রাশ', '১২ পার্সেল · দ্বিগুণ স্কোর · ৳১৫০০'], p: { scoreX: 2, quota: 12, reward: 1500, bonusX: 1.5, fw: 1 } },
   { id: 'boishakh', ico: '🎏', en: ['Pohela Boishakh Run', 'Double score · festive traffic'], bn: ['পহেলা বৈশাখ রান', 'দ্বিগুণ স্কোর · উৎসবের ভিড়'], p: { scoreX: 2, coinX: 1.5 } },
   { id: 'iftar', ico: '🍱', en: ['Ramadan Iftar Express', '10 hot-food orders · faster = bigger bonus'], bn: ['রমজান ইফতার এক্সপ্রেস', '১০ গরম খাবার অর্ডার · তাড়াতাড়ি = বড় বোনাস'], p: { quota: 10, reward: 1000, bonusX: 1.5 } },
-  { id: 'victory', ico: '🇧🇩', en: ['Victory Day Ride (Dec 16)', 'Night ride · double coins · ৳1600'], bn: ['বিজয় দিবস রাইড (১৬ ডিসেম্বর)', 'রাতের রাইড · দ্বিগুণ কয়েন · ৳১৬০০'], p: { night: true, coinX: 2, scoreX: 1.5, bonusX: 1.5 } },
+  { id: 'victory', ico: '🇧🇩', en: ['Victory Day Ride (Dec 16)', 'Night ride · double coins · ৳1600'], bn: ['বিজয় দিবস রাইড (১৬ ডিসেম্বর)', 'রাতের রাইড · দ্বিগুণ কয়েন · ৳১৬০০'], p: { night: true, coinX: 2, scoreX: 1.5, bonusX: 1.5, fw: 1 } },
   { id: 'cattle', ico: '🐂', en: ['Cattle Haat Rush', '12 parcels · 1.5x score · ৳1300'], bn: ['গরুর হাট রাশ', '১২ পার্সেল · ১.৫x স্কোর · ৳১৩০০'], p: { quota: 12, reward: 1300, scoreX: 1.5 } },
-  { id: 'mela', ico: '🎡', en: ['Boishakh Mela Run', 'Festive coins · 1.5x score'], bn: ['বৈশাখী মেলা রান', 'উৎসবের কয়েন · ১.৫x স্কোর'], p: { coinX: 2, scoreX: 1.5 } },
+  { id: 'mela', ico: '🎡', en: ['Boishakh Mela Run', 'Festive coins · 1.5x score'], bn: ['বৈশাখী মেলা রান', 'উৎসবের কয়েন · ১.৫x স্কোর'], p: { coinX: 2, scoreX: 1.5, fw: 1 } },
   { id: 'feb21', ico: '🌹', en: ['Ekushey Feb Run', '8 book parcels · ৳800'], bn: ['একুশে ফেব্রুয়ারি রান', '৮ বই পার্সেল · ৳৮০০'], p: { quota: 8, reward: 800, scoreX: 1.5 } },
   { id: 'boimela', ico: '📚', en: ['Boi Mela Rush', '10 parcels · faster = bigger bonus'], bn: ['বইমেলা রাশ', '১০ পার্সেল · তাড়াতাড়ি = বড় বোনাস'], p: { quota: 10, reward: 900 } }
 ];
@@ -4209,7 +4210,11 @@ var activeEventId = null; // admin live korle sudhu etai cholbe
 var ADMIN_EVENTS = [], ADMIN_MINLVL = {};
 var DISABLED_EV = {}, OVERRIDDEN_EV = {}; // admin: built-in event off + override
 function adminEvParams(e) {
-  return { night: !!e.night, coinX: +e.coinX || 1, fuelX: +e.fuelX || 1, fuelPick: +e.fuelPick || 35, nitroRate: +e.nitroRate || 0, nitroDur: +e.nitroDur || 6, quota: +e.quota || 0, reward: +e.reward || 0, bonusX: +e.bonusX || 1, scoreX: +e.scoreX || 1 };
+  return { tod: e.tod || (e.night ? 'night' : 'cycle'), night: !!e.night, fw: e.fw ? 1 : 0, coinX: +e.coinX || 1, fuelX: +e.fuelX || 1, fuelPick: +e.fuelPick || 35, nitroRate: +e.nitroRate || 0, nitroDur: +e.nitroDur || 6, quota: +e.quota || 0, reward: +e.reward || 0, bonusX: +e.bonusX || 1, scoreX: +e.scoreX || 1 };
+}
+function evTod(p) { // event time: day / night / cycle (purano night flag supported)
+  try { if (p.tod) return p.tod; if (p.night) return 'night'; } catch (e) {}
+  return 'cycle';
 }
 var BASE_STATS = null, BASE_COLS = null, BASE_BN = null, BASE_EN = null, BASE_TB = null, BASE_TE = null, BASE_PRC = null;
 function evP() {
@@ -5408,7 +5413,7 @@ function startGame(keepScore) {
   dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0; skidX = 0; skidV = 0; skidT = 0;
   if (keepScore && carryScore > 0) { score = carryScore; } else { score = 0; }
   carryScore = 0;
-  combo = 0; comboT = 0; missionGot = 0; timeScale = 1; slowT = 0; carried = 0; tutStep = 0; nmStreak = 0; runCrash = 0; trickUsed = false; airT0 = 0; floodK = 1; slipT = 0; stormK = 1; lastKiller = '';
+  combo = 0; comboT = 0; missionGot = 0; timeScale = 1; slowT = 0; carried = 0; tutStep = 0; nmStreak = 0; runCrash = 0; trickUsed = false; airT0 = 0; floodK = 1; slipT = 0; stormK = 1; lastKiller = ''; fwT = 3;
   crashOn = false; if (crashPts) crashPts.visible = false;
   pivot.rotation.set(0, 0, 0); bikeG.rotation.set(0, 0, 0);
   setLegLocs(); arrived = false;
@@ -5421,7 +5426,7 @@ function startGame(keepScore) {
   fuelDrainK = EP0.fuelX || 1;
   fuelPickAmt = EP0.fuelPick || 35;
   scoreXK = EP0.scoreX || 1;
-  if (EP0.night) dayT = 0.52;
+  try { var _tod = evTod(EP0); if (_tod === 'night') dayT = 0.52; else if (_tod === 'day') dayT = 0.8; } catch (eT) {} // event time: day/night/cycle
   fuel = 100; fuelOut = false; fuelWarned = false; fuelCritT = 0; onBridge = false; brakeT = 0; endReason = 'crash';
   nextGateDist = 230; nextCheckDist = 620; aqSkip = 0;
   player.position.set(0, 0, 0); player.rotation.set(0, 0, 0);
@@ -6695,6 +6700,18 @@ function update(dt) {
     if (state !== 'crash') player.position.y = py;
     runT += dt * (state === 'crash' ? 0 : speed * 0.45);
     if (evP().quota && state === 'play') orderSecs += dt;
+    if (state === 'play' && evP().fw) { // event fireworks: akashe atoshbazi
+      fwT -= dt;
+      if (fwT <= 0) {
+        fwT = rnd(2.5, 4.5);
+        try {
+          var _fx = rnd(-7, 7), _fz = rnd(-28, -12);
+          sparks(_fx, rnd(7, 12), _fz, 22);
+          pop('🎆', _fx, 9, _fz, '#ffe066');
+          tone(280 + Math.random() * 420, 0.25, 'sine', 0.04);
+        } catch (eFw) {}
+      }
+    }
   }
   if (state !== 'crash' && state !== 'over') animatePlayer(dt);
   blob.position.x = player.position.x + curveAt(0);
