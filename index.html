@@ -947,6 +947,10 @@
       <div class="setRow"><span class="lbl"><span class="ico">🔔</span><span data-i18n="set_push">Push Notification</span><span class="sub" data-i18n="set_push_sub">Daily reward reminder</span></span><button class="tgl" id="setPush">Off</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🔑</span><span data-i18n="set_code">Recovery code</span><span class="sub" data-i18n="set_code_sub">New phone progress back · tap to copy</span></span><button class="tgl on" id="setCode">------</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🗑️</span><span data-i18n="set_reset">Erase Progress</span><span class="sub" data-i18n="set_reset_sub">All save data will be deleted</span></span><button class="tgl danger" id="setReset">Erase</button></div>
+      <div class="setRow"><span class="lbl"><span class="ico">⭐</span><span data-i18n="set_rate">Rate Game</span><span class="sub" data-i18n="set_rate_sub">Share your experience</span></span>
+        <div id="rateStars" style="display:flex;gap:4px;"></div>
+        <span id="rateAvg" class="sub" style="margin-left:8px;"></span>
+      </div>
     </div>
     <button class="btn" id="settingsClose" data-i18n="set_close">Close</button>
   </div>
@@ -3866,6 +3870,7 @@ en: {
   set_reset: 'Erase Progress', set_reset_sub: 'All save data will be deleted',
   set_push: 'Push Notification', set_push_sub: 'Daily reward reminder',
   set_code: 'Recovery code', set_code_sub: 'New phone progress back · tap to copy',
+  set_rate: 'Rate Game', set_rate_sub: 'Share your experience',
   set_push_bn: 'পুশ নোটিফিকেশন', set_push_bn_sub: 'দৈনিক পুরস্কার রিমাইন্ডার',
   set_lang: 'Language', set_lang_sub: 'English / বাংলা',
   on: 'On', off: 'Off', high: 'High', low: 'Low', erase: 'Erase',
@@ -3968,6 +3973,7 @@ bn: {
   set_fps: 'FPS দেখাও', set_fps_sub: 'ডেভেলপার মোড',
   set_reset: 'প্রগ্রেস মুছো', set_reset_sub: 'সব সেভ ডেটা মুছে যাবে',
   set_code: 'রিকভারি কোড', set_code_sub: 'নতুন ফোনে প্রগ্রেস ফেরত · ট্যাপ=কপি',
+  set_rate: 'গেম রেট করো', set_rate_sub: 'তোমার অভিজ্ঞতা শেয়ার করো',
   set_lang: 'ভাষা', set_lang_sub: 'English / বাংলা',
   on: 'চালু', off: 'বন্ধ', high: 'উচ্চ', low: 'নিম্ন', erase: 'মুছো',
   set_close: 'বন্ধ করো',
@@ -6292,6 +6298,7 @@ function renderSettings() {
   if (lg) { lg.textContent = lang === 'bn' ? 'বাংলা' : 'English'; lg.classList.toggle('on', true); }
   var scb = $('setCode');
   if (scb) { try { scb.textContent = myCode(); } catch (e) {} }
+  loadRating();
 }
 function bindSetting(id, fn) { var el = $(id); if (el) el.addEventListener('click', function (e) { e.stopPropagation(); fn(); renderSettings(); }); }
 bindSetting('setSfx', function () { sfxOn = !sfxOn; try { if (!sfxOn) engineStop(); else if (state === 'play' && !muted) engineStart(); } catch (e) {} });
@@ -6394,7 +6401,62 @@ function autoQuality(dt) { // proti 20s-e re-check (gorom hole poreo nambe) + me
 bindSetting('setQuality', function () { applyQuality(quality === 'high' ? 'low' : 'high'); });
 bindSetting('setVib', function () { vibOn = !vibOn; });
 bindSetting('setFps', function () { showFps = !showFps; $('fpsBox').style.display = showFps ? 'block' : 'none'; });
-var resetArm = 0;
+  // Rating system
+  var rateStarsEl = $('rateStars');
+  var rateAvgEl = $('rateAvg');
+  var myRating = 0;
+  function renderRateStars() {
+    if (!rateStarsEl) return;
+    var stars = '';
+    for (var i = 1; i <= 5; i++) {
+      var filled = i <= myRating;
+      stars += '<button class="rateStar" data-star="' + i + '" style="background:none;border:0;font-size:22px;color:' + (filled ? '#ffc83d' : '#666') + ';cursor:pointer;">★</button>';
+    }
+    rateStarsEl.innerHTML = stars;
+    Array.prototype.forEach.call(rateStarsEl.querySelectorAll('.rateStar'), function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var star = parseInt(btn.getAttribute('data-star'), 10);
+        submitRating(star);
+      });
+    });
+  }
+  function loadRating() {
+    if (!fbReady || !FBDB || !fbUid) return;
+    // Load my rating
+    FBDB.ref('ratings/' + fbUid).once('value').then(function (snap) {
+      var val = snap.val();
+      myRating = (val && val.r) || 0;
+      renderRateStars();
+    });
+    // Load average rating
+    FBDB.ref('ratings').once('value').then(function (snap) {
+      var total = 0, count = 0;
+      snap.forEach(function (c) {
+        var v = c.val();
+        if (v && v.r) { total += v.r; count++; }
+      });
+      if (count > 0 && rateAvgEl) {
+        var avg = (total / count).toFixed(1);
+        rateAvgEl.textContent = (lang === 'bn' ? 'গড় ' : 'Avg ') + avg + ' (' + count + ' ' + (lang === 'bn' ? 'জন' : 'votes') + ')';
+      }
+    });
+  }
+  function submitRating(star) {
+    if (!fbReady || !FBDB || !fbUid) {
+      toast(elHint, lang === 'bn' ? 'নেট নেই, পরে চেষ্টা করো' : 'No connection, try later', 1800);
+      return;
+    }
+    myRating = star;
+    FBDB.ref('ratings/' + fbUid).set({ r: star, at: Date.now() }).then(function () {
+      renderRateStars();
+      toast(elHint, lang === 'bn' ? 'ধন্যবাদ! ⭐' : 'Thanks for rating! ⭐', 1800);
+      loadRating(); // refresh average
+    }).catch(function () {
+      toast(elHint, lang === 'bn' ? 'রেটিং সেভ হয়নি' : 'Rating failed', 1800);
+    });
+  }
+  var resetArm = 0;
 bindSetting('setReset', function () {
   var rb = $('setReset');
   if (!resetArm) { resetArm = 1; rb.textContent = T('reset_sure'); setTimeout(function () { resetArm = 0; rb.textContent = T('erase'); }, 3000); return; }

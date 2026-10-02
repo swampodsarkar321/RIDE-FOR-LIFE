@@ -78,12 +78,25 @@
     <button class="tab" data-tab="boards">🪧 Boards</button>
     <button class="tab" data-tab="notif">🔔 Notify</button>
     <button class="tab" data-tab="players">👥 Players</button>
+    <button class="tab" data-tab="ratings">⭐ Ratings</button>
   </div>
 
   <div id="tab-players" class="hidden">
     <div class="card">
       <h2>👥 All Players</h2>
       <div id="playerList"><p class="note">Loading…</p></div>
+    </div>
+  </div>
+
+  <div id="tab-ratings" class="hidden">
+    <div class="card">
+      <h2>⭐ Game Ratings</h2>
+      <div class="stats">
+        <div class="stat"><b id="stAvgRating">–</b><small>Average</small></div>
+        <div class="stat"><b id="stTotalRatings">–</b><small>Total Votes</small></div>
+        <div class="stat"><b id="stRatingDist">–</b><small>Distribution</small></div>
+      </div>
+      <div id="ratingList"><p class="note">Loading…</p></div>
     </div>
   </div>
 
@@ -346,6 +359,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
     $('tab-boards').classList.toggle('hidden', t !== 'boards');
     $('tab-notif').classList.toggle('hidden', t !== 'notif');
     $('tab-players').classList.toggle('hidden', t !== 'players');
+    $('tab-ratings').classList.toggle('hidden', t !== 'ratings');
   });
 });
 function hexToInt(h) { try { return parseInt(String(h).replace('#', '').slice(0, 6), 16) || 0xffffff; } catch (e) { return 0xffffff; } }
@@ -573,6 +587,32 @@ function startAll() {
     });
     $('bbList').innerHTML = html || '<p class="note">No custom billboards yet.</p>';
     bindAll();
+  });
+  // Ratings
+  db.ref('ratings').on('value', function (snap) {
+    var total = 0, count = 0, dist = {1:0,2:0,3:0,4:0,5:0};
+    var html = '';
+    snap.forEach(function (c) {
+      var v = c.val() || {};
+      var r = v.r;
+      if (r >= 1 && r <= 5) {
+        total += r;
+        count++;
+        dist[r]++;
+      }
+      var dt = new Date(v.at || 0);
+      html += '<div class="item"><b>User: ' + c.key.slice(0,8) + '…</b><br><small>⭐ ' + r + '/5 · ' + dt.toLocaleString() + '</small></div>';
+    });
+    var avg = count ? (total / count).toFixed(1) : '—';
+    $('stAvgRating').textContent = avg;
+    $('stTotalRatings').textContent = count;
+    var distStr = '';
+    for (var i = 5; i >= 1; i--) {
+      var pct = count ? Math.round((dist[i] / count) * 100) : 0;
+      distStr += '⭐' + i + ': ' + dist[i] + ' (' + pct + '%)  ';
+    }
+    $('stRatingDist').textContent = distStr || '—';
+    $('ratingList').innerHTML = html || '<p class="note">No ratings yet.</p>';
   });
 }
 $('liveSet').addEventListener('click', function () {
