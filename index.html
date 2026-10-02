@@ -9034,7 +9034,7 @@ function duelToMenu(page) {
 }
 
 /* ---------- in-race: broadcast + HUD ---------- */
-function duelPush() { if (DX.myRef) { try { DX.myRef.update({ d: Math.floor(dist), p: parcelCount, s: Math.floor(score), st: 'on' }); } catch (e) {} } }
+function duelPush() { if (DX.myRef) { try { DX.myRef.update({ d: Math.floor(dist), p: parcelCount, s: Math.floor(score), st: 'on', x: +player.position.x.toFixed(2), y: +py.toFixed(2), v: Math.round(speed * 3.6) }); } catch (e) {} } }
 function duelHudUpdate() {
   var r = DX.data, L = leg().len, opp = r ? oppOf(r) : null;
   var me = clamp(dist / L, 0, 1), op = opp ? clamp((opp.d || 0) / L, 0, 1) : 0;

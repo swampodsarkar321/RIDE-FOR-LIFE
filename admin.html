@@ -76,6 +76,7 @@
     <button class="tab" data-tab="bikes">🏍️ Bikes</button>
     <button class="tab" data-tab="events">🎪 Events</button>
     <button class="tab" data-tab="tours">🏆 Tournaments</button>
+    <button class="tab" data-tab="cast">📡 Broadcast</button>
     <button class="tab" data-tab="boards">🪧 Boards</button>
     <button class="tab" data-tab="notif">🔔 Notify</button>
     <button class="tab" data-tab="players">👥 Players</button>
@@ -258,6 +259,22 @@
     </div>
   </div>
 
+  <div id="tab-cast" class="hidden">
+    <div class="card">
+      <h2>📡 Broadcast — host live</h2>
+      <p class="note">Tournament বাছো → live match এ GO LIVE — 2 জনের broadcast একসাথে।</p>
+      <label>Tournament</label>
+      <select id="castTour" style="width:100%;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.3);color:#fff;font-family:inherit;"></select>
+      <div id="castMatches" style="margin-top:8px;"></div>
+    </div>
+    <div class="card" id="castLiveCard" style="display:none;">
+      <h2>🔴 LIVE <span id="castTitle"></span></h2>
+      <div id="castLive"></div>
+      <div id="castTalk" style="font-size:13px;color:#ffc83d;min-height:36px;margin-top:6px;"></div>
+      <button class="btn ghost" id="castStop">Stop</button>
+    </div>
+  </div>
+
   <div id="tab-boards" class="hidden">
     <div class="card">
       <h2>🪧 Billboard Control</h2>
@@ -387,6 +404,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
     $('tab-bikes').classList.toggle('hidden', t !== 'bikes');
     $('tab-events').classList.toggle('hidden', t !== 'events');
     $('tab-tours').classList.toggle('hidden', t !== 'tours');
+    $('tab-cast').classList.toggle('hidden', t !== 'cast');
     $('tab-boards').classList.toggle('hidden', t !== 'boards');
     $('tab-notif').classList.toggle('hidden', t !== 'notif');
     $('tab-players').classList.toggle('hidden', t !== 'players');
@@ -637,7 +655,91 @@ function startAll() {
     });
     $('tourListA').innerHTML = html || '<p class="note">No tournaments yet.</p>';
     bindAll();
+    try { refreshCastTours(); } catch (e) {}
   });
+var TOUR_CACHE = {}, castTimer = null, castLead = '', castCode = '';
+function refreshCastTours() {
+  try {
+    db.ref('config/tournaments').once('value').then(function (snap) {
+      TOUR_CACHE = snap.val() || {};
+      var sel = $('castTour'), cur = sel.value;
+      sel.innerHTML = '';
+      Object.keys(TOUR_CACHE).forEach(function (k) {
+        var o = document.createElement('option');
+        o.value = k; o.textContent = (TOUR_CACHE[k] || {}).name || k;
+        sel.appendChild(o);
+      });
+      if (cur && TOUR_CACHE[cur]) sel.value = cur;
+      renderCastMatches();
+    });
+  } catch (e) {}
+}
+function renderCastMatches() {
+  try {
+    var k = $('castTour').value, t = TOUR_CACHE[k] || {}, mm = t.matches || {};
+    var h = '';
+    Object.keys(mm).sort().forEach(function (mk) {
+      var m = mm[mk] || {};
+      var an = (m.a && m.a.n) || '?', bn = (m.b && m.b.n) || 'BYE';
+      var wn = (m.winner && m.winner.n) || '';
+      h += '<div class="item">R' + (m.round || 1) + ': <b>' + esc(an) + '</b> vs <b>' + esc(bn) + '</b>' +
+        (wn ? ' → 🏆 <b>' + esc(wn) + '</b>' : '') + (m.room ? ' <small>🔑' + esc(m.room) + '</small>' : '') + '<br>' +
+        (m.room ? '<button class="btn small" data-castgo="' + m.room + '|' + esc(t.name || '') + '">📡 GO LIVE</button>' : '<small>no room yet</small>') + '</div>';
+    });
+    $('castMatches').innerHTML = h || '<p class="note">No matches — make bracket first.</p>';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-castgo]'), function (b) {
+      b.addEventListener('click', function () {
+        var p = (b.getAttribute('data-castgo') || '').split('|');
+        castGo(p[0], p[1]);
+      });
+    });
+  } catch (e) {}
+}
+function castStop() { try { if (castTimer) { clearInterval(castTimer); castTimer = null; } } catch (e) {} try { $('castLiveCard').style.display = 'none'; } catch (e) {} castCode = ''; }
+function castTalk(t) {
+  try {
+    var el = $('castTalk');
+    el.innerHTML = t + '<br>' + el.innerHTML.split('<br>').slice(0, 2).join('<br>');
+  } catch (e) {}
+}
+function castGo(code, title) {
+  if (!db) return;
+  castStop(); castCode = code; castLead = '';
+  $('castTitle').textContent = (title || '') + ' · ' + code;
+  $('castLiveCard').style.display = '';
+  $('castLive').innerHTML = '<p class="note">Connecting…</p>';
+  castTimer = setInterval(function () {
+    db.ref('duel_rooms/' + code).once('value').then(function (snap) {
+      var r = snap.val();
+      if (!r) { $('castLive').innerHTML = '<p class="note">Room closed.</p>'; castStop(); return; }
+      if (r.winner && r.winner.u) {
+        $('castLive').innerHTML = '<div class="item" style="text-align:center;font-size:22px;">🏆 <b>' + esc(r.winner.n || '') + '</b><br><small>WINS!</small></div>';
+        castTalk('🏆 ' + (r.winner.n || '') + ' wins!');
+        castStop();
+        return;
+      }
+      var ps = r.players || {}, keys = Object.keys(ps).slice(0, 2), rows = [], infos = [];
+      keys.forEach(function (k) {
+        var p = ps[k] || {};
+        var pct = Math.min(100, Math.round(((+p.d || 0) / 2900) * 100));
+        infos.push({ n: p.n || '?', pct: pct, kmh: (+p.v || 0), par: (+p.p || 0), s: (+p.s || 0) });
+      });
+      infos.sort(function (a, b) { return b.pct - a.pct; });
+      if (infos.length === 2) {
+        if (castLead && infos[0].n !== castLead) castTalk('🔥 ' + infos[0].n + ' takes the lead!');
+        castLead = infos[0].n;
+        if (infos[0].pct >= 90) castTalk('🏁 Final stretch! ' + infos[0].n + ' ' + infos[0].pct + '%');
+      }
+      var h = '';
+      infos.forEach(function (e, i) {
+        h += '<div class="item"><b>' + (i === 0 ? '🥇 ' : '') + esc(e.n) + '</b> <small>' + e.pct + '% · ' + e.kmh + ' km/h · 📦' + e.par + ' · ' + e.s + 'pts</small>'
+          + '<div style="height:10px;border-radius:5px;background:rgba(255,255,255,.12);margin-top:4px;"><u style="display:block;height:100%;width:' + e.pct + '%;background:linear-gradient(90deg,#2d9c42,#ffc83d);border-radius:5px;"></u></div></div>';
+      });
+      if (infos.length === 2) h += '<div class="center"><small>GAP ' + Math.abs(infos[0].pct - infos[1].pct) + '%</small></div>';
+      $('castLive').innerHTML = h;
+    }).catch(function () {});
+  }, 1000);
+}
   db.ref('config/disabledEvents').on('value', function (s) {
     builtinDis = s.val() || {};
     renderBuiltin();
@@ -695,6 +797,8 @@ $('liveStop').addEventListener('click', function () {
   db.ref('config/activeEvent').remove().then(function () { alert('Live off — sob event open.'); });
 });
 $('watchStop').addEventListener('click', function () { watchStop(); $('watchLive').innerHTML = ''; });
+try { var _ct = $('castTour'); if (_ct) _ct.addEventListener('change', renderCastMatches); } catch (e) {}
+try { var _cs = $('castStop'); if (_cs) _cs.addEventListener('click', function () { castStop(); }); } catch (e) {}
 $('watchBtn').addEventListener('click', function () {
   if (!db) { alert('No Firebase connection!'); return; }
   var code = ($('watchCode').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
