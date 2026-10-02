@@ -4,7 +4,7 @@
       ".read": true,
       "$uid": {
         ".write": true,
-        ".validate": "newData.hasChildren(['name', 'best', 'bank', 'level', 'at']) && newData.child('name').isString() && newData.child('name').val().length <= 20 && newData.child('best').isNumber() && newData.child('best').val() >= 0 && newData.child('best').val() <= 50000000 && newData.child('bank').isNumber() && newData.child('bank').val() >= 0 && newData.child('bank').val() <= 50000000 && newData.child('level').isNumber() && newData.child('level').val() >= 1 && newData.child('level').val() <= 100 && newData.child('at').isNumber()"
+        ".validate": "newData.hasChildren(['name', 'best', 'bank', 'level', 'at']) && newData.child('name').isString() && newData.child('name').val().length <= 20 && newData.child('best').isNumber() && newData.child('best').val() >= 0 && newData.child('best').val() <= 5000000 && newData.child('bank').isNumber() && newData.child('bank').val() >= 0 && newData.child('bank').val() <= 50000000 && newData.child('level').isNumber() && newData.child('level').val() >= 1 && newData.child('level').val() <= 100 && newData.child('at').isNumber()"
       }
     },
     "scores_by_player": {

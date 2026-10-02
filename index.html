@@ -7,6 +7,22 @@
 <link rel="icon" href="ride-for-life-logo.png">
 <link rel="apple-touch-icon" href="ride-for-life-logo.png">
 <meta name="theme-color" content="#2d9c42">
+<meta property="og:title" content="Ride For Life – Delivery Rider">
+<meta property="og:description" content="Teknaf to Tetulia delivery ride across Bangladesh 🏍️ Beat my score!">
+<meta property="og:image" content="https://swampodsarkar321.github.io/RIDE-FOR-LIFE/ride-for-life-logo.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="Ride For Life – Delivery Rider logo">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://swampodsarkar321.github.io/RIDE-FOR-LIFE/">
+<meta property="og:site_name" content="Ride For Life">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Ride For Life – Teknaf to Tetulia delivery ride across Bangladesh. Beat my score!">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ride For Life – Delivery Rider">
+<meta name="twitter:description" content="Delivery ride across Bangladesh 🏍️ Beat my score!">
+<meta name="twitter:image" content="https://swampodsarkar321.github.io/RIDE-FOR-LIFE/ride-for-life-logo.png">
+<link rel="canonical" href="https://swampodsarkar321.github.io/RIDE-FOR-LIFE/">
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;700;800&family=Rubik:wght@400;600;800;900&display=swap" rel="stylesheet">
 <style>
@@ -684,6 +700,7 @@
       </div>
       <button class="btn" id="installBtn" style="display:none;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;font-size:20px;margin-top:10px;">📲 Install App</button>
       <div class="mm-foot" id="mmFoot">Rangpur • Day 1 • Ride Begins</div>
+      <div class="best" id="chBanner" style="display:none"></div>
       <div class="best" id="menuBest" style="display:none;"></div>
     </div>
     <div class="mpage" id="pageDest">
@@ -795,6 +812,19 @@
       <button class="btn" id="menuBtn" data-i18n="tomenu">‹ Back to Menu</button>
       <button class="btn" id="shareBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;">📤 Share</button>
     </div>
+    <img id="cardPrev" style="display:none;max-width:100%;border-radius:12px;margin:8px auto;" alt="score card">
+    <div class="overBtns" style="margin-top:8px">
+      <button class="btn" id="fbBtn" style="font-size:18px;background:#1877f2;box-shadow:0 4px 0 #0d4aa5;">f Facebook</button>
+      <button class="btn" id="msgBtn" style="font-size:18px;background:#0084ff;box-shadow:0 4px 0 #005bb5;">✈️ Messenger</button>
+    </div>
+    <div class="overBtns" style="margin-top:8px">
+      <button class="btn" id="waBtn" style="font-size:18px;background:#1faa53;box-shadow:0 4px 0 #0d6b32;">WhatsApp</button>
+      <button class="btn" id="copyBtn" style="font-size:18px;background:#555;box-shadow:0 4px 0 #222;">🔗 Copy link</button>
+    </div>
+    <div class="overBtns" style="margin-top:8px">
+      <button class="btn" id="replayBtn" style="font-size:18px;background:#7a3ff2;box-shadow:0 4px 0 #4a2396;display:none;">🎬 Clip</button>
+      <button class="btn" id="prideBtn" style="font-size:18px;background:#b5651d;box-shadow:0 4px 0 #6b3a0d;">🏆 Jela Pride</button>
+    </div>
     <div class="best" id="overBest"></div>
     <div class="board" id="overBoard"></div>
   </div>
@@ -865,6 +895,10 @@
     <div class="bn" id="dailySub">Roj eso, streak barao!</div>
     <div id="dailyStrip" style="display:flex;gap:6px;justify-content:center;margin:14px 0;flex-wrap:wrap;"></div>
     <button class="btn" id="dailyClaim">Claim ৳100</button>
+    <button class="btn" id="dailySave" style="display:none;background:#b5651d;box-shadow:0 5px 0 #6b3a0d;margin-top:8px;">🔥 Streak bachao −৳200</button>
+    <div style="margin-top:10px;font-weight:800;color:var(--gold);">🎡 Daily Spin</div>
+    <div class="best" id="spinMsg" style="min-height:18px;"></div>
+    <button class="btn" id="spinBtn" style="background:#7a3ff2;box-shadow:0 5px 0 #4a2396;margin-top:4px;">SPIN</button>
     <div style="margin-top:10px;"><button class="backBtn" id="dailyClose">‹ Close</button></div>
   </div>
 </div>
@@ -2651,6 +2685,7 @@ function makeBullCart() {
   ell(0.06, 0.1, 0.06, 0x3a3230, 0, 0.68, 0.9, g);
   g.scale.set(1.15, 1.15, 1.1);
   return { mesh: g, hw: 0.85, hd: 2.3, y0: 0, y1: 3.6 }; // wrap nai — goru player-er dike mukh (+z), bakider moto
+}
 function makeBullLoose() {
   var g = new THREE.Group(), W = 0xb09a80, WD = 0x8a7a64;
   var body = cyl(0.42, 1.5, 0.42, W, 0, 1.05, 0, g); body.rotation.x = Math.PI / 2;
@@ -3133,17 +3168,82 @@ function pushNotify(title, body) {
     setTimeout(function () { try { n.close(); } catch (e) {} }, 6000);
   } catch (e) {}
 }
-function checkDailyNotify() { // app khullei daily reward ready thakle notification
+function checkDailyNotify() { // app khullei daily reward ready thakle notification (evening-e smart text)
   try {
     if (notifyPerm() !== 'granted') return;
     var info = dailyInfo();
     if (info.claimable) {
       var bn = lang === 'bn';
+      var hr = 12; try { hr = new Date().getHours(); } catch (e) {}
+      var eve = (hr >= 18 && hr <= 22);
       pushNotify(
         bn ? '🎁 Ride For Life — দৈনিক পুরস্কার!' : '🎁 Ride For Life — Daily Reward!',
-        bn ? 'আজকের ৳' + info.pay + ' স্ট্রিক ' + info.streak + '🔥 নাও!' : 'Claim ৳' + info.pay + ' · Streak ' + info.streak + '🔥'
+        bn ? ('আজকের ৳' + info.pay + ' স্ট্রিক ' + info.streak + '🔥 নাও!' + (eve ? ' রাতে রাইড = ডাবল মজা!' : ''))
+          : ('Claim ৳' + info.pay + ' · Streak ' + info.streak + '🔥' + (eve ? ' Night ride = double fun!' : ''))
       );
     }
+  } catch (e) {}
+}
+/* ---------- loading tips (slow 3G-te bore hobe na) ---------- */
+var LOAD_TIPS = ['Tip: swipe = lane change', 'Tip: brake diye fuel stop-e tel nao', 'Tip: challenge link bondhuke pathao', 'Tip: roj eso, streak barao 🔥', 'Tip: night-e headlight jole'];
+var loadTipTimer = null;
+function startLoadTips() {
+  try {
+    if (loadTipTimer) return;
+    var k = 0;
+    loadTipTimer = setInterval(function () {
+      try {
+        var sp = $('splash');
+        if (!sp || sp.style.display === 'none') { clearInterval(loadTipTimer); loadTipTimer = null; return; }
+        var t = $('splashTxt');
+        if (t && (!t.textContent || /^(Loading|Done|Building|Preparing|Almost|Loading audio)/.test(t.textContent))) t.textContent = LOAD_TIPS[k++ % LOAD_TIPS.length];
+      } catch (e) {}
+    }, 2500);
+  } catch (e) {}
+}
+/* ---------- streak-save + daily spin ---------- */
+function saveStreakOffer() {
+  try {
+    var st = dailyState(), t = dayStr(), y = dayStr(new Date(Date.now() - 86400000));
+    if (!st.last || st.last === t || st.last === y) return null;
+    if ((st.streak || 0) < 3) return null;
+    return st;
+  } catch (e) { return null; }
+}
+function saveStreak() {
+  try {
+    var st = saveStreakOffer();
+    if (!st) return;
+    if (bankCoins < 200) { toast(elHint, lang === 'bn' ? '৳২০০ লাগবে!' : 'Need ৳200!', 1800); return; }
+    bankCoins -= 200;
+    var y = dayStr(new Date(Date.now() - 86400000));
+    try {
+      localStorage.setItem('rrBank', String(bankCoins));
+      localStorage.setItem('rrDaily', JSON.stringify({ last: y, streak: st.streak }));
+    } catch (e) {}
+    cloudSave(); renderDaily(); updateMenuBest();
+    try { logEv('streak_save', { streak: st.streak }); } catch (e) {}
+    sfx.coin();
+    toast(elLoc, lang === 'bn' ? '🔥 স্ট্রিক বেঁচে গেল!' : '🔥 Streak saved!', 2500);
+  } catch (e) {}
+}
+function spinInfo() {
+  try { var l = localStorage.getItem('rrSpin') || ''; return { can: l !== dayStr() }; }
+  catch (e) { return { can: true }; }
+}
+function doSpin() {
+  try {
+    if (!spinInfo().can) return;
+    var r = Math.random(), rw = r < 0.3 ? 50 : r < 0.55 ? 80 : r < 0.75 ? 100 : r < 0.88 ? 150 : r < 0.96 ? 200 : r < 0.99 ? 300 : 500;
+    bankCoins += rw;
+    try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrSpin', dayStr()); } catch (e) {}
+    cloudSave(); updateMenuBest();
+    var sm = $('spinMsg');
+    if (sm) sm.textContent = '🎉 +' + rw + '!';
+    var sb = $('spinBtn'); if (sb) sb.style.display = 'none';
+    try { confettiBurst(); } catch (e) {}
+    try { logEv('spin', { rw: rw }); } catch (e) {}
+    sfx.coin();
   } catch (e) {}
 }
 function checkAdminNotif() { // admin pathano notification check
@@ -3241,6 +3341,15 @@ function renderDaily() {
       cb.style.display = 'inline-block';
       cb.textContent = (bn ? 'নাও ৳' : 'Claim ৳') + info.pay + ' 🔥' + info.streak;
     } else cb.style.display = 'none';
+    try { // streak venge gele bachao offer (3+ streak, ৳200)
+      var sv = $('dailySave'), off = saveStreakOffer();
+      if (sv) sv.style.display = off ? 'inline-block' : 'none';
+    } catch (e) {}
+    try { // daily spin: dine 1 bar
+      var sb2 = $('spinBtn'), sm2 = $('spinMsg'), si = spinInfo();
+      if (sb2) sb2.style.display = si.can ? 'inline-block' : 'none';
+      if (sm2 && si.can) sm2.textContent = bn ? '🎡 ফ্রি স্পিন বাকি!' : '🎡 Free spin left!';
+    } catch (e) {}
     var mv = $('mDailyVal');
     if (mv) mv.textContent = info.claimable ? '❗' : info.streak + '🔥';
     var mEl = $('mMissionVal');
@@ -3672,6 +3781,13 @@ function T(k) { try { var L = STR[lang] || STR.en; return (L[k] !== undefined ? 
 function F(k) { var s = T(k); for (var i = 1; i < arguments.length; i++) s = s.split('{' + (i - 1) + '}').join(arguments[i]); return s; }
 var BIKE_EN = ['Honda Dream', 'Yamaha FZS', 'Suzuki Gixxer', 'TVS Apache', 'Bajaj Pulsar', 'Hero Splendor'];
 var BIKE_BN = ['হোন্ডা ড্রিম', 'যামাহা এফজেড', 'সুজুকি গিক্সার', 'টিভিএস অ্যাপাচি', 'বাজাজ পালসার', 'হিরো স্প্লেন্ডর'];
+/* limited-time festival bike: sudhu event-e pawa jay, ekbar nile chirodin thake */
+var FEST_BIKE_IDX = 6;
+var FEST_EVENTS = ['puja', 'eid', 'boishakh', 'iftar', 'victory'];
+try {
+  BIKE_EN.push('Eid Special'); BIKE_BN.push('ঈদ স্পেশাল');
+  TAG_EN.push('🎪 Event only'); TAG_BN.push('🎪 শুধু ইভেন্টে');
+} catch (e) {}
 var TAG_EN = ['All-rounder', 'Fuel saver', 'More speed', 'Easy turning', 'Strong body', 'Racing bike'];
 var TAG_BN = ['সবদিক ঠিকঠাক', 'তেল সাশ্রয়ী', 'বেশি গতি', 'সহজে মোড় নেয়', 'শক্ত বডি', 'রেসিং বাইক'];
 var THEME_TX = { sea: { en: 'Seaside', bn: 'সাগর পাড়' }, port: { en: 'Hills+Port', bn: 'পাহাড়+বন্দর' }, village: { en: 'Village', bn: 'গ্রাম' }, city: { en: 'City', bn: 'শহর' }, town: { en: 'Town', bn: 'মফস্বল' }, tea: { en: 'Tea Garden', bn: 'চা-বাগান' }, pond: { en: 'Ponds+Village', bn: 'পুকুর+গ্রাম' } };
@@ -3843,7 +3959,11 @@ var EVENTS = [
   { id: 'fuel', ico: '⛽', en: ['Fuel Challenge', 'Fast drain, 1.5x bonus'], bn: ['ফুয়েল চ্যালেঞ্জ', 'তাড়াতাড়ি তেল শেষ, ১.৫x বোনাস'], p: { fuelX: 1.6, fuelPick: 50, bonusX: 1.5 } },
   { id: 'nitro', ico: '🚀', en: ['Nitro Rush', 'More nitro, 9s boost'], bn: ['নাইট্রো রাশ', 'বেশি নাইট্রো, ৯ সেকেন্ড বুস্ট'], p: { nitroRate: 0.15, nitroDur: 9 } },
   { id: 'express', ico: '⚡', en: ['Express Delivery', '10 parcels, faster = bigger bonus'], bn: ['এক্সপ্রেস ডেলিভারি', '১০ পার্সেল, যত তাড়াতাড়ি তত বোনাস'], p: { quota: 10, reward: 600 } },
-  { id: 'puja', ico: '🪔', en: ['Durga Puja Rush (Oct 16-21)', '12 parcels · night lights · double coins · ৳1200'], bn: ['দুর্গা পূজা রাশ (১৬-২১ অক্টোবর)', '১২ পার্সেল · রাতের আলো · দ্বিগুণ কয়েন · ৳১২০০'], p: { night: true, coinX: 2, quota: 12, reward: 1200, bonusX: 1.5 } }
+  { id: 'puja', ico: '🪔', en: ['Durga Puja Rush (Oct 16-21)', '12 parcels · night lights · double coins · ৳1200'], bn: ['দুর্গা পূজা রাশ (১৬-২১ অক্টোবর)', '১২ পার্সেল · রাতের আলো · দ্বিগুণ কয়েন · ৳১২০০'], p: { night: true, coinX: 2, quota: 12, reward: 1200, bonusX: 1.5 } },
+  { id: 'eid', ico: '🌙', en: ['Eid Delivery Rush', '12 parcels · double score · ৳1500'], bn: ['ঈদ ডেলিভারি রাশ', '১২ পার্সেল · দ্বিগুণ স্কোর · ৳১৫০০'], p: { scoreX: 2, quota: 12, reward: 1500, bonusX: 1.5 } },
+  { id: 'boishakh', ico: '🎏', en: ['Pohela Boishakh Run', 'Double score · festive traffic'], bn: ['পহেলা বৈশাখ রান', 'দ্বিগুণ স্কোর · উৎসবের ভিড়'], p: { scoreX: 2, coinX: 1.5 } },
+  { id: 'iftar', ico: '🍱', en: ['Ramadan Iftar Express', '10 hot-food orders · faster = bigger bonus'], bn: ['রমজান ইফতার এক্সপ্রেস', '১০ গরম খাবার অর্ডার · তাড়াতাড়ি = বড় বোনাস'], p: { quota: 10, reward: 1000, bonusX: 1.5 } },
+  { id: 'victory', ico: '🇧🇩', en: ['Victory Day Ride (Dec 16)', 'Night ride · double coins · ৳1600'], bn: ['বিজয় দিবস রাইড (১৬ ডিসেম্বর)', 'রাতের রাইড · দ্বিগুণ কয়েন · ৳১৬০০'], p: { night: true, coinX: 2, scoreX: 1.5, bonusX: 1.5 } }
 ];
 var eventMode = null, fuelDrainK = 1, fuelPickAmt = 35, scoreXK = 1;
 var activeEventId = null; // admin live korle sudhu etai cholbe
@@ -4011,8 +4131,25 @@ var fuelOut = false;
 var onBridge = false, bridgeT = 0;
 var keyBrake = false, btnBrake = false, brakeT = 0, nextGateDist = 230, nextCheckDist = 620;
 function repairCost() { return Math.ceil((100 - hpStore) * 1); }
+try { // festival bike (index 6): gold special — sudhu event-e unlock
+  if (typeof BIKE_STATS !== 'undefined' && BIKE_STATS.length === 6) BIKE_STATS.push({ spd: 2, hnd: 0.25, fuel: 0.90, dmg: 12, tag: 'x' });
+  if (typeof BIKE_PRICE !== 'undefined' && BIKE_PRICE.length === 6) BIKE_PRICE.push(0);
+} catch (e) {}
+function isFestEvent(id) { try { return FEST_EVENTS.indexOf(id) >= 0; } catch (e) { return false; } }
+function claimFestBike() {
+  try {
+    if (!isFestEvent(eventMode)) return;
+    if (ownedBikes.indexOf(FEST_BIKE_IDX) >= 0) return;
+    ownedBikes.push(FEST_BIKE_IDX);
+    try { localStorage.setItem('rrOwned', JSON.stringify(ownedBikes)); } catch (e) {}
+    cloudSave();
+    toast(elHint, lang === 'bn' ? '🎪 লিমিটেড বাইক! ঈদ স্পেশাল পেলে!' : '🎪 Limited bike! Eid Special unlocked!', 3000);
+    try { logEv('fest_bike', { ev: eventMode }); } catch (e) {}
+  } catch (e) {}
+}
 function bikeUnlocked(i) {
   try { if (ownedBikes.indexOf(i) >= 0) return true; } catch (e) {}
+  try { if (i === FEST_BIKE_IDX && isFestEvent(eventMode)) return true; } catch (e) {} // event cholle limited bike khola
   var pr = (typeof BIKE_PRICE !== 'undefined' && BIKE_PRICE[i]) || 0;
   if (pr > 0) return false; // coin diye kinte hbe
   var need = ADMIN_MINLVL[i] || (i + 1);
@@ -4842,6 +4979,7 @@ function startGame(keepScore) {
     }
   }
   ac(); engineStart();
+  try { var cp = $('cardPrev'); if (cp) cp.style.display = 'none'; } catch (e) {}
   if (!bikeUnlocked(selBike)) selBike = firstOwned();
   clearWorld();
   addLegGate();
@@ -4873,6 +5011,8 @@ function startGame(keepScore) {
   $('pMag').classList.remove('on'); $('pDbl').classList.remove('on');
   applyBikeColor();
   state = 'play'; document.body.dataset.ui = 'play';
+  try { claimFestBike(); } catch (e) {} // festival event-e limited bike gift
+  try { replayStart(); } catch (e) {} // replay clip record suru
   try { logEv('run_start', { leg: selLeg, ev: eventMode || 'none' }); } catch (e) {}
   if (emergency) toast(elHint, emergency, 2800);
   if (keepScore && score > 0) toast(elLoc, F('leg_keep', legName(leg()), Math.floor(score), leg().len), 3200);
@@ -4984,6 +5124,14 @@ function endRun() {
   lb.sort(function (a, b) { return b.s - a.s; }); lb = lb.slice(0, 5);
   try { localStorage.setItem('rrBoard', JSON.stringify(lb)); } catch (e) {}
   $('oScore').textContent = s; $('oCoins').textContent = coinCount; $('oParcel').textContent = parcelCount;
+  prebuildCard(s, parcelCount, coinCount); // auto result card — ek tap-e share
+  try { replayStop(false); } catch (e) {} // last 10s clip ready — Clip button-e share
+  if (challengeTarget > 0 && s >= challengeTarget) {
+    ot.textContent = '🏆 ' + (lang === 'bn' ? 'চ্যালেঞ্জ জিতেছ!' : 'Challenge beaten!');
+    try { logEv('challenge_win', { t: challengeTarget, s: s }); } catch (e) {}
+    challengeTarget = 0;
+    try { readChallenge(); } catch (e) {}
+  }
   $('newBest').style.display = isBest && s > 0 ? 'inline-block' : 'none';
   $('overBest').textContent = fmtBest();
   // map-complete flow: arrive hole porer map-er button dekhao
@@ -5148,57 +5296,309 @@ function sharePhotoSheet() { // system sheet: Messenger/WhatsApp/List — phone-
   photoNote(lang === 'bn' ? '💾 Save হোইছে (share phone-e)' : '💾 Saved (share on phone)');
 }
 /* ---------- share card: score card baniye WhatsApp/FB-e share ---------- */
-function shareScore() {
+var lastCard = null, runSeq = 0, challengeTarget = 0;
+function gameUrl() {
+  try { var u = location.href.split('?')[0]; if (/^https?:/.test(u)) return u; } catch (e) {}
+  return 'https://swampodsarkar321.github.io/RIDE-FOR-LIFE/';
+}
+function challengeUrl(s) { return gameUrl() + '?challenge=' + s; }
+function shareText(s) {
+  var bn = lang === 'bn';
+  var where = '';
+  try {
+    var ln = (typeof leg === 'function' && typeof legName === 'function') ? legName(leg()) : '';
+    var dn = playerDiv ? divName(playerDiv) : '';
+    var dm = Math.floor(typeof dist !== 'undefined' ? dist : 0);
+    if (ln) where += (bn ? ' — আমি ' + ln + '-এ ' + s + ' গেলাম' : ' — I rode ' + s + ' at ' + ln);
+    else where += (bn ? ' — আমি ' + s + ' গেলাম' : ' — My score ' + s);
+    if (dn) where += ' (' + dn + ')';
+    if (dm > 0) where += ' · ' + dm + 'm';
+  } catch (e) { where = (bn ? ' — আমার স্কোর ' : ' — My score ') + s; }
+  return where + (bn ? ', হারাতে পারলে দেখাও 😎 ' : ', beat me if you can 😎 ') + challengeUrl(s);
+}
+function buildScoreCard(s, pc, tc, done) {
   try {
     var bn = lang === 'bn';
-    var s = Math.floor(score), pc = parcelCount, tc = coinCount;
-    var c = document.createElement('canvas'); c.width = 512; c.height = 640;
+    var c = document.createElement('canvas'); c.width = 512; c.height = 660;
     var g = c.getContext('2d');
-    var gr = g.createLinearGradient(0, 0, 0, 640);
+    var gr = g.createLinearGradient(0, 0, 0, 660);
     gr.addColorStop(0, '#12300f'); gr.addColorStop(1, '#0d8a4f');
-    g.fillStyle = gr; g.fillRect(0, 0, 512, 640);
-    g.strokeStyle = '#ffc83d'; g.lineWidth = 10; g.strokeRect(10, 10, 492, 620);
+    g.fillStyle = gr; g.fillRect(0, 0, 512, 660);
+    g.strokeStyle = '#ffc83d'; g.lineWidth = 10; g.strokeRect(10, 10, 492, 640);
     g.textAlign = 'center'; g.fillStyle = '#ffc83d';
-    g.font = '800 54px Arial, sans-serif';
-    g.fillText('RIDE FOR LIFE', 256, 110);
-    g.fillStyle = '#ffffff'; g.font = '700 32px Arial, sans-serif';
-    g.fillText(bn ? 'ডেলিভারি রাইডার' : 'Delivery Rider', 256, 160);
-    g.font = '800 64px Arial, sans-serif'; g.fillStyle = '#ffe066';
-    g.fillText(String(s), 256, 265);
-    g.fillStyle = '#ffffff'; g.font = '700 32px Arial, sans-serif';
-    g.fillText('📦 ' + pc + '   ৳' + tc, 256, 325);
-    g.fillText((bn ? 'সেরা: ' : 'Best: ') + best, 256, 375);
-    g.fillText('📍 ' + (playerDiv ? divName(playerDiv) : '') + (playerName ? ' · ' + playerName : ''), 256, 425);
-    g.fillStyle = '#ffc83d'; g.font = '700 30px Arial, sans-serif';
-    g.fillText(bn ? 'আমাকে হারাতে পারো?' : 'Can you beat me?', 256, 505);
+    g.font = '800 50px Arial, sans-serif';
+    g.fillText('RIDE FOR LIFE', 256, 96);
+    g.fillStyle = '#ffffff'; g.font = '700 30px Arial, sans-serif';
+    g.fillText(bn ? 'ডেলিভারি রাইডার' : 'Delivery Rider', 256, 140);
+    // avatar initial circle (top-right, sync draw — no async load)
+    try {
+      var nm0 = (playerName || 'R').trim().charAt(0).toUpperCase() || 'R';
+      g.fillStyle = '#ffffff'; g.beginPath(); g.arc(446, 70, 34, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#0d8a4f'; g.font = '800 38px Arial, sans-serif';
+      g.fillText(nm0, 446, 84);
+    } catch (e) {}
+    g.font = '800 60px Arial, sans-serif'; g.fillStyle = '#ffe066';
+    g.fillText(String(s), 256, 240);
+    g.fillStyle = '#ffffff'; g.font = '700 30px Arial, sans-serif';
+    g.fillText('📦 ' + pc + '   ৳' + tc, 256, 292);
+    g.fillText((bn ? 'সেরা: ' : 'Best: ') + best, 256, 336);
+    var dm2 = 0, ln2 = '', bk2 = '';
+    try { dm2 = Math.floor(typeof dist !== 'undefined' ? dist : 0); } catch (e) {}
+    try { ln2 = (typeof leg === 'function' && typeof legName === 'function') ? legName(leg()) : ''; } catch (e) {}
+    try { bk2 = (typeof bikeName === 'function') ? bikeName(selBike % 6) : ''; } catch (e) {}
+    if (dm2 > 0 || ln2) g.fillText('🛣️ ' + dm2 + 'm' + (ln2 ? ' · ' + ln2 : ''), 256, 380);
+    g.fillText('📍 ' + (playerDiv ? divName(playerDiv) : '') + (playerName ? ' · ' + playerName : '') + (bk2 ? ' · ' + bk2 : ''), 256, 424);
+    g.fillStyle = '#ffc83d'; g.font = '700 28px Arial, sans-serif';
+    g.fillText(bn ? 'আমাকে হারাতে পারো?' : 'Can you beat me?', 256, 500);
     g.fillStyle = '#cfe6cf'; g.font = '400 24px Arial, sans-serif';
-    g.fillText('Rangpur Division', 256, 555);
+    g.fillText('Rangpur Division', 256, 548);
     // watermark
     g.fillStyle = 'rgba(0,0,0,0.45)';
     g.beginPath();
-    if (g.roundRect) g.roundRect(156, 590, 200, 36, 10); else g.rect(156, 590, 200, 36);
+    if (g.roundRect) g.roundRect(156, 596, 200, 36, 10); else g.rect(156, 596, 200, 36);
     g.fill();
     g.fillStyle = '#ffffff'; g.font = '800 22px Arial, sans-serif';
-    g.fillText('Ride For Life', 256, 616);
-    var txt = (bn ? 'আমার স্কোর ' : 'My score ') + s + ' — Ride For Life!';
-    if (c.toBlob) {
-      c.toBlob(function (blob) {
-        try {
-          var f = new File([blob], 'ride-for-life.png', { type: 'image/png' });
-          if (navigator.canShare && navigator.canShare({ files: [f] })) {
-            navigator.share({ files: [f], title: 'Ride For Life', text: txt }).catch(function () {});
-            try { logEv('share', { s: s }); } catch (e) {}
-            return;
-          }
-        } catch (e) {}
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a'); a.href = url; a.download = 'ride-for-life-score.png';
-        document.body.appendChild(a); a.click();
-        setTimeout(function () { try { document.body.removeChild(a); } catch (e2) {} }, 800);
-        try { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); } catch (e2) {}
-      }, 'image/png');
+    g.fillText('Ride For Life', 256, 622);
+    if (c.toBlob) c.toBlob(function (blob) { done({ canvas: c, blob: blob, url: URL.createObjectURL(blob) }); }, 'image/png');
+    else done(null);
+  } catch (e) { done(null); }
+}
+function prebuildCard(s, pc, tc) {
+  runSeq++;
+  var mySeq = runSeq;
+  buildScoreCard(s, pc, tc, function (card) {
+    if (!card || mySeq !== runSeq) return;
+    if (lastCard && lastCard.card) { try { URL.revokeObjectURL(lastCard.card.url); } catch (e) {} }
+    lastCard = { seq: mySeq, card: card, s: s };
+    var im = $('cardPrev');
+    if (im) { im.src = card.url; im.style.display = 'block'; }
+  });
+}
+function shareScore() {
+  try {
+    var s = Math.floor(score);
+    if (lastCard && lastCard.seq === runSeq && lastCard.card && lastCard.s === s) { sendCard(lastCard.card, s); return; }
+    buildScoreCard(s, parcelCount, coinCount, function (card) {
+      if (!card) return;
+      lastCard = { seq: runSeq, card: card, s: s };
+      sendCard(card, s);
+    });
+  } catch (e) {}
+}
+function sendCardText(card, txt, tag) {
+  try {
+    var f = new File([card.blob], 'ride-for-life.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      navigator.share({ files: [f], title: 'Ride For Life', text: txt }).catch(function () {});
+      try { logEv('share', { t: tag || 'card' }); } catch (e) {}
+      return;
     }
   } catch (e) {}
+  try {
+    var url = card.url;
+    var a = document.createElement('a'); a.href = url; a.download = 'ride-for-life-score.png';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { try { document.body.removeChild(a); } catch (e2) {} }, 800);
+    try { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); } catch (e2) {}
+  } catch (e) {}
+}
+function sendCard(card, s) { sendCardText(card, shareText(s), 'score'); }
+function shareWA() {
+  try {
+    var s = Math.floor(score);
+    window.open('https://wa.me/?text=' + encodeURIComponent(shareText(s)), '_blank');
+    try { logEv('share_wa', { s: s }); } catch (e) {}
+  } catch (e) {}
+}
+function shareFB() {
+  try {
+    var s = Math.floor(score);
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(challengeUrl(s)), '_blank');
+    try { logEv('share_fb', { s: s }); } catch (e) {}
+  } catch (e) {}
+}
+function shareMsg() {
+  copyLink();
+  try { window.open('fb-messenger://share/?link=' + encodeURIComponent(challengeUrl(Math.floor(score))), '_blank'); } catch (e) {}
+}
+function copyLink() {
+  try {
+    var u = challengeUrl(Math.floor(score));
+    var btn = $('copyBtn');
+    function ok() { if (btn) { var o = btn.textContent; btn.textContent = '✓'; setTimeout(function () { btn.textContent = o; }, 1500); } }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(ok).catch(function () {});
+    else { var ta = document.createElement('textarea'); ta.value = u; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); ok(); }
+    try { logEv('share_copy', {}); } catch (e) {}
+  } catch (e) {}
+}
+function readChallenge() {
+  try {
+    var m = /[?&]challenge=(\d+)/.exec(location.search || '');
+    challengeTarget = m ? Math.max(0, parseInt(m[1], 10) || 0) : 0;
+    var b = $('chBanner');
+    if (b) {
+      if (challengeTarget > 0) {
+        b.style.display = 'block';
+        b.textContent = lang === 'bn' ? '🎯 চ্যালেঞ্জ: ' + challengeTarget + ' হারাও!' : '🎯 Challenge: beat ' + challengeTarget + '!';
+      } else b.style.display = 'none';
+    }
+  } catch (e) { challengeTarget = 0; }
+}
+/* ---------- replay clip: last 10s canvas capture + share ---------- */
+var replayChunks = [], replayRec = null, replayBlob = null, replayUrl = null;
+function replayShowBtn() {
+  try { var rb = $('replayBtn'); if (rb && replayBlob) rb.style.display = 'inline-block'; } catch (e) {}
+}
+function replayStart() {
+  try {
+    replayStop(true);
+    replayChunks = []; replayBlob = null;
+    try { var rb = $('replayBtn'); if (rb) rb.style.display = 'none'; } catch (e) {}
+    if (!renderer || !renderer.domElement || !renderer.domElement.captureStream) return;
+    if (typeof MediaRecorder === 'undefined') return;
+    var stream = renderer.domElement.captureStream(15);
+    var mime = '';
+    try {
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) mime = 'video/webm;codecs=vp8';
+      else if (MediaRecorder.isTypeSupported('video/webm')) mime = 'video/webm';
+    } catch (e) {}
+    var rec = mime ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 800000 }) : new MediaRecorder(stream);
+    rec.ondataavailable = function (e) {
+      try { if (e.data && e.data.size) { replayChunks.push(e.data); while (replayChunks.length > 10) replayChunks.shift(); } } catch (e2) {}
+    };
+    rec.onstop = function () {
+      try {
+        if (replayChunks.length && !replayBlob) {
+          replayBlob = new Blob(replayChunks, { type: 'video/webm' });
+          if (replayUrl) { try { URL.revokeObjectURL(replayUrl); } catch (e2) {} }
+          replayUrl = URL.createObjectURL(replayBlob);
+          replayShowBtn();
+        }
+      } catch (e2) {}
+    };
+    replayRec = rec;
+    rec.start(1000);
+  } catch (e) { replayRec = null; }
+}
+function replayStop(silent) {
+  try {
+    var rec = replayRec; replayRec = null;
+    if (rec) { try { if (rec.state !== 'inactive') rec.stop(); else if (rec.onstop) rec.onstop(); } catch (e) {} }
+    else if (!silent && replayChunks.length && !replayBlob) {
+      try {
+        replayBlob = new Blob(replayChunks, { type: 'video/webm' });
+        if (replayUrl) { try { URL.revokeObjectURL(replayUrl); } catch (e) {} }
+        replayUrl = URL.createObjectURL(replayBlob);
+        replayShowBtn();
+      } catch (e) {}
+    }
+  } catch (e) {}
+}
+function shareReplay() {
+  try {
+    if (!replayBlob && replayChunks.length) {
+      try { replayBlob = new Blob(replayChunks, { type: 'video/webm' }); } catch (e) {}
+    }
+    if (!replayBlob) return;
+    var f = new File([replayBlob], 'ride-for-life-clip.webm', { type: 'video/webm' });
+    var txt = shareText(Math.floor(score));
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      navigator.share({ files: [f], title: 'Ride For Life', text: txt }).catch(function () {});
+      try { logEv('share_replay', {}); } catch (e) {}
+      return;
+    }
+    var url = replayUrl || URL.createObjectURL(replayBlob);
+    var a = document.createElement('a'); a.href = url; a.download = 'ride-for-life-clip.webm';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { try { document.body.removeChild(a); } catch (e2) {} }, 800);
+  } catch (e) {}
+}
+/* ---------- district pride share card ---------- */
+function prideRank() {
+  try {
+    if (typeof warCache !== 'undefined' && warCache && warCache.length && playerDiv) {
+      for (var i = 0; i < warCache.length; i++) if (warCache[i].id === playerDiv) return { rank: i + 1, tot: warCache.length, score: warCache[i].s };
+    }
+  } catch (e) {}
+  return null;
+}
+function buildPrideCard(done) {
+  try {
+    var bn = lang === 'bn';
+    var r = prideRank();
+    var dn = playerDiv ? divName(playerDiv) : (bn ? 'আমার জেলা' : 'My district');
+    var c = document.createElement('canvas'); c.width = 512; c.height = 560;
+    var g = c.getContext('2d');
+    var gr = g.createLinearGradient(0, 0, 0, 560);
+    gr.addColorStop(0, '#3a1c00'); gr.addColorStop(1, '#b5651d');
+    g.fillStyle = gr; g.fillRect(0, 0, 512, 560);
+    g.strokeStyle = '#ffc83d'; g.lineWidth = 10; g.strokeRect(10, 10, 492, 540);
+    g.textAlign = 'center'; g.fillStyle = '#ffc83d';
+    g.font = '800 46px Arial, sans-serif';
+    g.fillText(bn ? 'জেলা প্রাইড' : 'DISTRICT PRIDE', 256, 100);
+    g.fillStyle = '#ffffff'; g.font = '800 64px Arial, sans-serif';
+    g.fillText('📍 ' + dn, 256, 210);
+    g.fillStyle = '#ffe066'; g.font = '800 52px Arial, sans-serif';
+    g.fillText(r ? ('#' + r.rank + ' / ' + r.tot) : ('🏆 ' + best), 256, 310);
+    g.fillStyle = '#ffffff'; g.font = '700 30px Arial, sans-serif';
+    g.fillText((bn ? 'আমার জেলা টপ ' : 'My district top ') + (r ? r.rank : '3') + (bn ? '-এ!' : '!'), 256, 370);
+    if (playerName) { g.fillStyle = '#ffe9b0'; g.font = '700 28px Arial, sans-serif'; g.fillText('— ' + playerName, 256, 420); }
+    g.fillStyle = '#ffc83d'; g.font = '700 26px Arial, sans-serif';
+    g.fillText(bn ? 'তোমার জেলা কোথায়?' : 'Where is your district?', 256, 470);
+    g.fillStyle = 'rgba(0,0,0,0.45)';
+    g.beginPath();
+    if (g.roundRect) g.roundRect(156, 500, 200, 36, 10); else g.rect(156, 500, 200, 36);
+    g.fill();
+    g.fillStyle = '#ffffff'; g.font = '800 22px Arial, sans-serif';
+    g.fillText('Ride For Life', 256, 526);
+    if (c.toBlob) c.toBlob(function (blob) { done({ canvas: c, blob: blob, url: URL.createObjectURL(blob) }); }, 'image/png');
+    else done(null);
+  } catch (e) { done(null); }
+}
+function sharePride() {
+  try {
+    var bn = lang === 'bn';
+    var r = prideRank();
+    var dn = playerDiv ? divName(playerDiv) : '';
+    var txt = (bn ? 'আমার জেলা (' + dn + ')' + (r ? ' টপ ' + r.rank + '-এ!' : ' সেরা!') + ' তোমার জেলা কোথায়? 😎 ' : 'My district (' + dn + ')' + (r ? ' is top ' + r.rank + '!' : ' is the best!') + ' Where is yours? 😎 ') + challengeUrl(Math.floor(score));
+    buildPrideCard(function (card) { if (card) sendCardText(card, txt, 'pride'); });
+    try { logEv('share_pride', {}); } catch (e) {}
+  } catch (e) {}
+}
+/* ---------- friends-only leaderboard ---------- */
+function getFriends() { try { return JSON.parse(localStorage.getItem('rrFriends') || '[]'); } catch (e) { return []; } }
+function addFriend(uid, name) {
+  try {
+    if (!uid || uid === fbUid) return;
+    var f = getFriends(), has = false;
+    for (var i = 0; i < f.length; i++) if (f[i].uid === uid) { has = true; break; }
+    if (has) return;
+    f.push({ uid: uid, n: name || 'Friend', at: Date.now() });
+    while (f.length > 30) f.shift();
+    localStorage.setItem('rrFriends', JSON.stringify(f));
+  } catch (e) {}
+}
+var friendsCache = null, friendsFetching = false;
+function fetchFriendsBoard(cb) {
+  cb = cb || function () {};
+  try {
+    if (!fbReady || !FBDB) { cb([]); return; }
+    if (friendsFetching) return;
+    friendsFetching = true;
+    var ids = [fbUid], f = getFriends();
+    for (var i = 0; i < f.length; i++) if (f[i].uid) ids.push(f[i].uid);
+    var out = [], left = ids.length;
+    if (!left) { friendsFetching = false; cb([]); return; }
+    ids.forEach(function (id) {
+      try {
+        FBDB.ref('scores_by_player/' + id).once('value').then(function (snap) {
+          var v = snap.val();
+          if (v) { v._me = (id === fbUid); out.push(v); }
+          if (--left <= 0) { friendsFetching = false; out.sort(function (a, b) { return (b.s || 0) - (a.s || 0); }); friendsCache = out; cb(out); }
+        }, function () { if (--left <= 0) { friendsFetching = false; out.sort(function (a, b) { return (b.s || 0) - (a.s || 0); }); friendsCache = out; cb(out); } });
+      } catch (e) { if (--left <= 0) { friendsFetching = false; cb(out); } }
+    });
+  } catch (e) { friendsFetching = false; cb([]); }
 }
 $('pauseBtn').addEventListener('click', function (e) { e.currentTarget.blur(); pauseGame(); });
 $('mute').addEventListener('click', function (e) { muted = !muted; e.currentTarget.textContent = muted ? '🔇' : '🔊'; e.currentTarget.blur(); if (muted) engineStop(); else if (state === 'play') engineStart(); try { radioTick(); } catch (e2) {} });
@@ -6111,6 +6511,7 @@ function frame(now) {
 
 /* ---------- garage + bike color ---------- */
 var BIKE_COLS = [0x0f0f0f, 0xdd2222, 0x2a9df4, 0xff8c1a, 0x9b5de5, 0x222222];
+try { if (BIKE_COLS.length === 6) BIKE_COLS.push(0xffd700); } catch (e) {} // festival gold bike (idx 6)
 /* ---------- PWA install prompt ---------- */
 var deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', function (e) {
@@ -6485,7 +6886,7 @@ function renderStats() {
 function renderBoard() {
   try { renderStats(); } catch (e) {}
   var html = '';
-  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">' + (lang === 'bn' ? '⚔️ যুদ্ধ' : '⚔️ War') + '</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">' + (lang === 'bn' ? '📅 সপ্তাহ' : '📅 Week') + '</button></div>';
+  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'frnd' ? ' sel' : '') + '" data-tab="frnd">' + (lang === 'bn' ? '👥 বন্ধু' : '👥 Friends') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">' + (lang === 'bn' ? '⚔️ যুদ্ধ' : '⚔️ War') + '</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">' + (lang === 'bn' ? '📅 সপ্তাহ' : '📅 Week') + '</button></div>';
   if (myRankCache) html += '<div class="best">🏅 #' + myRankCache.rank + ' / ' + myRankCache.tot + '</div>';
   else { try { fetchMyRank(); } catch (e) {} }
   if (lbTab === 'div') {
@@ -6493,10 +6894,17 @@ function renderBoard() {
     else if (divCache) html += botRowsHTML(divCache.list, false, divCache.n, playerDiv);
     else if (!fbReady || !FBDB) html += botRowsHTML([], false, 0, playerDiv);
     else { html += T('lb_loading'); fetchDivBoard(); }
-  } else {
+  } else if (lbTab !== 'frnd') {
     if (globCache) html += botRowsHTML(globCache.list, true, globCache.n, null);
     else if (!fbReady || !FBDB) html += botRowsHTML([], true, 0, null);
     else { html += T('lb_loading'); fetchGlobBoard(); }
+  }
+  if (lbTab === 'frnd') {
+    var _fr = (typeof getFriends === 'function') ? getFriends() : [];
+    html += '<div class="best">👥 ' + _fr.length + (lang === 'bn' ? ' বন্ধু · প্রোফাইলে Invite কোড দাও' : ' friends · add via Profile invite code') + '</div>';
+    if (friendsCache) html += friendsCache.length ? worldRows(friendsCache, true) : T('lb_empty');
+    else if (!fbReady || !FBDB) html += T('lb_empty');
+    else { html += T('lb_loading'); try { fetchFriendsBoard(function () { if (lbTab === 'frnd') renderBoard(); }); } catch (e) {} }
   }
   if (lbTab === 'war' || lbTab === 'week') {
     if (!warCache || !weekCache) { html += T('lb_loading'); fetchWarWeek(); }
@@ -6810,7 +7218,14 @@ function boot() {
   $('photoBtn').addEventListener('click', function () { photoMode(true); });
   $('photoZoomIn').addEventListener('click', function () { photoZoom = Math.max(0.6, photoZoom - 0.1); applyPhotoCam(); });
   $('photoZoomOut').addEventListener('click', function () { photoZoom = Math.min(1.5, photoZoom + 0.1); applyPhotoCam(); });
-  $('shareBtn').addEventListener('click', function () { shareScore(); });  $('photoExit').addEventListener('click', function () { exitPhotoMode(); });
+  $('shareBtn').addEventListener('click', function () { shareScore(); });
+  $('fbBtn').addEventListener('click', function () { shareFB(); });
+  $('msgBtn').addEventListener('click', function () { shareMsg(); });
+  $('copyBtn').addEventListener('click', function () { copyLink(); });
+  try { var _wab = $('waBtn'); if (_wab) _wab.addEventListener('click', function () { shareWA(); }); } catch (e) {}
+  try { var _rpb = $('replayBtn'); if (_rpb) _rpb.addEventListener('click', function () { shareReplay(); }); } catch (e) {}
+  try { var _prb = $('prideBtn'); if (_prb) _prb.addEventListener('click', function () { sharePride(); }); } catch (e) {}
+  try { readChallenge(); } catch (e) {}  $('photoExit').addEventListener('click', function () { exitPhotoMode(); });
   $('photoCap').addEventListener('click', function () { capturePhoto(); });
   $('photoSave').addEventListener('click', function () { savePhoto(); });
   $('photoShareBtn').addEventListener('click', function () { sharePhotoSheet(); });
@@ -6949,6 +7364,7 @@ function boot() {
           bankCoins += 100;
           try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrInvUsed', c); } catch (e2) {}
           try { FBDB.ref('invitesUsed/' + fbUid).set(c); } catch (e2) {}
+          try { addFriend(r.u, c); friendsCache = null; } catch (e2) {}
           cloudSave(); renderProfile(); updateMenuBest();
           say((lang === 'bn' ? '🎉 বন্ধু পাবে ৳300, তুমি পেলে ৳100!' : '🎉 Friend gets ৳300, you get ৳100!'));
           try { logEv('invite_sent', {}); } catch (e2) {}
@@ -6957,6 +7373,9 @@ function boot() {
       }).catch(function () { say('🔑 ?'); });
     }).catch(function () { say('🔑 ?'); });
   });  $('dailyClose').addEventListener('click', function () { $('dailyOverlay').classList.add('hidden'); });
+  try { var _dsv = $('dailySave'); if (_dsv) _dsv.addEventListener('click', function () { saveStreak(); }); } catch (e) {}
+  try { var _spb = $('spinBtn'); if (_spb) _spb.addEventListener('click', function () { doSpin(); }); } catch (e) {}
+  try { startLoadTips(); } catch (e) {}
   $('dailyClaim').addEventListener('click', function () {
     var info = dailyInfo();
     if (!info.claimable) return;
