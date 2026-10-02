@@ -791,8 +791,9 @@ function castGo(code, title) {
       }
       var h = '';
       infos.forEach(function (e, i) {
-        h += '<div class="item"><b>' + (i === 0 ? '🥇 ' : '') + esc(e.n) + '</b> <small>' + e.pct + '% · ' + e.kmh + ' km/h · 📦' + e.par + ' · ' + e.s + 'pts</small>'
-          + '<div style="height:10px;border-radius:5px;background:rgba(255,255,255,.12);margin-top:4px;"><u style="display:block;height:100%;width:' + e.pct + '%;background:linear-gradient(90deg,#2d9c42,#ffc83d);border-radius:5px;"></u></div></div>';
+        h += '<div class="item"><div style="display:flex;align-items:center;gap:8px;"><b style="min-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (i === 0 ? '🥇 ' : '') + esc(e.n) + '</b>'
+          + '<span style="position:relative;flex:1;height:18px;border-radius:999px;background:rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.25);overflow:hidden;"><u style="display:block;height:100%;width:' + e.pct + '%;background:' + (i === 0 ? 'linear-gradient(90deg,#37e05a,#b6ff5a)' : 'linear-gradient(90deg,#8a8f96,#c9ced4)') + ';border-radius:999px;"></u><i style="position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:900;color:#fff;">' + e.pct + '%</i></span>'
+          + '<b>📦' + e.par + '</b></div><small>' + e.kmh + ' km/h · ' + e.s + 'pts</small></div>';
       });
       if (infos.length === 2) h += '<div class="center"><small>GAP ' + Math.abs(infos[0].pct - infos[1].pct) + '%</small></div>';
       $('castLive').innerHTML = h;

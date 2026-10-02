@@ -494,8 +494,15 @@
   #vsRows .vsTag { font-size: 26px; text-align: center; font-weight: 900; color: var(--gold); margin: 2px 0; }
   #vsCount { font-size: 76px; font-weight: 900; color: var(--gold); min-height: 88px; line-height: 1; text-shadow: 0 4px 0 rgba(0,0,0,.4); }
   #vsCancel { width: 100%; box-sizing: border-box; margin-top: 10px; }
-  /* ===== spectator broadcast ===== */
+  /* ===== spectator broadcast (dual bars like ref) ===== */
   #specBody .lbrow { text-align: left; }
+  .spTop { display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; }
+  .spTop .who { min-width: 76px; max-width: 110px; font-weight: 900; font-size: 14px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+  .spTop .cnt { min-width: 44px; font-weight: 900; font-size: 14px; color: #fff; text-align: right; white-space: nowrap; }
+  .spBar { position: relative; flex: 1; height: 18px; border-radius: 999px; background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.25); overflow: hidden; }
+  .spBar u { display: block; height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg,#37e05a,#b6ff5a); }
+  .spBar.dim u { background: linear-gradient(90deg,#8a8f96,#c9ced4); }
+  .spBar i { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
   #specBody .spd { font-size: 22px; font-weight: 900; color: #7dff9a; }
   #specBody .gap { text-align: center; font-weight: 900; font-size: 18px; color: var(--gold); margin: 4px 0; }
   @keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
@@ -9518,8 +9525,10 @@ function specRender(code, r) {
       if (infos[0].pct >= 90 && !specFeed.join(' ').match(' stretch')) specSay('🏁 ' + (bn ? 'শেষ ল্যাপ! ' : 'Final stretch! ') + infos[0].n + ' ' + infos[0].pct + '%');
     }
     rows = infos.map(function (e, i) {
-      return '<div class="lbrow' + (i === 0 ? ' me' : '') + '"><span class="nm">' + (i === 0 ? '🥇 ' : '') + dEsc(e.n) + '<small>' + e.pct + '% · 📦' + e.p + ' · ' + e.s + 'pts · ' + e.st + '</small><span class="spd">' + e.kmh + ' km/h</span></span></div>'
-        + '<div style="height:8px;border-radius:4px;background:rgba(255,255,255,.12);margin:2px 0 6px;"><u style="display:block;height:100%;width:' + e.pct + '%;background:linear-gradient(90deg,#2d9c42,#ffc83d);border-radius:4px;"></u></div>';
+      return '<div class="spTop"><span class="who">' + (i === 0 ? '🥇 ' : '') + dEsc(e.n) + '</span>'
+        + '<span class="spBar' + (i === 0 ? '' : ' dim') + '"><u style="width:' + e.pct + '%;"></u><i>' + e.pct + '%</i></span>'
+        + '<span class="cnt">📦' + e.p + '</span></div>'
+        + '<div style="font-size:11px;color:var(--panel-soft);text-align:right;margin:-2px 0 4px;">' + e.kmh + ' km/h · ' + e.s + 'pts</div>';
     }).join('');
     if (infos.length === 2) rows += '<div class="gap">GAP ' + Math.abs(infos[0].pct - infos[1].pct) + '%</div>';
     rows = '<div class="best">🔑 ' + code + ' · ' + (r.st || '') + '</div>' + rows;
