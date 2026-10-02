@@ -4445,6 +4445,21 @@ function renderTours() {
         + '<span style="flex:1;min-width:0;"><b>' + t.name + '</b>' + (live ? ' <b style="color:var(--gold)">● LIVE</b>' : '')
         + '<br><small style="color:var(--panel-soft);">💰 ৳' + (+t.prize || 0) + ' · 🤖 ' + (+t.bots || 0) + ' bots</small></span>'
         + '<span class="st">' + (live ? '▶' : '🔒') + '</span></div>';
+      var _mm = t.matches || {}, _mks = Object.keys(_mm).sort(), _myMatch = null;
+      if (_mks.length) {
+        var _lastR = 0;
+        _mks.forEach(function (mk) {
+          var m = _mm[mk] || {};
+          if (m.round > _lastR) { _lastR = m.round; h += '<div class="best" style="margin:6px 0 2px;">Round ' + m.round + '</div>'; }
+          var an = (m.a && m.a.n) || '?', bnn = (m.b && m.b.n) || 'BYE';
+          var wn = (m.winner && m.winner.n) || '';
+          try {
+            if ((m.a && m.a.u === fbUid) || (m.b && m.b.u === fbUid)) _myMatch = m;
+          } catch (e) {}
+          h += '<div class="lbrow"><span class="nm">' + an + ' <small>vs</small> ' + bnn + (wn ? ' <small>🏆 ' + wn + '</small>' : '') + '</span><span class="sc">' + (m.room ? '🔑' + m.room : '') + '</span></div>';
+        });
+        if (_myMatch && _myMatch.room) h += '<div class="best">🔑 ' + (bn ? 'তোমার ম্যাচ কোড: ' : 'Your match code: ') + '<b>' + _myMatch.room + '</b></div>';
+      }
       if (live) {
         h += tourBots(t).slice(0, 5).map(function (b, i) {
           return '<div class="lbrow"><span class="rk">' + (i + 1) + '.</span><span class="nm">🤖 ' + b.n + '</span><span class="sc">' + b.s + '</span></div>';

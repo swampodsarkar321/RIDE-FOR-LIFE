@@ -247,6 +247,15 @@
       <h2>🏆 Tournaments in game</h2>
       <div id="tourListA"><p class="note">Loading…</p></div>
     </div>
+    <div class="card">
+      <h2>👁 Live Watch (drone board)</h2>
+      <p class="note">Duel room code দাও — 2 জনের live progress একসাথে (FF custom room style)।</p>
+      <label>Room code</label>
+      <input id="watchCode" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;">
+      <button class="btn" id="watchBtn">👁 Watch</button>
+      <button class="btn ghost" id="watchStop">Stop</button>
+      <div id="watchLive" style="margin-top:8px;"></div>
+    </div>
   </div>
 
   <div id="tab-boards" class="hidden">
@@ -613,7 +622,18 @@ function startAll() {
       html += '<div class="item"><b>🏆 ' + esc(t.name) + '</b> <small>· ৳' + (+t.prize || 0) + ' · ' + (+t.bots || 0) + ' bots · ' + esc(t.status) + '</small><br>' +
         '<button class="btn small" data-tourlive="' + c.key + '">🔴 Live</button>' +
         '<button class="btn small" data-tourdone="' + c.key + '">✔ Done</button>' +
-        '<button class="btn small danger" data-tour="' + c.key + '">Delete</button></div>';
+        '<button class="btn small danger" data-tour="' + c.key + '">Delete</button><br>' +
+        '<button class="btn small" data-bracket="' + c.key + '">🎲 Bracket</button></div>';
+      var mm = t.matches || {}, mks = Object.keys(mm).sort();
+      mks.forEach(function (mk) {
+        var m = mm[mk] || {};
+        var an = (m.a && m.a.n) || '?', bn2 = (m.b && m.b.n) || 'BYE';
+        var wn = (m.winner && m.winner.n) || '';
+        html += '<div class="item" style="margin:6px 0 6px 12px;">R' + (m.round || 1) + ': <b>' + esc(an) + '</b> vs <b>' + esc(bn2) + '</b>' +
+          (wn ? ' → 🏆 <b>' + esc(wn) + '</b>' : '') + (m.room ? ' <small>🔑' + esc(m.room) + '</small>' : '') + '<br>' +
+          '<button class="btn small" data-mroom="' + c.key + '|' + mk + '">🔑 Room</button>' +
+          '<button class="btn small" data-msync="' + c.key + '|' + mk + '">✔ Sync</button></div>';
+      });
     });
     $('tourListA').innerHTML = html || '<p class="note">No tournaments yet.</p>';
     bindAll();
@@ -674,6 +694,29 @@ $('liveStop').addEventListener('click', function () {
   if (!db) return;
   db.ref('config/activeEvent').remove().then(function () { alert('Live off — sob event open.'); });
 });
+$('watchStop').addEventListener('click', function () { watchStop(); $('watchLive').innerHTML = ''; });
+$('watchBtn').addEventListener('click', function () {
+  if (!db) { alert('No Firebase connection!'); return; }
+  var code = ($('watchCode').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 5) { alert('5-letter room code daw'); return; }
+  watchStop();
+  watchTimer = setInterval(function () {
+    db.ref('duel_rooms/' + code).once('value').then(function (snap) {
+      var r = snap.val();
+      if (!r) { $('watchLive').innerHTML = '<p class="note">Room not found (closed?).</p>'; watchStop(); return; }
+      var ps = r.players || {}, keys = Object.keys(ps), h = '';
+      h += '<div class="item"><b>🔑 ' + esc(code) + '</b> <small>' + esc(r.st || '') + (r.winner ? ' · 🏆 ' + esc((r.winner.n || '')) : '') + '</small></div>';
+      keys.slice(0, 2).forEach(function (k) {
+        var p = ps[k] || {};
+        var pct = Math.min(100, Math.round(((+p.d || 0) / 2900) * 100));
+        h += '<div class="item"><b>' + esc(p.n || '?') + '</b> <small>' + esc(p.st || '') + ' · 📦' + (+p.p || 0) + ' · ' + (+p.s || 0) + 'pts</small>'
+          + '<div style="height:10px;border-radius:5px;background:rgba(255,255,255,.12);margin-top:4px;"><u style="display:block;height:100%;width:' + pct + '%;background:linear-gradient(90deg,#2d9c42,#ffc83d);border-radius:5px;"></u></div>'
+          + '<small>' + pct + '%</small></div>';
+      });
+      $('watchLive').innerHTML = h;
+    }).catch(function () { $('watchLive').innerHTML = '<p class="note">Watch error.</p>'; watchStop(); });
+  }, 1500);
+});
 $('nSend').addEventListener('click', function () {
   if (!db) { alert('No Firebase connection!'); return; }
   var title = $('nTitle').value.trim() || 'Ride For Life';
@@ -702,7 +745,87 @@ db.ref('notifications').on('value', function (snap) {
     });
   });
 });
+var watchTimer = null;
+function watchStop() { try { if (watchTimer) { clearInterval(watchTimer); watchTimer = null; } } catch (e) {} }
+function buildBracket(tourKey) {
+  if (!db) return;
+  db.ref('tour_join/' + tourKey).once('value').then(function (snap) {
+    var ps = [];
+    snap.forEach(function (c) { var v = c.val() || {}; ps.push({ u: c.key, n: String(v.n || 'Rider').slice(0, 20) }); });
+    if (ps.length < 2) { alert('Need 2+ joined players (now ' + ps.length + ')'); return; }
+    if (!confirm(ps.length + ' players → Round 1 bracket? Old matches replaced.')) return;
+    var up = {}, i = 0;
+    for (var k = 0; k < ps.length; k += 2) {
+      var a = ps[k], b = (k + 1 < ps.length) ? ps[k + 1] : null;
+      up['m' + i] = { round: 1, a: a, b: b, room: null, winner: b ? null : { u: a.u, n: a.n }, st: b ? 'open' : 'done' };
+      i++;
+    }
+    db.ref('config/tournaments/' + tourKey + '/matches').set(up).then(function () { alert('Bracket ready!'); });
+  });
+}
+function makeMatchRoom(tourKey, mk) {
+  if (!db) return;
+  db.ref('config/tournaments/' + tourKey + '/matches/' + mk).once('value').then(function (s) {
+    var m = s.val() || {};
+    if (!m.a || !m.b) { alert('Need 2 players'); return; }
+    var code = '', ch = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    for (var i = 0; i < 5; i++) code += ch.charAt((Math.random() * ch.length) | 0);
+    var room = { host: m.a.u, created: Date.now(), leg: 0, st: 'lobby', round: 1, guest: null, players: {} };
+    room.players[m.a.u] = { n: m.a.n, av: '', d: 0, p: 0, s: 0, f: 0, ms: 0, st: 'on', ready: false };
+    room.players[m.b.u] = { n: m.b.n, av: '', d: 0, p: 0, s: 0, f: 0, ms: 0, st: 'on', ready: false };
+    db.ref('duel_rooms/' + code).transaction(function (cur) { return cur ? undefined : room; }).then(function (res) {
+      if (!res.committed) { alert('Code clash, try again'); return; }
+      db.ref('config/tournaments/' + tourKey + '/matches/' + mk).update({ room: code, st: 'live' }).then(function () {
+        alert('Room ' + code + ' — players join from Custom with code!');
+      });
+    });
+  });
+}
+function syncMatchWinner(tourKey, mk) {
+  if (!db) return;
+  db.ref('config/tournaments/' + tourKey + '/matches/' + mk).once('value').then(function (s) {
+    var m = s.val() || {};
+    if (!m.room) { alert('No room yet'); return; }
+    db.ref('duel_rooms/' + m.room + '/winner').once('value').then(function (ws) {
+      var w = ws.val();
+      if (!w || !w.u) { alert('No winner yet in room'); return; }
+      db.ref('config/tournaments/' + tourKey + '/matches/' + mk).update({ winner: { u: w.u, n: String(w.n || '?').slice(0, 20) }, st: 'done' }).then(function () {
+        advanceBracket(tourKey, m.round || 1);
+      });
+    });
+  });
+}
+function advanceBracket(tourKey, round) {
+  if (!db) return;
+  db.ref('config/tournaments/' + tourKey + '/matches').once('value').then(function (snap) {
+    var all = [];
+    snap.forEach(function (c) { var v = c.val() || {}; if ((v.round | 0) === round) all.push({ k: c.key, w: v.winner }); });
+    var wins = all.filter(function (x) { return x.w && x.w.u; });
+    if (wins.length < 2 || wins.length !== all.length) return; // round sesh hoyni
+    var up = {}, base = 'mR' + (round + 1) + '_';
+    for (var i = 0; i < wins.length; i += 2) {
+      var a = wins[i].w, b = wins[i + 1] ? wins[i + 1].w : null;
+      up[base + (i / 2)] = { round: round + 1, a: a, b: b, room: null, winner: b ? null : a, st: b ? 'open' : 'done' };
+    }
+    db.ref('config/tournaments/' + tourKey + '/matches').update(up).then(function () { alert('Round ' + (round + 1) + ' ready!'); });
+  });
+}
 function bindAll() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bracket]'), function (b) {
+    b.addEventListener('click', function () { buildBracket(b.getAttribute('data-bracket')); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-mroom]'), function (b) {
+    b.addEventListener('click', function () {
+      var p = (b.getAttribute('data-mroom') || '').split('|');
+      makeMatchRoom(p[0], p[1]);
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-msync]'), function (b) {
+    b.addEventListener('click', function () {
+      var p = (b.getAttribute('data-msync') || '').split('|');
+      syncMatchWinner(p[0], p[1]);
+    });
+  });
   Array.prototype.forEach.call(document.querySelectorAll('[data-tour]'), function (b) {
     b.addEventListener('click', function () {
       if (!confirm('Delete this tournament?')) return;
