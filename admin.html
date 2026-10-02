@@ -29,7 +29,7 @@
   table.top td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.06); }
   table.top td.r { text-align: right; color: #ffc83d; font-weight: 700; }
   label { display: block; font-size: 12px; color: #a0b0a0; margin: 10px 0 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
-  input { width: 100%; font-size: 15px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.3); color: #fff; font-family: inherit; transition: border-color .2s; }
+  input, select { width: 100%; font-size: 15px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.3); color: #fff; font-family: inherit; transition: border-color .2s; }
   input:focus { outline: none; border-color: #ffc83d; }
   input[type="color"] { height: 44px; padding: 2px; cursor: pointer; }
   input[type="checkbox"] { width: 22px; height: 22px; vertical-align: middle; }
@@ -167,10 +167,19 @@
       <button class="btn ghost" id="liveStop">Stop live (sob open)</button>
     </div>
     <div class="card">
+      <h2>🏠 Built-in Events</h2>
+      <p class="note">Game-er nijer event — bondho/chalu + edit (override) ekhan theke. Edit korle game code bodlay na.</p>
+      <div id="builtinList"><p class="note">Loading…</p></div>
+    </div>
+    <div class="card">
       <h2 id="evFormT">🎪 Add Event</h2>
       <div class="row2">
         <div><label>Icon (emoji)</label><input id="eIco" maxlength="4" value="⭐"></div>
-        <div><label>Night start?</label><br><input id="eNight" type="checkbox"></div>
+        <div><label>Time of day</label><select id="eTod"><option value="cycle">🔁 Cycle</option><option value="day">☀️ Day</option><option value="night">🌙 Night</option></select></div>
+      </div>
+      <div class="row2">
+        <div><label>Fireworks in sky?</label><br><input id="eFw" type="checkbox"></div>
+        <div><label>Parcel quota (0 = normal)</label><input id="eQuota" type="number" value="0" min="0"></div>
       </div>
       <div class="row2">
         <div><label>Name (English)</label><input id="eNameEn" maxlength="24" placeholder="Rain Rush"></div>
@@ -180,10 +189,8 @@
         <div><label>Desc (English)</label><input id="eDescEn" maxlength="48" placeholder="Double coins in rain"></div>
         <div><label>Desc (Bangla)</label><input id="eDescBn" maxlength="48" placeholder="বৃষ্টিতে দ্বিগুণ কয়েন"></div>
       </div>
-      <div class="row2">
-        <div><label>Parcel quota (0 = normal)</label><input id="eQuota" type="number" value="0" min="0"></div>
-        <div><label>Quota reward ৳</label><input id="eReward" type="number" value="0" min="0"></div>
-      </div>
+      <label>Quota reward ৳</label>
+      <input id="eReward" type="number" value="0" min="0">
       <div class="row2">
         <div><label>Score ×</label><input id="eScoreX" type="number" value="1" step="0.5" min="1" max="5"></div>
         <div><label>Coin ×</label><input id="eCoinX" type="number" value="1" step="1" min="1" max="5"></div>
@@ -200,6 +207,7 @@
       <input id="eBonusX" type="number" value="1" step="0.5" min="1" max="5">
       <button class="btn" id="evSave">＋ Save Event</button>
       <button class="btn ghost hidden" id="evCancel">Cancel edit</button>
+      <button class="btn ghost hidden" id="evResetOv">Reset to built-in</button>
     </div>
     <div class="card">
       <h2>🎪 Events in game</h2>
@@ -231,7 +239,70 @@
 <script>
 var ADMIN_CODE = 'rideadmin321'; // <-- change this passcode
 var db = null;
-var editBikeKey = null, editEvKey = null;
+var editBikeKey = null, editEvKey = null, editBuiltInKey = null;
+/* built-in events mirror (game EVENTS) — admin theke off/on + override */
+var BUILTIN = [
+  { id: 'fest', ico: '🎉', en: 'Festival Run', bn: 'ফেস্টিভ্যাল রান', tod: 'cycle', scoreX: 2 },
+  { id: 'night', ico: '🌙', en: 'Night Run', bn: 'নাইট রান', tod: 'night', coinX: 2 },
+  { id: 'fuel', ico: '⛽', en: 'Fuel Challenge', bn: 'ফুয়েল চ্যালেঞ্জ', tod: 'cycle', fuelX: 1.6, fuelPick: 50, bonusX: 1.5 },
+  { id: 'nitro', ico: '🚀', en: 'Nitro Rush', bn: 'নাইট্রো রাশ', tod: 'cycle', nitroRate: 0.15, nitroDur: 9 },
+  { id: 'express', ico: '⚡', en: 'Express Delivery', bn: 'এক্সপ্রেস ডেলিভারি', tod: 'cycle', quota: 10, reward: 600 },
+  { id: 'puja', ico: '🪔', en: 'Durga Puja Rush', bn: 'দুর্গা পূজা রাশ', tod: 'night', coinX: 2, quota: 12, reward: 1200, bonusX: 1.5, fw: 1 },
+  { id: 'eid', ico: '🌙', en: 'Eid Delivery Rush', bn: 'ঈদ ডেলিভারি রাশ', tod: 'cycle', scoreX: 2, quota: 12, reward: 1500, bonusX: 1.5, fw: 1 },
+  { id: 'boishakh', ico: '🎏', en: 'Pohela Boishakh Run', bn: 'পহেলা বৈশাখ রান', tod: 'day', scoreX: 2, coinX: 1.5 },
+  { id: 'iftar', ico: '🍱', en: 'Ramadan Iftar Express', bn: 'রমজান ইফতার এক্সপ্রেস', tod: 'cycle', quota: 10, reward: 1000, bonusX: 1.5 },
+  { id: 'victory', ico: '🇧🇩', en: 'Victory Day Ride', bn: 'বিজয় দিবস রাইড', tod: 'night', coinX: 2, scoreX: 1.5, bonusX: 1.5, fw: 1 },
+  { id: 'cattle', ico: '🐂', en: 'Cattle Haat Rush', bn: 'গরুর হাট রাশ', tod: 'cycle', scoreX: 1.5, quota: 12, reward: 1300 },
+  { id: 'mela', ico: '🎡', en: 'Boishakh Mela Run', bn: 'বৈশাখী মেলা রান', tod: 'day', scoreX: 1.5, coinX: 2, fw: 1 },
+  { id: 'feb21', ico: '🌹', en: 'Ekushey Feb Run', bn: 'একুশে ফেব্রুয়ারি রান', tod: 'cycle', scoreX: 1.5, quota: 8, reward: 800 },
+  { id: 'boimela', ico: '📚', en: 'Boi Mela Rush', bn: 'বইমেলা রাশ', tod: 'cycle', quota: 10, reward: 900 }
+];
+var builtinDis = {}, builtinOvr = {};
+function builtinById(id) { for (var i = 0; i < BUILTIN.length; i++) if (BUILTIN[i].id === id) return BUILTIN[i]; return null; }
+function fillEvForm(d) {
+  $('eIco').value = d.ico || '⭐';
+  $('eNameEn').value = d.name_en || d.en || ''; $('eNameBn').value = d.name_bn || d.bn || '';
+  $('eDescEn').value = d.desc_en || d.descEn || ''; $('eDescBn').value = d.desc_bn || d.descBn || '';
+  $('eQuota').value = d.quota || 0; $('eReward').value = d.reward || 0;
+  $('eScoreX').value = d.scoreX || 1; $('eCoinX').value = d.coinX || 1;
+  $('eFuelX').value = d.fuelX || 1; $('eFuelPick').value = d.fuelPick || 35;
+  $('eNitroRate').value = d.nitroRate || 0; $('eNitroDur').value = d.nitroDur || 6;
+  $('eBonusX').value = d.bonusX || 1; $('eNight').checked = !!d.night;
+}
+function renderBuiltin() {
+  var el = $('builtinList'); if (!el) return;
+  var html = '';
+  BUILTIN.forEach(function (b) {
+    var off = !!builtinDis[b.id], ov = !!builtinOvr[b.id];
+    html += '<div class="item"><b>' + esc(b.ico) + ' ' + esc(b.en) + '</b> / ' + esc(b.bn) + (ov ? ' <small>✏️ edited</small>' : '') +
+      '<br><small>' + (off ? '🚫 off' : '✅ on') + ((b.fw || (builtinOvr[b.id] && builtinOvr[b.id].fw)) ? ' · 🎆' : '') + '</small><br>' +
+      '<button class="btn small' + (off ? '' : ' ghost') + '" data-btoggle="' + b.id + '">' + (off ? '✅ Enable' : '🚫 Disable') + '</button>' +
+      '<button class="btn small" data-bedit2="' + b.id + '">Edit</button></div>';
+  });
+  el.innerHTML = html;
+  Array.prototype.forEach.call(el.querySelectorAll('[data-btoggle]'), function (x) {
+    x.addEventListener('click', function () {
+      if (!db) return;
+      var id = x.getAttribute('data-btoggle');
+      if (builtinDis[id]) db.ref('config/disabledEvents/' + id).remove();
+      else db.ref('config/disabledEvents/' + id).set(true);
+    });
+  });
+  Array.prototype.forEach.call(el.querySelectorAll('[data-bedit2]'), function (x) {
+    x.addEventListener('click', function () {
+      var id = x.getAttribute('data-bedit2'), b = builtinById(id);
+      if (!b) return;
+      var ov = builtinOvr[id] || {};
+      fillEvForm({ ico: ov.ico || b.ico, name_en: ov.name_en || b.en, name_bn: ov.name_bn || b.bn, desc_en: ov.desc_en || '', desc_bn: ov.desc_bn || '', quota: ov.quota != null ? ov.quota : (b.quota || 0), reward: ov.reward != null ? ov.reward : (b.reward || 0), scoreX: ov.scoreX != null ? ov.scoreX : (b.scoreX || 1), coinX: ov.coinX != null ? ov.coinX : (b.coinX || 1), fuelX: ov.fuelX != null ? ov.fuelX : (b.fuelX || 1), fuelPick: ov.fuelPick != null ? ov.fuelPick : 35, nitroRate: ov.nitroRate != null ? ov.nitroRate : (b.nitroRate || 0), nitroDur: ov.nitroDur != null ? ov.nitroDur : 6, bonusX: ov.bonusX != null ? ov.bonusX : (b.bonusX || 1), tod: ov.tod || (ov.night ? 'night' : (b.tod || 'cycle')), fw: ov.fw != null ? ov.fw : (b.fw ? 1 : 0) });
+      editBuiltInKey = id; editEvKey = null;
+      $('evFormT').textContent = '🎪 Edit Built-in: ' + b.en;
+      $('evSave').textContent = '✔ Save Override';
+      $('evCancel').classList.remove('hidden');
+      $('evResetOv').classList.remove('hidden');
+      window.scrollTo(0, 0);
+    });
+  });
+}
 function $(id) { return document.getElementById(id); }
 function num(id, fb) { var v = parseFloat($(id).value); return isNaN(v) ? fb : v; }
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -301,7 +372,7 @@ function evObj() {
     scoreX: num('eScoreX', 1), coinX: num('eCoinX', 1),
     fuelX: num('eFuelX', 1), fuelPick: num('eFuelPick', 35),
     nitroRate: num('eNitroRate', 0), nitroDur: num('eNitroDur', 6),
-    bonusX: num('eBonusX', 1), night: $('eNight').checked
+    bonusX: num('eBonusX', 1), tod: ($('eTod').value || 'cycle'), fw: ($('eFw').checked ? 1 : 0)
   };
 }
 $('bikeSave').addEventListener('click', function () {
@@ -319,6 +390,10 @@ function resetBikeForm() {
 }
 $('evSave').addEventListener('click', function () {
   if (!db) { alert('No Firebase connection!'); return; }
+  if (editBuiltInKey) { // built-in override (game code bodlay na)
+    db.ref('config/eventOverrides/' + editBuiltInKey).set(evObj()).then(function () { alert('Override saved! Game updates live.'); resetEvForm(); });
+    return;
+  }
   var done = function () { alert(editEvKey ? 'Event updated!' : 'Event saved! Game updates live.'); resetEvForm(); };
   if (editEvKey) db.ref('config/events/' + editEvKey).set(evObj()).then(done);
   else db.ref('config/events').push(evObj()).then(done);
@@ -376,11 +451,17 @@ db.ref('config/billboardsOn').on('value', function (s) {
   $('bbToggle').classList.toggle('on', on);
 });
 function resetEvForm() {
-  editEvKey = null;
+  editEvKey = null; editBuiltInKey = null;
   $('evFormT').textContent = '🎪 Add Event';
   $('evSave').textContent = '＋ Save Event';
   $('evCancel').classList.add('hidden');
+  $('evResetOv').classList.add('hidden');
 }
+$('evResetOv').addEventListener('click', function () {
+  if (!db || !editBuiltInKey) return;
+  if (!confirm('Override muchhe built-in-e firot jabe. OK?')) return;
+  db.ref('config/eventOverrides/' + editBuiltInKey).remove().then(function () { alert('Reset done.'); resetEvForm(); });
+});
 function startAll() {
   if (!db) return;
   db.ref('players').on('value', function (s) {
@@ -388,12 +469,40 @@ function startAll() {
     $('stPlayers').textContent = n;
     var html = '';
     s.forEach(function (c) {
-      n++;
-      var p = c.val() || {};
+      var p = c.val() || {}, id = c.key;
       html += '<div class="item"><b>' + esc(p.name || 'Rider') + '</b> <small>· ' + esc(p.div || '') + '</small>' +
-        '<br><small>🏆 ' + (p.best || 0) + ' · 📦 ' + (p.tp || 0) + ' · 🏍️ Lvl ' + (p.level || 1) + ' · ৳' + (p.bank || 0) + '</small></div>';
+        '<br><small>🏆 ' + (p.best || 0) + ' · 📦 ' + (p.tp || 0) + ' · 🏍️ Lvl ' + (p.level || 1) + ' · ৳' + (p.bank || 0) + '</small><br>' +
+        '<button class="btn small" data-grant="100:' + id + '">+100</button>' +
+        '<button class="btn small" data-grant="500:' + id + '">+500</button>' +
+        '<button class="btn small danger" data-grant="-100:' + id + '">−100</button>' +
+        '<button class="btn small danger" data-grant="-500:' + id + '">−500</button>' +
+        '<button class="btn small" data-gemgrant="1:' + id + '">💎+1</button>' +
+        '<button class="btn small" data-gemgrant="5:' + id + '">💎+5</button></div>';
     });
     $('playerList').innerHTML = html || '<p class="note">No players yet.</p>';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-grant]'), function (b) {
+      b.addEventListener('click', function () {
+        if (!db) return;
+        var parts = (b.getAttribute('data-grant') || '').split(':');
+        var amt = parseInt(parts[0], 10) || 0, uid = parts[1];
+        if (!uid || !amt) return;
+        if (amt > 0) { // grant: reward queue (safe — offline player-o pabe)
+          db.ref('rewards/' + uid).push({ amt: Math.min(500, amt), from: 'admin', at: Date.now() }).then(function () { alert('+' + amt + ' sent! Player porer open-e pabe.'); });
+        } else { // deduct: direct bank theke kata
+          if (!confirm('Ei player-er ৳' + (-amt) + ' katbe?')) return;
+          db.ref('players/' + uid + '/bank').transaction(function (cur) { return Math.max(0, (+cur || 0) + amt); }).then(function () { alert('৳' + (-amt) + ' kata holo.'); });
+        }
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-gemgrant]'), function (b) {
+      b.addEventListener('click', function () {
+        if (!db) return;
+        var parts = (b.getAttribute('data-gemgrant') || '').split(':');
+        var n = Math.min(20, parseInt(parts[0], 10) || 0), uid = parts[1];
+        if (!uid || n <= 0) return; // rules: gems<=20, amt>0 lagbe tai amt:1 sathe
+        db.ref('rewards/' + uid).push({ amt: 1, gems: n, from: 'admin', at: Date.now() }).then(function () { alert('💎+' + n + ' sent! Player porer open-e pabe (+৳1).'); });
+      });
+    });
   }, function () { $('stPlayers').textContent = '!rules'; });
   db.ref('scores_by_player').on('value', function (s) {
     var n = 0, arr = [];
@@ -425,7 +534,7 @@ function startAll() {
       n++;
       var e = c.val() || {};
       html += '<div class="item"><b>' + esc(e.ico) + ' ' + esc(e.name_en) + '</b> / ' + esc(e.name_bn) +
-        '<br><small>' + esc(e.desc_en) + (e.quota ? ' · quota ' + e.quota : '') + (e.scoreX > 1 ? ' · score ×' + e.scoreX : '') + (e.night ? ' · night' : '') + '</small><br>' +
+        '<br><small>' + esc(e.desc_en) + (e.quota ? ' · quota ' + e.quota : '') + (e.scoreX > 1 ? ' · score ×' + e.scoreX : '') + (e.tod && e.tod !== 'cycle' ? ' · ' + e.tod : (e.night ? ' · night' : '')) + (e.fw ? ' · 🎆' : '') + '</small><br>' +
         '<button class="btn small" data-live="c_' + c.key + '">🔴 Live</button>' +
         '<button class="btn small" data-eedit="' + c.key + '">Edit</button>' +
         '<button class="btn small danger" data-ev="' + c.key + '">Delete</button></div>';
@@ -435,7 +544,7 @@ function startAll() {
     var dl = $('liveList');
     if (dl) {
       dl.innerHTML = '';
-      ['puja', 'fest', 'night', 'fuel', 'nitro', 'express'].forEach(function (id) {
+      ['puja', 'fest', 'night', 'fuel', 'nitro', 'express', 'eid', 'boishakh', 'iftar', 'victory', 'cattle', 'mela', 'feb21', 'boimela'].forEach(function (id) {
         var o = document.createElement('option'); o.value = id; dl.appendChild(o);
       });
       snap.forEach(function (c) { var o = document.createElement('option'); o.value = 'c_' + c.key; dl.appendChild(o); });
@@ -445,6 +554,14 @@ function startAll() {
   db.ref('config/activeEvent').on('value', function (s) {
     var v = s.val() || '—';
     $('liveNow').textContent = 'Live: ' + v + (v && v !== '—' ? ' (game-e sudhu etai cholbe)' : ' (sob open)');
+  });
+  db.ref('config/disabledEvents').on('value', function (s) {
+    builtinDis = s.val() || {};
+    renderBuiltin();
+  });
+  db.ref('config/eventOverrides').on('value', function (s) {
+    builtinOvr = s.val() || {};
+    renderBuiltin();
   });
   db.ref('config/billboards').on('value', function (snap) {
     var html = '', n = 0;
@@ -549,8 +666,9 @@ function bindAll() {
         $('eScoreX').value = d.scoreX || 1; $('eCoinX').value = d.coinX || 1;
         $('eFuelX').value = d.fuelX || 1; $('eFuelPick').value = d.fuelPick || 35;
         $('eNitroRate').value = d.nitroRate || 0; $('eNitroDur').value = d.nitroDur || 6;
-        $('eBonusX').value = d.bonusX || 1; $('eNight').checked = !!d.night;
-        editEvKey = b.getAttribute('data-eedit');
+  $('eBonusX').value = d.bonusX || 1; $('eTod').value = d.tod || (d.night ? 'night' : 'cycle'); $('eFw').checked = !!(d.fw);
+        editEvKey = b.getAttribute('data-eedit'); editBuiltInKey = null;
+        $('evResetOv').classList.add('hidden');
         $('evFormT').textContent = '🎪 Edit Event';
         $('evSave').textContent = '✔ Update Event';
         $('evCancel').classList.remove('hidden');

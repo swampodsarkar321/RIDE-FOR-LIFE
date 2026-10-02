@@ -642,6 +642,50 @@
     .coin-ico { width: 24px; height: 24px; font-size: 15px; box-shadow: inset 0 0 0 2px #e0a300; }
     .icon-btn { width: 38px; height: 38px; font-size: 16px; }
   }
+
+  /* ---------- 1v1 duel ---------- */
+  .mx.orange { border: 2px solid #ff9a3d; box-shadow: 0 0 14px rgba(255,154,61,.35); }
+  .mx.orange .ico { background: linear-gradient(135deg,#ff9a3d,#b34700); }
+  #pageDuel input { -webkit-user-select: text; user-select: text; touch-action: manipulation; }
+  .dvIn { flex: 1; min-width: 0; font-family: inherit; font-size: 18px; font-weight: 700; text-align: center; border-radius: 12px; border: 2px solid var(--gold); padding: 6px 8px; box-sizing: border-box; background: #fff; color: #222; }
+  .dvBtn { font-size: 20px !important; padding: 6px 18px 8px !important; }
+  .dvBtn:disabled { cursor: not-allowed; }
+  .dvCode { font: 900 40px/1.1 'Rubik', system-ui, sans-serif; letter-spacing: 8px; color: var(--gold); margin: 2px 0 6px; padding-left: 8px; }
+  .dvP { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.1); border-radius: 14px; padding: 7px 9px; margin: 6px 0; text-align: left; }
+  .dvP.win { background: rgba(255,200,61,.22); box-shadow: inset 0 0 0 2px #ffc83d; }
+  .dvP img { width: 38px; height: 38px; border-radius: 50%; background: #fff; object-fit: cover; flex-shrink: 0; }
+  .dvP .nm { flex: 1; min-width: 0; font-weight: 800; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dvP .tg { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.16); white-space: nowrap; }
+  .dvP .tg.ok { background: #2d9c42; }
+  .dvMap { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0 4px; }
+  .dvMap .mn { flex: 1; font-weight: 800; font-size: 17px; }
+  .dvMap .mn small { display: block; font-size: 12px; font-weight: 500; color: var(--panel-soft); }
+  .dvMap .arr { width: 44px; height: 44px; font-size: 20px; flex-shrink: 0; border: 0; border-radius: 12px; background: rgba(255,255,255,.16); color: #fff; font-family: inherit; cursor: pointer; }
+  #duelHud {
+    display: none; position: absolute; left: 50%; transform: translateX(-50%); width: min(440px, 92vw); z-index: 55;
+    top: calc(env(safe-area-inset-top, 0px) + 64px); background: var(--panel); border-radius: 14px; padding: 6px 10px; pointer-events: none; color: #fff;
+    font-family: 'Rubik', system-ui, sans-serif;
+  }
+  #duelHud .dRow { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-weight: 800; font-size: 14px; }
+  #duelHud .dN { width: 84px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #duelHud .dBar { position: relative; flex: 1; height: 16px; border-radius: 999px; background: rgba(255,255,255,.18); overflow: hidden; }
+  #duelHud .dBar u { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 999px; text-decoration: none; transition: width .35s linear; }
+  #duelHud .me .dBar u { background: linear-gradient(90deg,#2d9c42,#ffcc00); transition-duration: .12s; }
+  #duelHud .opp .dBar u { background: linear-gradient(90deg,#3d8bff,#b45cff); }
+  #duelHud .dBar i { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-size: 11px; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+  #duelHud .dP { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+  body.duel-on[data-ui="play"] #duelHud, body.duel-on[data-ui="pause"] #duelHud { display: block; }
+  body.duel-on #missionPill, body.duel-on #timePill, body.duel-on #radioPill, body.duel-on #chasePill,
+  body.duel-on #coinsPill, body.duel-on #routeBar, body.duel-on #pFuel { display: none !important; }
+  body.duel-on .loc { top: calc(env(safe-area-inset-top, 0px) + 148px); }
+  body.duel-on .hint { top: calc(env(safe-area-inset-top, 0px) + 204px); }
+  body.duel-on #combo { top: calc(env(safe-area-inset-top, 0px) + 252px); }
+  #duelCount {
+    position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; pointer-events: none;
+    background: rgba(0,0,0,.35); color: #ffc83d; font: 900 150px/1 'Rubik', system-ui, sans-serif;
+    text-shadow: 0 6px 0 rgba(0,0,0,.45);
+  }
+  #duelCount.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -652,8 +696,8 @@
 <div id="hud">
   <div class="hud-top">
     <div class="pill"><small data-i18n="hud_score">Score</small><b id="score">0</b></div>
-    <div class="pill coins"><div class="coin-ico">📦</div><b id="parcels">0</b></div>
-    <div class="pill coins"><div class="coin-ico">৳</div><b id="coins">0</b></div>
+    <div class="pill coins" id="parcelsPill"><div class="coin-ico">📦</div><b id="parcels">0</b></div>
+    <div class="pill coins" id="coinsPill"><div class="coin-ico">৳</div><b id="coins">0</b></div>
     <div class="pill coins" id="missionPill"><div class="coin-ico">🎯</div><b id="mission">0/10</b></div>
     <div class="pill coins" id="chasePill" style="display:none;"><div class="coin-ico">🚔</div><b id="chaseTxt">10s</b></div>
     <div class="pill coins" id="timePill"><div class="coin-ico" id="timeIco">🌅</div><b id="timeTxt" style="font-size:19px">Morning</b></div>
@@ -667,6 +711,10 @@
   <div class="hint" id="hint"></div>
   <div class="hint" id="combo" style="background:#ff5722;color:#fff;font-size:18px;"></div>
   <div id="routeBar"><u id="routeFill"></u><span id="routeTxt">Rangpur Division</span></div>
+  <div id="duelHud">
+    <div class="dRow me"><span class="dN" id="dMeN">You</span><span class="dBar"><u id="dMeBar"></u><i id="dMeT">0%</i></span><span class="dP">📦 <b id="dMeP">0</b></span></div>
+    <div class="dRow opp"><span class="dN" id="dOpN">Rival</span><span class="dBar"><u id="dOpBar"></u><i id="dOpT">0%</i></span><span class="dP">📦 <b id="dOpP">0</b></span></div>
+  </div>
   <div class="powers">
     <div class="power on" id="pHp"><span>🔧</span><b id="hpTxt" style="font-size:15px">100%</b><i><u id="hpFill"></u></i></div>
     <div class="power on" id="pFuel"><span>⛽</span><b id="fuelTxt" style="font-size:15px">100%</b><i><u id="fuelFill"></u></i></div>
@@ -703,6 +751,7 @@
       <div class="mm-tag" data-i18n="mm_tag">Deliver More Than Just Packages</div>
       <div class="mx-grid">
       <button class="mx blue" data-page="pageDest"><span class="ico">🗺️</span><span class="tx"><b data-i18n="mm_map">Map</b><small data-i18n="mm_map_s">Explore Rangpur &amp; Nearby Areas</small></span><span class="chev">›</span></button>
+      <button class="mx orange" id="duelRow" data-page="pageDuel"><span class="ico">⚔️</span><span class="tx"><b>1v1 Duel</b><small>Race a friend live · Room code</small></span><span class="chev">›</span></button>
       <button class="mx purple" id="missionRow" data-page="pageMission"><span class="ico">🎯</span><span class="tx"><b data-i18n="mm_jobs">Daily Mission</b><small data-i18n="mm_jobs_s">Complete Today's Challenge</small></span><span class="chev">›</span></button>
       <button class="mx green" data-page="pageGarage"><span class="ico">🛠️</span><span class="tx"><b data-i18n="mm_garage">Garage</b><small data-i18n="mm_garage_s">Upgrade Your Bike &amp; Gear</small></span><span class="chev">›</span></button>
       <button class="mx red" data-page="pageBoard"><span class="ico">📊</span><span class="tx"><b data-i18n="mm_rides">My Rides</b><small data-i18n="mm_rides_s">Stats, Earnings &amp; Progress</small></span><span class="chev">›</span></button>
@@ -816,6 +865,12 @@
       <div class="sec">🎯 Daily Missions</div>
       <div class="secCard"><div id="missionList"></div></div>
     </div>
+        <div class="mpage" id="pageDuel">
+      <button class="backBtn" id="duelBack">‹ Back</button>
+      <div class="sec">⚔️ 1v1 Duel</div>
+      <div class="secCard" id="duelHome"></div>
+      <div class="secCard" id="duelLobby" style="display:none;"></div>
+    </div>
     <div class="mpage" id="pageRadio">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
       <div class="sec">📻 Radio FM</div>
@@ -857,6 +912,20 @@
   </div>
 </div>
 
+<div id="duelCount" class="hidden">3</div>
+<div class="overlay hidden" id="duelOver">
+  <div class="card">
+    <div class="emblem" id="dvIcon">🏆</div>
+    <h1 id="dvTitle" style="font-size:38px">YOU WIN!</h1>
+    <div class="bn" id="dvSub" style="font-size:20px;"></div>
+    <div id="dvRows" style="margin:12px 0 4px;"></div>
+    <div class="best" id="dvTime" style="margin:4px 0 12px;"></div>
+    <div class="overBtns">
+      <button class="btn" id="dvAgain" style="font-size:22px;background:#2d9c42;box-shadow:0 5px 0 #14521f;">🔁 Rematch</button>
+      <button class="btn" id="dvExit" style="font-size:22px;">🏠 Exit</button>
+    </div>
+  </div>
+</div>
 <div class="overlay hidden" id="settings">
   <div class="card">
     <h1 style="font-size:40px" data-i18n="set_title">⚙️ Settings</h1>
@@ -979,7 +1048,6 @@
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-database-compat.js"></script>
 <script src="vendor/firebase-analytics-compat.js"></script>
-<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script>
 (function () {
 'use strict';
@@ -988,6 +1056,7 @@ var $ = function (id) { return document.getElementById(id); };
 var rnd = function (a, b) { return a + Math.random() * (b - a); };
 var pick = function (a) { return a[(Math.random() * a.length) | 0]; };
 var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+var DUEL = { on: false }; // 1v1 duel mode flag
 
 if (typeof THREE === 'undefined') {
   $('loading').textContent = 'Could not load 3D engine. Please check internet and reload.';
@@ -3252,93 +3321,6 @@ try {
     try { if (typeof firebase.analytics === 'function') { window._fa = firebase.analytics(); } } catch (e) {}
   }
 } catch (e) { fbReady = false; }
-/* ---------- CrazyGames portal: SDK v3 + portal-safe mode (fail-safe: SDK na thakleo game chole) ---------- */
-var CG_PORTAL = false, cgReady = false;
-try { var _cgh = (location.hostname || '').toLowerCase(); if (_cgh.indexOf('crazygames.com') >= 0) CG_PORTAL = true; } catch (e) {}
-function cgInit() {
-  try {
-    if (!window.CrazyGames || !window.CrazyGames.SDK || !window.CrazyGames.SDK.init) return;
-    window.CrazyGames.SDK.init().then(function () {
-      cgReady = true; CG_PORTAL = true;
-      try { applyPortalMode(); applyPortalPerf(); } catch (e) {}
-      try { cgLoaded(); } catch (eCL) {}
-      try { cgSyncAudio(); } catch (eS) {}
-      try { // CG audio/mute setting change shunbo (SDK priority)
-        var _gm = window.CrazyGames.SDK.game;
-        if (_gm && _gm.addSettingsChangeListener) _gm.addSettingsChangeListener(function () { try { cgSyncAudio(); } catch (e2) {} });
-      } catch (eL) {}
-      try { logEv('cg_ready', {}); } catch (e2) {}
-    }).catch(function () {});
-  } catch (e) {}
-}
-function cgSyncAudio() { // CG muteAudio setting-er priority (Full impl requirement)
-  try {
-    var gm = window.CrazyGames.SDK.game;
-    if (gm && gm.settings && gm.settings.muteAudio && !muted) {
-      muted = true;
-      var mb = $('mute'); if (mb) mb.textContent = '🔇';
-      try { engineStop(); } catch (e) {}
-    }
-  } catch (e) {}
-}
-function cgProgress() { // completion % + context (endless: map progress = completion)
-  try {
-    if (!cgReady) return;
-    var gm = window.CrazyGames.SDK.game;
-    try {
-      var pct = 0;
-      try { pct = Math.round((unlockLeg / (LEGS.length - 1)) * 100); } catch (e) {}
-      if (gm.reportGameCompletedPercentage) gm.reportGameCompletedPercentage(Math.max(0, Math.min(100, pct)));
-    } catch (e2) {}
-    try { if (gm.setGameContext) gm.setGameContext({ leg: String(selLeg), best: String(best) }); } catch (e3) {}
-  } catch (e) {}
-}
-function cgHappy() { // record/achievement-e portal celebrate
-  try { if (cgReady && window.CrazyGames.SDK.game.happytime) window.CrazyGames.SDK.game.happytime(); } catch (e) {}
-}
-function cgGame(start) { // gameplay start/stop event (download-size + ad pacing measure)
-  try {
-    if (!cgReady || !window.CrazyGames || !window.CrazyGames.SDK || !window.CrazyGames.SDK.game) return;
-    var gm = window.CrazyGames.SDK.game;
-    if (start && gm.gameplayStart) gm.gameplayStart();
-    if (!start && gm.gameplayStop) gm.gameplayStop();
-  } catch (e) {}
-}
-var cgOverCount = 0;
-function cgMidgame() { // game-over ad (Full launch) — ad fail/block hole chupchap continue
-  try {
-    if (!cgReady) return;
-    var S = window.CrazyGames.SDK;
-    if (!S.ad || !S.ad.requestAd) return;
-    cgOverCount++;
-    if (cgOverCount % 2 === 0) return; // proti 2nd game-over-e ad (pacing)
-    S.ad.requestAd('midgame', function () {}, function () {});
-  } catch (e) {}
-}
-function cgRewarded(ok, no) { // rewarded ad — ok/no callback, SDK na thakle no()
-  try {
-    if (!cgReady) { try { no(); } catch (e2) {} return; }
-    var S = window.CrazyGames.SDK;
-    if (!S.ad || !S.ad.requestAd) { try { no(); } catch (e3) {} return; }
-    S.ad.requestAd('rewarded', function () { try { ok(); } catch (e4) {} }, function () { try { no(); } catch (e5) {} });
-  } catch (e) { try { no(); } catch (e6) {} }
-}
-function applyPortalMode() { // portal iframe: install + external share lukano
-  try {
-    ['installBtn', 'splashInstall'].forEach(function (id) { var el = $(id); if (el) el.style.display = 'none'; });
-    ['fbBtn', 'msgBtn', 'waBtn', 'copyBtn'].forEach(function (id) { var b = $(id); if (b) b.style.display = 'none'; });
-  } catch (e) {}
-}
-function applyPortalPerf() { // portal/QA device: stable fps (4GB Chromebook safe)
-  try {
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    try { sunLight.castShadow = true; sunLight.shadow.mapSize.set(1024, 1024); if (sunLight.shadow.map) { sunLight.shadow.map.dispose(); sunLight.shadow.map = null; } } catch (e) {}
-  } catch (e2) {}
-}
-function cgLoaded() { // loading sesh + menu ready
-  try { if (cgReady && window.CrazyGames.SDK.game.loadingStop) window.CrazyGames.SDK.game.loadingStop(); } catch (e) {}
-}
 function logEv(n, p) { try { if (window._fa) window._fa.logEvent(n, p || {}); } catch (e) {} }
 try { window.addEventListener('error', function (e) { try { logEv('js_err', { m: String((e && e.message) || 'err').slice(0, 120) }); } catch (e2) {} }); } catch (e3) {} // real-player crash log (analytics-e dekha jabe)
 function cloudSave() { // local + cloud — sob save ekhan diye
@@ -3464,21 +3446,7 @@ function spinInfo() {
 function doSpin() {
   try {
     var sb0 = $('spinBtn');
-    if (!spinInfo().can) { // spin shesh — portal-e rewarded ad-e extra spin
-      if (sb0 && sb0._adMode && cgReady) {
-        sb0._adMode = false;
-        cgRewarded(function () {
-          var rw2 = 100 + ((Math.random() * 5) | 0) * 50;
-          bankCoins += rw2;
-          try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
-          cloudSave(); updateMenuBest();
-          var sm = $('spinMsg'); if (sm) sm.textContent = '🎉 +' + rw2 + '!';
-          var sb = $('spinBtn'); if (sb) sb.style.display = 'none';
-          try { confettiBurst(); } catch (e2) {}
-          try { logEv('spin_ad', { rw: rw2 }); } catch (e3) {}
-          sfx.coin();
-        }, function () {});
-      }
+    if (!spinInfo().can) { // spin shesh
       return;
     }
     var r = Math.random(), rw = r < 0.3 ? 50 : r < 0.55 ? 80 : r < 0.75 ? 100 : r < 0.88 ? 150 : r < 0.96 ? 200 : r < 0.99 ? 300 : 500;
@@ -3592,11 +3560,10 @@ function renderDaily() {
       var sv = $('dailySave'), off = saveStreakOffer();
       if (sv) sv.style.display = off ? 'inline-block' : 'none';
     } catch (e) {}
-    try { // daily spin: dine 1 bar (portal-e ad dekhe extra spin)
+    try { // daily spin: dine 1 bar 
       var sb2 = $('spinBtn'), sm2 = $('spinMsg'), si = spinInfo();
       if (sb2) {
-        if (si.can) { sb2.style.display = 'inline-block'; sb2.textContent = 'SPIN'; sb2._adMode = false; }
-        else if (typeof cgReady !== 'undefined' && cgReady) { sb2.style.display = 'inline-block'; sb2.textContent = '📺 Ad Spin'; sb2._adMode = true; }
+        if (si.can) { sb2.style.display = 'inline-block'; sb2.textContent = 'SPIN'; }
         else sb2.style.display = 'none';
       }
       if (sm2 && si.can) sm2.textContent = bn ? '🎡 ফ্রি স্পিন বাকি!' : '🎡 Free spin left!';
@@ -3707,7 +3674,7 @@ function myCode() { // 6-char recovery code, uid theke stable
 var lastMidSave = 0;
 function midRunSave(force) { // run-er majhe tab close/call ele progress bachao
   try {
-    if (state !== 'play') return;
+    if (state !== 'play' || DUEL.on) return;
     var now = Date.now();
     if (!force && now - lastMidSave < 15000) return;
     lastMidSave = now;
@@ -4217,8 +4184,8 @@ var combo = 0, comboT = 0, lastComboShown = -1, nmStreak = 0;
 var xp = 0, riderLevel = 1, bankCoins = 0, upSpeed = 0, upHandle = 0, bagLevel = 0, upFuel = 0, upMag = 0, upNitro = 0;
 var UMAX = 8; // skill max level
 function fuelEff() { return Math.max(0.55, 1 - 0.06 * upFuel); } // kom tel khoroch
-function magDur() { return 8 + 2 * upMag; } // magnet koto sec
-function magRange() { return 22 + 3 * upMag; } // koto dur theke tane
+function magDur() { return 8 + 2 * (DUEL.on ? 0 : upMag); } // magnet koto sec
+function magRange() { return 22 + 3 * (DUEL.on ? 0 : upMag); } // koto dur theke tane
 var playerName = '', selBike = 0, playerDiv = '', tParcels = 0, tStars = 0, tCrash = 0, nmTotal = 0, runCrash = 0, pendingClean = false;
 try { tStars = +localStorage.getItem('rrStars') || 0; } catch (e) {}
 try { tCrash = +localStorage.getItem('rrCrash') || 0; } catch (e) {}
@@ -4424,7 +4391,7 @@ var BIKE_STATS = [
   { spd: 1, hnd: 0.15, fuel: 0.95, dmg: 14, tag: 'শক্ত বডি' },
   { spd: 3, hnd: 0.20, fuel: 1.15, dmg: 18, tag: 'রেসিং বাইক' }
 ];
-function bikeStat() { return BIKE_STATS[selBike % BIKE_STATS.length]; }
+function bikeStat() { return BIKE_STATS[(DUEL.on ? 0 : selBike) % BIKE_STATS.length]; }
 function bikeStatText(i) {
   var b = BIKE_STATS[i % BIKE_STATS.length];
   return F('bike_tpl', bikeTag(i % BIKE_STATS.length), b.spd, Math.round(b.hnd * 100), b.fuel.toFixed(2), b.dmg);
@@ -4451,7 +4418,7 @@ try {
   try { var ow0 = JSON.parse(localStorage.getItem('rrOwned') || 'null'); ownedBikes = (ow0 && ow0.length) ? ow0 : null; } catch (e) { ownedBikes = null; }
   if (!ownedBikes) { ownedBikes = []; for (var bi0 = 0; bi0 < 6; bi0++) { try { if ((BIKE_GEMS[bi0] || 0) > 0) continue; } catch (eG) {} if (riderLevel >= bi0 + 1) ownedBikes.push(bi0); } if (!ownedBikes.length) ownedBikes = [0]; }
 } catch (e) {}
-function bagCap() { return BAG_CAP[Math.min(bagLevel, 2)]; }
+function bagCap() { return BAG_CAP[DUEL.on ? 0 : Math.min(bagLevel, 2)]; }
 var fuel = 100, fuelWarned = false, fuelCritT = 0, endReason = 'crash', arrivedName = '', OVER_T0 = '', OVER_S0 = '';
 var fuelOut = false;
 var onBridge = false, bridgeT = 0;
@@ -5516,11 +5483,11 @@ function showTut(ks) {
   } catch (e) {}
 }
 function startGame(keepScore) {
-  try { clampLeg(); } catch (e) {} // strict: last city thekei suru
-  try { if (!CG_PORTAL && !localStorage.getItem('rrTut')) { showTut(keepScore); return; } } catch (e) {} // portal-e tutorial skip: instant gameplay
+  if (!DUEL.on) try { clampLeg(); } catch (e) {} // strict: last city thekei suru
+  try { if (!DUEL.on && !localStorage.getItem('rrTut')) { showTut(keepScore); return; } } catch (e) {}
   if (state === 'menu') { justFinished = -1; carryScore = 0; }
   var emergency = '';
-  if (hpStore <= 0) { // bike full smashed: repair na kore ride noy
+  if (hpStore <= 0 && !DUEL.on) { // bike full smashed: repair na kore ride noy
     var rc0 = repairCost();
     if (bankCoins < rc0) { // taka na thakle emergency 35% free (atke thakbe na)
       hpStore = 35;
@@ -5538,7 +5505,7 @@ function startGame(keepScore) {
   if (!bikeUnlocked(selBike)) selBike = firstOwned();
   clearWorld();
   addLegGate();
-  hp = hpStore; invT = 0; finalDead = false;
+  hp = DUEL.on ? 100 : hpStore; invT = 0; finalDead = false;
   heat = 0; bustedFine = 0; try { chaseStop(); } catch (e) {}
   zoneIdx = -1; nextTrainDist = 900; nextSvcDist = 500; nextFerryDist = 700; delStreak = 0; emgFuel = false;
   dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0; skidX = 0; skidV = 0; skidT = 0;
@@ -5553,8 +5520,8 @@ function startGame(keepScore) {
   try { groundMat.color.setHex(GROUND_TINT[legTheme()] || 0x6b9450); } catch (e) {}
   magnetT = 0; doubleT = 0; nitroT = 0; crashT = 0; shake = 0; hints = { banner: 0, low: 0, jam: 0, goat: 0, gate: 0 }; lastLocIdx = -1;
   var EP0 = evP();
-  NITRO_MAX = (EP0.nitroDur || 6) + upNitro;
-  fuelDrainK = EP0.fuelX || 1;
+  NITRO_MAX = (EP0.nitroDur || 6) + (DUEL.on ? 0 : upNitro);
+  fuelDrainK = EP0.fuelX || 1; if (DUEL.on) fuelDrainK = 0;
   fuelPickAmt = EP0.fuelPick || 35;
   scoreXK = EP0.scoreX || 1;
   try { var _tod = evTod(EP0); if (_tod === 'night') dayT = 0.52; else if (_tod === 'day') dayT = 0.8; } catch (eT) {} // event time: day/night/cycle
@@ -5568,10 +5535,9 @@ function startGame(keepScore) {
   state = 'play'; document.body.dataset.ui = 'play';
   try { claimFestBike(); } catch (e) {} // festival event-e limited bike gift
   if (practice) toast(elHint, lang === 'bn' ? '🛡️ প্র্যাকটিস মোড!' : '🛡️ Practice mode!', 2000);
-  try { refreshGhosts(); } catch (e2) {} // ghost score list (nijer best + bondhu)
-  try { cgGame(true); } catch (eCG) {} // CG: gameplay start
-  try { fetchFriendsBoard(function () {}); } catch (e3) {} // porer run-er ghost fresh hobe
-  try { replayStart(); } catch (e) {} // replay clip record suru
+  if (!DUEL.on) try { refreshGhosts(); } catch (e2) {} // ghost score list (nijer best + bondhu)
+  if (!DUEL.on) try { fetchFriendsBoard(function () {}); } catch (e3) {} // porer run-er ghost fresh hobe
+  if (!DUEL.on) try { replayStart(); } catch (e) {} // replay clip record suru
   try { logEv('run_start', { leg: selLeg, ev: eventMode || 'none' }); } catch (e) {}
   if (emergency) toast(elHint, emergency, 2800);
   if (keepScore && score > 0) toast(elLoc, F('leg_keep', legName(leg()), Math.floor(score), leg().len), 3200);
@@ -5594,13 +5560,12 @@ function pauseGame() {
     }
   } catch (e) {}
   try { engineStop(); } catch (e2) {} try { radioTick(); } catch (e3) {}
-  try { cgGame(false); } catch (eCG) {}
 }
 function resumeGame() { if (state === 'pause') { state = 'play'; document.body.dataset.ui = 'play'; $('pause').classList.add('hidden'); last = performance.now(); try { engineStart(); } catch (e) {} try { radioTick(); } catch (e) {} } }
 /* ---------- police chase: checkpoint-e overspeed → dhawa → crash = dhora ---------- */
 var heat = 0, heatT = 0, graceT = 0, sirenT = 0, bustedFine = 0;
 function chaseStart() {
-  if (heat > 0) return;
+  if (heat > 0 || DUEL.on) return;
   heat = 1; heatT = 0; graceT = 2; sirenT = 0;
   try {
     var cp = $('chasePill'); if (cp) cp.style.display = 'flex';
@@ -5641,8 +5606,8 @@ function die(killer) {
   if (state !== 'play' || invT > 0) return;
   try { if (killer) lastKiller = killer; } catch (e) {}
   if (practice) { try { toast(elHint, lang === 'bn' ? '🛡️ প্র্যাকটিস — ক্র্যাশ নেই!' : '🛡️ Practice — no crash!', 1500); } catch (e) {} return; } // practice mode: obinashi
-  try { chaseBusted(); } catch (e) {}
-  hp -= bikeStat().dmg; // bike damage — morbena, damage hobe
+  if (!DUEL.on) try { chaseBusted(); } catch (e) {}
+  if (!DUEL.on) hp -= bikeStat().dmg; // duel: crash = time loss only // bike damage — morbena, damage hobe
   state = 'crash'; crashT = 0; shake = 1.7; hitStop = 0.09; // juice: jhakuni + freeze
   try { if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) shake = 0; } catch (eRM) {}
   // crash slow-mo: 0.6s slow motion + parcel bhanga toast
@@ -5656,7 +5621,7 @@ function die(killer) {
   crashBurst(player.position.x, py + 1); // dhulo + tukro chitke
   try { crashBurst(player.position.x - 0.5, py + 1.6); } catch (eB) {}
   if (carried > 0) { carried = Math.floor(carried / 2); } // crash-e ordhek parcel nosto (baki ordhek beche jay)
-  orderCrash = true; nmStreak = 0; runCrash++; tCrash++; delStreak = 0; // rating katbe + near-miss streak reset
+  orderCrash = true; nmStreak = 0; runCrash++; if (!DUEL.on) tCrash++; delStreak = 0; // rating katbe + near-miss streak reset
   try { localStorage.setItem('rrCrash', String(tCrash)); } catch (e) {}
   if (hp <= 0) { hp = 0; finalDead = true; toast(elHint, T('crash_dead'), 2000); }
   else { finalDead = false; invT = 2.5; toast(elHint, F('crash_hit', hp), 2000); }
@@ -5671,7 +5636,7 @@ function endRun() {
       else { ot.textContent = T('crash_t'); os.textContent = T('crash_s'); }
     }
   var s = Math.floor(score), isBest = s > best;
-  if (isBest) { best = s; try { localStorage.setItem('rangpurRushBest', String(best)); } catch (e) {} try { cgHappy(); } catch (eH) {} }
+  if (isBest) { best = s; try { localStorage.setItem('rangpurRushBest', String(best)); } catch (e) {} }
   // bank + xp save
   if (dblRun) { coinCount *= 2; dblRun = false; }
   bankCoins += coinCount;
@@ -5711,11 +5676,9 @@ function endRun() {
   $('oScore').textContent = s; $('oCoins').textContent = coinCount; $('oParcel').textContent = parcelCount;
   prebuildCard(s, parcelCount, coinCount); // auto result card — ek tap-e share
   try { replayStop(false); } catch (e) {} // last 10s clip ready — Clip button-e share
-  try { cgGame(false); cgMidgame(); cgProgress(); } catch (eCG) {} // CG: gameplay stop + midgame ad + progress
   if (challengeTarget > 0 && s >= challengeTarget) {
     ot.textContent = '🏆 ' + (lang === 'bn' ? 'চ্যালেঞ্জ জিতেছ!' : 'Challenge beaten!');
     try { logEv('challenge_win', { t: challengeTarget, s: s }); } catch (e) {}
-    try { cgHappy(); } catch (eH) {}
     challengeTarget = 0;
     try { readChallenge(); } catch (e) {}
   }
@@ -5773,7 +5736,7 @@ $('menuBtn').addEventListener('click', function (e) {
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
 });
   $('resumeBtn').addEventListener('click', resumeGame);
-  $('quitBtn').addEventListener('click', function () { try { $('menuBtn').click(); } catch (e) {} });
+  $('quitBtn').addEventListener('click', function () { try { if (DUEL.on) { duelQuit(); return; } $('menuBtn').click(); } catch (e) {} });
 /* ---------- photo mode: pause theke camera ghuriye screenshot ---------- */
 var photoOn = false, photoYaw = 0, photoPitch = 0, photoZoom = 1, photoDrag = null;
 function applyPhotoCam() {
@@ -6002,7 +5965,7 @@ function dlCard(card, name) { // card download helper
 }
 function sendCardText(card, txt, tag) {
   try {
-    if (!CG_PORTAL) {
+    {
       var f = new File([card.blob], 'ride-for-life.png', { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [f] })) {
         navigator.share({ files: [f], title: 'Ride For Life', text: txt }).then(function () {
@@ -6014,8 +5977,7 @@ function sendCardText(card, txt, tag) {
   } catch (e) {}
   try {
     dlCard(card);
-    if (!CG_PORTAL) { try { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); } catch (e2) {} }
-    else { try { toast(elHint, lang === 'bn' ? '💾 কার্ড ডাউনলোড!' : '💾 Card downloaded!', 2000); } catch (e3) {} }
+    try { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); } catch (e2) {}
   } catch (e) {}
 }
 function sendCard(card, s) { sendCardText(card, shareText(s), 'score'); }
@@ -6300,7 +6262,7 @@ function fetchFriendsBoard(cb) {
   } catch (e) { friendsFetching = false; cb([]); }
 }
 $('pauseBtn').addEventListener('click', function (e) { e.currentTarget.blur(); pauseGame(); });
-$('mute').addEventListener('click', function (e) { muted = !muted; e.currentTarget.textContent = muted ? '🔇' : '🔊'; e.currentTarget.blur(); try { cgSyncAudio(); if (muted) e.currentTarget.textContent = '🔇'; } catch (eCG) {} if (muted) engineStop(); else if (state === 'play') engineStart(); try { radioTick(); } catch (e2) {} });
+$('mute').addEventListener('click', function (e) { muted = !muted; e.currentTarget.textContent = muted ? '🔇' : '🔊'; e.currentTarget.blur(); if (muted) engineStop(); else if (state === 'play') engineStart(); try { radioTick(); } catch (e2) {} });
 $('settingsBtn').addEventListener('click', function (e) {
   e.stopPropagation();
   if (state === 'play') { state = 'pause'; document.body.dataset.ui = 'pause'; }
@@ -6488,10 +6450,11 @@ function update(dt) {
     var bst = bikeStat();
     var L0 = (typeof leg === 'function' ? leg().len : 6000) || 6000;
     var progK = clamp(dist / L0, 0, 1); // joto rasta agabe toto speed barbe
-    var baseSp = 19 + selLeg * 1.1 + progK * 23 + upSpeed * 1.5 + bst.spd;
-    var target = Math.min(48 + upSpeed * 2 + bst.spd, baseSp * wetK * fuelK * floodK);
-    if (nitroT > 0) target = Math.min(target + 16, 62 + upSpeed * 2); // nitro boost
-    if (slipT > 0) target = Math.min(target + 5, 58 + upSpeed * 2); // slipstream bonus
+    var uS = DUEL.on ? 0 : upSpeed;
+    var baseSp = 19 + selLeg * 1.1 + progK * 23 + uS * 1.5 + bst.spd;
+    var target = Math.min(48 + uS * 2 + bst.spd, baseSp * wetK * fuelK * floodK);
+    if (nitroT > 0) target = Math.min(target + 16, 62 + uS * 2); // nitro boost
+    if (slipT > 0) target = Math.min(target + 5, 58 + uS * 2); // slipstream bonus
     var isBrake = keyBrake || btnBrake || brakeT > 0;
     if (brakeT > 0) brakeT -= dt;
     if (isBrake) {
@@ -6532,12 +6495,13 @@ function update(dt) {
     dist += speed * dt;
     xp += speed * dt * 0.1;
     score += speed * dt * (doubleT > 0 ? 2 * scoreXK : scoreXK);
-    try { ghostTick(); } catch (eG) {}
+    if (!DUEL.on) try { ghostTick(); } catch (eG) {}
     if (missionInfo().id === 'score') addMissionProgress(speed * dt * (doubleT > 0 ? 2 * scoreXK : scoreXK));
     if (missionInfo().id === 'distance') addMissionProgress(speed * dt);
     try { chaseTick(dt); } catch (e) {}
     try { zoneTick(); } catch (e) {}
     // gontobye pouchano?
+    if (DUEL.on) { if (!arrived && dist >= leg().len) { arrived = true; duelFinish(); } } else
     if (!arrived && dist >= leg().len) {
       arrived = true; endReason = 'arrive'; arrivedName = legName(leg());
       var ab = Math.round((500 + selLeg * 200) * (evP().bonusX || 1));
@@ -6816,7 +6780,7 @@ function update(dt) {
 
   /* player physics */
   if (state === 'play' || state === 'menu' || state === 'crash') {
-    player.position.x += (targetX + curveAt(0) - player.position.x) * Math.min(1, dt * (14 + upHandle * 3) * (1 + bikeStat().hnd));
+    player.position.x += (targetX + curveAt(0) - player.position.x) * Math.min(1, dt * (14 + (DUEL.on ? 0 : upHandle) * 3) * (1 + bikeStat().hnd));
     if (!onGround) {
       vy -= GRAV * dt; py += vy * dt;
       if (py <= 0) {
@@ -7059,7 +7023,8 @@ function update(dt) {
   var swayAmp = (weather === 'storm' ? 0.07 : 0.018); // sobsomoy halka dol — jibonto gach
   var swaySpd = (weather === 'storm' ? 6 : 1.2);
   for (var swi2 = 0; swi2 < swayTrees.length; swi2++) { try { var swo2 = swayTrees[swi2]; swo2.g.rotation.z = swo2.base + Math.sin(time * swaySpd + swo2.ph) * swayAmp; } catch (e) {} }
-  for (var bi = 0; bi < flyBirds.length; bi++) { // pakhi ore + dana jhaptae    var bd = flyBirds[bi];
+  for (var bi = 0; bi < flyBirds.length; bi++) { // pakhi ore + dana jhaptae
+    var bd = flyBirds[bi];
     bd.g.position.x += dt * bd.sp;
     if (bd.g.position.x > 100) { bd.g.position.x = -100; bd.g.position.y = rnd(18, 30); bd.g.position.z = rnd(-140, -50); }
     var flap = Math.sin(time * 10 + bd.ph) * 0.55;
@@ -7394,6 +7359,7 @@ function frame(now) {
   if (slowT > 0 || wheelOpen) { if (slowT > 0) slowT -= dt; timeScale = 0.3; } else timeScale = 1;
   time += dt * timeScale;
   update(dt * timeScale);
+  if (DUEL.on) { try { duelTick(); } catch (eD) {} }
   autoQuality(dt);
   try { if (state === 'play') midRunSave(false); } catch (e) {} // 15s por por autosave
   renderer.render(scene, camera);
@@ -8282,7 +8248,7 @@ function boot() {
   loadProgress('Loading audio…');
   try { engineEnsureAudio(); } catch (e) {}
   loadProgress('Preparing world…');
-  try { if ('serviceWorker' in navigator && !CG_PORTAL) navigator.serviceWorker.register('sw.js'); } catch (e) {}
+  try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   loadProgress('Almost ready…');
   OVER_T0 = ($('overTitle') || {}).textContent || ''; OVER_S0 = ($('overSub') || {}).textContent || '';
   var bb = $('brakeBtn');
@@ -8333,8 +8299,6 @@ function boot() {
   applyLang();
   applyBikeColor(); applyCustomization(); renderCustomize(); renderGarage(); renderBoard(); renderDest();
   try { applyHand(); applyTextCB(); applyLite(); } catch (eQ) {} // QoL prefs
-  try { cgInit(); if (CG_PORTAL) { applyPortalMode(); applyPortalPerf(); } } catch (eCG) {} // CrazyGames portal
-  try { cgLoaded(); } catch (eCL) {}
   cloudLoad(); loadGameConfig();
   if (selLeg > unlockLeg) { selLeg = unlockLeg; try { localStorage.setItem('rrLeg', String(selLeg)); } catch (e) {} renderDest(); }
   document.body.dataset.ui = 'menu';
@@ -8342,14 +8306,6 @@ function boot() {
   selDivIdx = playerDiv ? divIndex(playerDiv) : -1;
   if (playerName) { try { $('nameInput').value = playerName; } catch (e) {} }
   renderDivGrid();
-  try { if (CG_PORTAL && !playerName) { selDivIdx = 4; var _gi = $('nameInput'); if (_gi && !_gi.value) _gi.value = 'Guest'; renderDivGrid(); } } catch (eG) {} // portal QA: 1-click-e gameplay
-  try { if (CG_PORTAL && !playerName && !playerDiv) { // portal: gate charai menu — QA/bot 1 click-e gameplay
-    playerName = 'Guest' + Math.floor(100 + Math.random() * 900);
-    playerDiv = 'rangpur';
-    try { localStorage.setItem('rrName', playerName); localStorage.setItem('rrDiv', playerDiv); } catch (eG2) {}
-    selDivIdx = 4;
-    try { renderDivGrid(); } catch (eG3) {}
-  } } catch (eG) {}
   if (!playerName || !playerDiv) { $('nameOverlay').classList.remove('hidden'); try { $('nameOverlay').scrollTop = 0; var nc = $('nameCard'); if (nc) nc.scrollTop = 0; } catch (e) {} }
   $('bikeL').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(-1); });
   $('bikeR').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(1); });
@@ -8498,6 +8454,438 @@ function boot() {
   last = performance.now();
   requestAnimationFrame(frame);
 }
+/* ================= 1v1 DUEL — Firebase Realtime DB friend rooms =================
+   Flow:  Menu -> 1v1 Duel -> Create Room (code) / Join Room (code)
+          Lobby: host picks map, guest taps Ready, host taps START
+          Both get the same synced countdown, each renders their OWN world,
+          live progress + parcels are pushed to  duel_rooms/<CODE>/players/<uid>
+          First rider to reach the destination wins (atomic transaction on /winner).
+   Fair play: same base bike, no upgrades, no fuel drain, crashes only cost time.
+   Progression (coins/xp/bike hp/map unlock) is snapshot before the duel and restored after. */
+var DX = DUEL;
+DX.room = null; DX.ref = null; DX.myRef = null; DX.data = null; DX.isHost = false; DX.offset = 0;
+DX.startedRound = -1; DX.over = false; DX.fin = false; DX.counting = false; DX.joining = false;
+DX.lastSend = 0; DX.t0 = 0; DX.sv = null; DX.cb = null; DX.connCb = null; DX.forfeitT = null; DX.name = ''; DX.lastKey = '';
+try { DX.name = localStorage.getItem('rrDuelName') || ''; } catch (e) {}
+try { if (fbReady && FBDB) FBDB.ref('.info/serverTimeOffset').on('value', function (s) { DX.offset = +s.val() || 0; }); } catch (e) {}
+
+function dl(en, bn) { return lang === 'bn' ? bn : en; }
+function dEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function dAv(u) { return (typeof u === 'string' && (/^https?:\/\//.test(u) || /^data:image\//.test(u))) ? u : 'ride-for-life-logo.png'; }
+function srvNow() { return Date.now() + DX.offset; }
+function dFmt(ms) { ms = Math.max(0, ms | 0); var s = ms / 1000, m = Math.floor(s / 60); return m + ':' + ('0' + (s - m * 60).toFixed(1)).slice(-4); }
+function dToast(msg) { try { toast(elHint, msg, 2400); } catch (e) {} }
+function dErr(e) {
+  try { console.error('[duel]', e); } catch (e2) {}
+  var c = e && e.code ? String(e.code) : '';
+  if (c.indexOf('PERMISSION') >= 0 || String(e).indexOf('permission') >= 0) dToast(dl('Firebase rules block "duel_rooms" — add the rule', 'Firebase rules-এ "duel_rooms" allow করো'));
+  else dToast(dl('Network error, try again', 'নেট সমস্যা, আবার চেষ্টা করো'));
+}
+function dMyName() {
+  var el = $('duelName'), n = el ? (el.value || '').replace(/[<>]/g, '').trim().slice(0, 14) : '';
+  if (!n) n = DX.name || playerName || dl('Rider', 'রাইডার');
+  DX.name = n; try { localStorage.setItem('rrDuelName', n); } catch (e) {}
+  return n;
+}
+function genCode() { var c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s = ''; for (var i = 0; i < 5; i++) s += c.charAt((Math.random() * c.length) | 0); return s; }
+function mkPlayer(name) { return { n: name, av: getAvatar(), d: 0, p: 0, s: 0, f: 0, ms: 0, st: 'on', ready: false }; }
+function oppUid(r) { return r ? (r.host === fbUid ? r.guest : r.host) : null; }
+function oppOf(r) { var u = oppUid(r); return (u && r.players) ? (r.players[u] || null) : null; }
+
+/* ---------- create / join / leave ---------- */
+function duelCreate() {
+  if (!fbReady || !FBDB) { dToast(dl('No connection', 'নেট নেই')); return; }
+  if (DX.room || DX.joining) return;
+  DX.joining = true;
+  var name = dMyName(), tries = 0;
+  (function attempt() {
+    var code = genCode(), ref = FBDB.ref('duel_rooms/' + code);
+    var room = { host: fbUid, created: Date.now(), leg: clamp(selLeg, 0, LEGS.length - 1), st: 'lobby', round: 0, players: {} };
+    room.players[fbUid] = mkPlayer(name);
+    ref.transaction(function (cur) {
+      return (cur && cur.created && Date.now() - cur.created < 3 * 3600 * 1000) ? undefined : room;
+    }, undefined, false).then(function (res) {
+      if (res.committed) { DX.joining = false; enterRoom(code, true); }
+      else if (++tries < 6) attempt();
+      else { DX.joining = false; dToast(dl('Could not create room', 'রুম বানানো গেল না')); }
+    }).catch(function (e) { DX.joining = false; dErr(e); });
+  })();
+}
+function duelJoin(code) {
+  if (!fbReady || !FBDB) { dToast(dl('No connection', 'নেট নেই')); return; }
+  code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 5) { dToast(dl('Enter the 5-letter room code', '৫ অক্ষরের রুম কোড দাও')); return; }
+  if (DX.room || DX.joining) return;
+  DX.joining = true;
+  var name = dMyName(), ref = FBDB.ref('duel_rooms/' + code);
+  ref.once('value').then(function (snap) {
+    var r = snap.val();
+    if (!r) throw 'nf';
+    if (r.host === fbUid) { DX.joining = false; enterRoom(code, true); return null; }
+    if (r.guest && r.guest !== fbUid) throw 'full';
+    if (r.st !== 'lobby' && r.guest !== fbUid) throw 'busy';
+    return ref.child('guest').transaction(function (cur) { return (!cur || cur === fbUid) ? fbUid : undefined; }, undefined, false).then(function (res) {
+      if (!res.committed) throw 'full';
+      return ref.child('players/' + fbUid).set(mkPlayer(name)).then(function () { DX.joining = false; enterRoom(code, false); });
+    });
+  }).catch(function (e) {
+    DX.joining = false;
+    if (e === 'nf') dToast(dl('Room not found', 'রুম পাওয়া যায়নি'));
+    else if (e === 'full') dToast(dl('Room is full', 'রুম ভরে গেছে'));
+    else if (e === 'busy') dToast(dl('Race already started', 'রেস শুরু হয়ে গেছে'));
+    else dErr(e);
+  });
+}
+function enterRoom(code, host) {
+  DX.room = code; DX.isHost = host; DX.ref = FBDB.ref('duel_rooms/' + code); DX.myRef = DX.ref.child('players/' + fbUid);
+  DX.startedRound = -1; DX.over = false; DX.fin = false; DX.counting = false; DX.data = null;
+  DX.cb = DX.ref.on('value', onRoom, function (e) { dErr(e); });
+  DX.connCb = FBDB.ref('.info/connected').on('value', function (s) {
+    if (!s.val() || !DX.myRef) return;
+    try { DX.myRef.child('st').onDisconnect().set('left'); } catch (e) {}
+    if (DX.data && DX.data.players && DX.data.players[fbUid]) { try { DX.myRef.child('st').set('on'); } catch (e2) {} }
+  });
+  try { showPage('pageDuel'); } catch (e) {}
+  duelOpen();
+}
+function duelDetach() {
+  try { if (DX.ref && DX.cb) DX.ref.off('value', DX.cb); } catch (e) {}
+  try { if (DX.connCb && FBDB) FBDB.ref('.info/connected').off('value', DX.connCb); } catch (e) {}
+  if (DX.forfeitT) { clearTimeout(DX.forfeitT); DX.forfeitT = null; }
+  DX.room = null; DX.ref = null; DX.myRef = null; DX.data = null; DX.cb = null; DX.connCb = null; DX.counting = false;
+}
+function duelLeave() {
+  var ref = DX.ref, myRef = DX.myRef, host = DX.isHost, had = !!DX.room;
+  duelDetach();
+  if (!had || !ref) return;
+  try { myRef.child('st').onDisconnect().cancel(); } catch (e) {}
+  try { if (host) ref.remove(); else { ref.child('guest').remove(); myRef.remove(); } } catch (e2) {}
+}
+function duelRoomGone() { // room deleted (host left / closed)
+  var racing = DX.on && !DX.over;
+  duelDetach();
+  if (racing) { duelShowResult({ u: fbUid, n: dMyName(), forfeit: 1 }); }
+  else if (!DX.on) { dToast(dl('Room closed', 'রুম বন্ধ হয়েছে')); duelOpen(); }
+}
+
+/* ---------- live room listener ---------- */
+function onRoom(snap) {
+  var r = snap.val();
+  DX.data = r;
+  if (!r) { duelRoomGone(); return; }
+  DX.isHost = (r.host === fbUid);
+  if (!DX.on || DX.over) { try { renderLobby(r); } catch (e) {} }
+  // synced race start (only fresh 'go' of a new round)
+  if (r.st === 'go' && !r.winner && r.startAt && r.round !== DX.startedRound && !DX.on && !DX.counting && r.players && r.players[fbUid]) {
+    if (srvNow() - r.startAt < 4000) { DX.startedRound = r.round; duelCountdown(r); }
+  }
+  if (DX.on && !DX.over) {
+    var opp = oppOf(r);
+    if (r.winner && r.winner.u !== fbUid) { duelShowResult(r.winner); return; }
+    if (!DX.fin) {
+      if (!opp) { duelClaim(); }
+      else if (opp.st === 'left') {
+        if (!DX.forfeitT) DX.forfeitT = setTimeout(function () {
+          DX.forfeitT = null;
+          var o = oppOf(DX.data);
+          if (DX.on && !DX.over && !DX.fin && (!o || o.st === 'left')) duelClaim();
+        }, 9000);
+      } else if (DX.forfeitT) { clearTimeout(DX.forfeitT); DX.forfeitT = null; }
+    }
+  }
+}
+
+/* ---------- lobby UI ---------- */
+function buildHome() {
+  var box = $('duelHome'); if (!box) return;
+  var nm = $('duelName') ? $('duelName').value : (DX.name || playerName || ''), cd = $('duelCode') ? $('duelCode').value : '';
+  box.innerHTML =
+    '<div style="font-size:14px;color:var(--panel-soft);margin:2px 0 8px;">' + dl('Race a friend live. First to reach the destination wins!', 'বন্ধুর সাথে লাইভ রেস। যে আগে গন্তব্যে পৌঁছাবে সে জিতবে!') + '</div>' +
+    '<div style="font-size:13px;font-weight:800;text-align:left;margin:6px 2px 3px;">🏷️ ' + dl('Your duel name', 'তোমার ডুয়েল নাম') + '</div>' +
+    '<input id="duelName" class="dvIn" maxlength="14" autocomplete="nickname" style="width:100%;" placeholder="' + dl('e.g. Sakib', 'যেমন: সাকিব') + '">' +
+    '<button class="btn dvBtn" data-act="create" style="width:100%;margin:12px 0 4px;background:#2d9c42;box-shadow:0 5px 0 #14521f;">🏁 ' + dl('Create Room', 'রুম বানাও') + '</button>' +
+    '<div style="margin:10px 0 6px;font-size:13px;color:var(--panel-soft);">— ' + dl('or join a friend', 'অথবা বন্ধুর রুমে ঢোকো') + ' —</div>' +
+    '<div style="display:flex;gap:8px;"><input id="duelCode" class="dvIn" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:4px;">' +
+    '<button class="btn dvBtn" data-act="join" style="white-space:nowrap;background:#3d6fa5;box-shadow:0 5px 0 #274a70;">' + dl('Join', 'জয়েন') + '</button></div>';
+  $('duelName').value = nm || DX.name || playerName || '';
+  $('duelCode').value = cd;
+}
+function duelOpen() {
+  var inRoom = !!(DX.room && DX.data);
+  if (!inRoom) buildHome();
+  if ($('duelHome')) $('duelHome').style.display = inRoom ? 'none' : '';
+  if ($('duelLobby')) $('duelLobby').style.display = inRoom ? '' : 'none';
+  if (inRoom) renderLobby(DX.data);
+}
+function renderLobby(r) {
+  var box = $('duelLobby'); if (!box || !r || !DX.room) return;
+  var hm = $('duelHome'); if (hm) hm.style.display = 'none';
+  box.style.display = '';
+  var host = r.players && r.players[r.host], gUid = r.guest, guest = (gUid && r.players) ? r.players[gUid] : null;
+  var li = clamp(r.leg | 0, 0, LEGS.length - 1), L = LEGS[li], imHost = (r.host === fbUid);
+  var going = (r.st === 'go' && !r.winner);
+  function prow(p, tag, ready) {
+    if (!p) return '<div class="dvP" style="opacity:.6;"><span style="font-size:30px;width:40px;text-align:center;">⏳</span><span class="nm">' + dl('Waiting for friend…', 'বন্ধুর জন্য অপেক্ষা…') + '</span></div>';
+    var st = p.st === 'left' ? '<span class="tg">📡 ' + dl('reconnecting', 'নেট নেই') + '</span>' : (ready === null ? '' : (p.ready ? '<span class="tg ok">✅ ' + dl('Ready', 'রেডি') + '</span>' : '<span class="tg">⏳ ' + dl('Not ready', 'রেডি না') + '</span>'));
+    return '<div class="dvP"><img src="' + dAv(p.av) + '" alt=""><span class="nm">' + dEsc(p.n) + '</span>' + (tag ? '<span class="tg" style="background:#b5651d;">' + tag + '</span>' : '') + st + '</div>';
+  }
+  var guestReady = !!(guest && guest.ready);
+  var h = '';
+  h += '<div style="font-size:13px;color:var(--panel-soft);">' + dl('Room code', 'রুম কোড') + '</div><div class="dvCode">' + dEsc(DX.room) + '</div>';
+  h += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">' +
+    '<button class="backBtn" data-act="copy" style="margin:0;">📋 ' + dl('Copy', 'কপি') + '</button>' +
+    '<button class="backBtn" data-act="share" style="margin:0;">📤 ' + dl('Invite', 'ইনভাইট') + '</button></div>';
+  h += '<div class="dvMap">' + (imHost && !going ? '<button class="arr" data-act="mapL">◀</button>' : '') +
+    '<div class="mn">📍 ' + dEsc(legName(L)) + '<small>' + L.len + ' m · ' + dEsc(legReal(L)) + '</small></div>' +
+    (imHost && !going ? '<button class="arr" data-act="mapR">▶</button>' : '') + '</div>';
+  h += prow(host, '👑 ' + dl('HOST', 'হোস্ট'), null);
+  h += prow(guest, '', true);
+  if (imHost) {
+    var can = !!(guest && guestReady && guest.st !== 'left') && !going;
+    h += '<button class="btn dvBtn" data-act="start" ' + (can ? '' : 'disabled') + ' style="width:100%;margin-top:10px;background:#2d9c42;box-shadow:0 5px 0 #14521f;' + (can ? '' : 'opacity:.5;') + '">▶ ' + dl('START RACE', 'রেস শুরু') + '</button>';
+    h += '<div style="font-size:12.5px;color:var(--panel-soft);margin-top:6px;">' + (!guest ? dl('Share the code with your friend', 'বন্ধুকে কোডটা পাঠাও') : (guestReady ? dl('Friend is ready — go!', 'বন্ধু রেডি — শুরু করো!') : dl('Waiting for friend to tap Ready', 'বন্ধুর রেডি চাপার অপেক্ষা'))) + '</div>';
+  } else {
+    var me = r.players && r.players[fbUid];
+    var mr = !!(me && me.ready);
+    h += '<button class="btn dvBtn" data-act="ready" style="width:100%;margin-top:10px;background:' + (mr ? '#7a4a1a' : '#2d9c42') + ';box-shadow:0 5px 0 ' + (mr ? '#4a2c0d' : '#14521f') + ';">' + (mr ? '↩ ' + dl('Not ready', 'রেডি বাতিল') : '✅ ' + dl("I'm Ready", 'আমি রেডি')) + '</button>';
+    h += '<div style="font-size:12.5px;color:var(--panel-soft);margin-top:6px;">' + dl('Host picks the map & starts the race', 'হোস্ট ম্যাপ ঠিক করে রেস শুরু করবে') + '</div>';
+  }
+  h += '<div style="font-size:12px;color:var(--panel-soft);margin:10px 0 6px;line-height:1.35;">' +
+    dl('Same bike for both · no upgrades · no fuel · a crash only costs time. Your coins & bike are not touched.', 'দুজনেরই একই বাইক · আপগ্রেড নেই · তেল লাগে না · ক্র্যাশ মানে শুধু সময় নষ্ট। তোমার কয়েন ও বাইক ঠিক থাকবে।') + '</div>';
+  h += '<button class="backBtn" data-act="leave" style="margin:4px 0 0;">🚪 ' + dl('Leave room', 'রুম ছাড়ো') + '</button>';
+  box.innerHTML = h;
+}
+function duelLink() { try { return location.origin + location.pathname + '?room=' + DX.room; } catch (e) { return ''; } }
+function dCopy(t, done) {
+  function fb() {
+    try { var ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;left:-999px;top:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); } catch (e) {}
+    done();
+  }
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(done, fb); return; } } catch (e) {}
+  fb();
+}
+function duelInviteText() { return dl('Race me in Ride For Life 1v1! Room code: ', 'Ride For Life 1v1-এ আমার সাথে রেস দাও! রুম কোড: ') + DX.room + ' ' + duelLink(); }
+function duelMapStep(d) {
+  if (!DX.ref || !DX.isHost || !DX.data) return;
+  var n = (clamp(DX.data.leg | 0, 0, LEGS.length - 1) + d + LEGS.length) % LEGS.length;
+  DX.ref.child('leg').set(n);
+}
+function duelReadyToggle() {
+  var me = DX.data && DX.data.players && DX.data.players[fbUid];
+  if (!me || !DX.myRef) return;
+  try { ac(); } catch (e) {}
+  DX.myRef.child('ready').set(!me.ready);
+}
+function duelStart() {
+  var r = DX.data;
+  if (!r || !DX.ref || r.host !== fbUid || !r.guest) return;
+  var g = r.players && r.players[r.guest];
+  if (!g || !g.ready || g.st === 'left') return;
+  try { ac(); } catch (e) {}
+  var u = { st: 'go', round: (r.round | 0) + 1, startAt: srvNow() + 3200, winner: null };
+  [fbUid, r.guest].forEach(function (id) {
+    u['players/' + id + '/d'] = 0; u['players/' + id + '/p'] = 0; u['players/' + id + '/s'] = 0;
+    u['players/' + id + '/f'] = 0; u['players/' + id + '/ms'] = 0; u['players/' + id + '/st'] = 'on';
+  });
+  u['players/' + r.guest + '/ready'] = false;
+  DX.ref.update(u).catch(dErr);
+}
+
+/* ---------- countdown + race begin ---------- */
+function duelCountdown(r) {
+  DX.counting = true;
+  var el = $('duelCount'); el.classList.remove('hidden');
+  try { ac(); } catch (e) {}
+  var lastN = 0;
+  (function tick() {
+    if (!DX.room || !DX.counting) { el.classList.add('hidden'); DX.counting = false; return; }
+    var left = r.startAt - srvNow();
+    if (left <= 0) { el.classList.add('hidden'); DX.counting = false; duelBegin(r); return; }
+    var n = Math.ceil(left / 1000);
+    if (n !== lastN) { lastN = n; el.textContent = n; try { sfx.move(); } catch (e2) {} }
+    setTimeout(tick, Math.min(100, left));
+  })();
+}
+function duelBegin(r) {
+  if (!DX.sv) DX.sv = { selLeg: selLeg, bankCoins: bankCoins, xp: xp, riderLevel: riderLevel, hpStore: hpStore, practice: practice, eventMode: eventMode };
+  DX.on = true; DX.over = false; DX.fin = false; DX.lastKey = ''; DX.lastSend = 0;
+  document.body.classList.add('duel-on');
+  practice = false; eventMode = null; carryScore = 0; justFinished = -1;
+  selLeg = clamp(r.leg | 0, 0, LEGS.length - 1);
+  DX.t0 = r.startAt;
+  try { $('quitBtn').textContent = '🏳️ ' + dl('Forfeit & Exit', 'হার মেনে বের হও'); } catch (e) {}
+  $('duelOver').classList.add('hidden'); $('settings').classList.add('hidden');
+  startGame(false);
+  var o = oppOf(DX.data);
+  try { $('dMeN').textContent = dl('You', 'তুমি'); $('dOpN').textContent = o ? String(o.n).slice(0, 10) : dl('Rival', 'প্রতিপক্ষ'); } catch (e2) {}
+  try { logEv('duel_start', { leg: selLeg }); } catch (e3) {}
+}
+/* restore everything the duel touched */
+function duelEndLocal() {
+  if (!DX.on && !DX.sv) return;
+  DX.on = false; document.body.classList.remove('duel-on');
+  var s = DX.sv; DX.sv = null;
+  if (s) {
+    selLeg = s.selLeg; bankCoins = s.bankCoins; xp = s.xp; riderLevel = s.riderLevel; hpStore = s.hpStore; practice = s.practice; eventMode = s.eventMode;
+    try {
+      localStorage.setItem('rrLeg', String(selLeg)); localStorage.setItem('rrBank', String(bankCoins));
+      localStorage.setItem('rrXp', String(Math.floor(xp))); localStorage.setItem('rrLevel', String(riderLevel)); localStorage.setItem('rrHp', String(hpStore));
+    } catch (e) {}
+  }
+  try { chaseStop(); } catch (e2) {}
+  try { $('quitBtn').textContent = '🏠 Main Menu'; } catch (e3) {}
+  try { cloudSave(); } catch (e4) {}
+}
+function duelToMenu(page) {
+  duelEndLocal();
+  ['duelOver', 'duelCount', 'pause', 'over', 'settings'].forEach(function (id) { try { $(id).classList.add('hidden'); } catch (e) {} });
+  $('menu').classList.remove('hidden');
+  state = 'menu'; document.body.dataset.ui = 'menu';
+  try { clampLeg(); } catch (e) {}
+  try { showPage(page || 'pageMain'); renderGarage(); renderBoard(); renderDest(); updateMenuBest(); } catch (e2) {}
+  speed = 9; last = performance.now();
+  try { radioTick(); } catch (e3) {}
+}
+
+/* ---------- in-race: broadcast + HUD ---------- */
+function duelPush() { if (DX.myRef) { try { DX.myRef.update({ d: Math.floor(dist), p: parcelCount, s: Math.floor(score), st: 'on' }); } catch (e) {} } }
+function duelHudUpdate() {
+  var r = DX.data, L = leg().len, opp = r ? oppOf(r) : null;
+  var me = clamp(dist / L, 0, 1), op = opp ? clamp((opp.d || 0) / L, 0, 1) : 0;
+  var key = [Math.round(me * 300), Math.round(op * 300), parcelCount, opp ? (opp.p | 0) : 0, opp ? opp.n : ''].join('|');
+  if (key === DX.lastKey) return; DX.lastKey = key;
+  try {
+    $('dMeBar').style.width = (me * 100).toFixed(1) + '%'; $('dOpBar').style.width = (op * 100).toFixed(1) + '%';
+    $('dMeT').textContent = Math.round(me * 100) + '%'; $('dOpT').textContent = Math.round(op * 100) + '%';
+    $('dMeP').textContent = parcelCount; $('dOpP').textContent = opp ? (opp.p | 0) : 0;
+    $('dMeN').textContent = (me >= op ? '🥇 ' : '🥈 ') + dl('You', 'তুমি');
+    $('dOpN').textContent = (op > me ? '🥇 ' : '') + (opp ? String(opp.n).slice(0, 9) : dl('Rival', 'প্রতিপক্ষ'));
+  } catch (e) {}
+}
+function duelTick() {
+  if (!DX.on || DX.over) return;
+  var now = performance.now();
+  if (!DX.fin && now - DX.lastSend > 400) { DX.lastSend = now; duelPush(); }
+  duelHudUpdate();
+}
+
+/* ---------- finish / winner ---------- */
+function duelFinish() { // called from update() when MY dist >= map length
+  if (DX.fin || DX.over) return;
+  DX.fin = true;
+  var ms = Math.max(0, srvNow() - DX.t0);
+  state = 'over'; document.body.dataset.ui = 'over';
+  try { engineStop(); sfx.deliver(); } catch (e) {}
+  try { if (DX.myRef) DX.myRef.update({ d: leg().len, p: parcelCount, s: Math.floor(score), f: 1, ms: ms, st: 'fin' }); } catch (e2) {}
+  var mine = { u: fbUid, n: dMyName(), ms: ms, p: parcelCount, t: Date.now() };
+  if (!DX.ref) { duelShowResult(mine); return; }
+  DX.ref.child('winner').transaction(function (cur) { return cur ? undefined : mine; }, undefined, false).then(function (res) {
+    duelShowResult(res.snapshot.val() || mine);
+  }).catch(function (e) { dErr(e); duelShowResult(mine); });
+}
+function duelClaim() { // opponent vanished -> I win by forfeit
+  if (DX.over || DX.fin) return;
+  DX.fin = true;
+  var mine = { u: fbUid, n: dMyName(), ms: Math.max(0, srvNow() - DX.t0), p: parcelCount, forfeit: 1, t: Date.now() };
+  if (!DX.ref) { duelShowResult(mine); return; }
+  DX.ref.child('winner').transaction(function (cur) { return cur ? undefined : mine; }, undefined, false).then(function (res) {
+    duelShowResult(res.snapshot.val() || mine);
+  }).catch(function () { duelShowResult(mine); });
+}
+function duelShowResult(w) {
+  if (DX.over) return;
+  DX.over = true;
+  if (DX.forfeitT) { clearTimeout(DX.forfeitT); DX.forfeitT = null; }
+  state = 'over'; document.body.dataset.ui = 'over';
+  try { engineStop(); } catch (e) {}
+  ['pause', 'settings', 'over', 'duelCount'].forEach(function (id) { try { $(id).classList.add('hidden'); } catch (e) {} });
+  var r = DX.data || {}, L = leg().len, win = !!(w && w.u === fbUid), opp = oppOf(r);
+  var myPct = (DX.fin && win) || (w && w.u === fbUid) ? 100 : Math.min(100, Math.round(dist / L * 100));
+  var opPct = (w && w.u !== fbUid) ? 100 : Math.min(100, Math.round(((opp && (opp.f ? L : opp.d)) || 0) / L * 100));
+  var myName = dMyName(), opName = opp ? opp.n : (w && w.u !== fbUid ? w.n : dl('Rival', 'প্রতিপক্ষ'));
+  var opPar = opp ? (opp.p | 0) : (w && w.u !== fbUid ? (w.p | 0) : 0);
+  $('dvIcon').textContent = win ? '🏆' : '😤';
+  $('dvTitle').textContent = win ? dl('YOU WIN!', 'তুমি জিতেছ!') : dl('YOU LOST', 'তুমি হেরেছ');
+  $('dvTitle').style.color = win ? '#ffc83d' : '#ff7a7a';
+  $('dvSub').textContent = (w && w.forfeit) ? (win ? dl('Your rival left the race', 'প্রতিপক্ষ রেস ছেড়ে দিয়েছে') : dl('You left the race', 'তুমি রেস ছেড়ে দিয়েছ'))
+    : (win ? dl('First to the destination!', 'সবার আগে গন্তব্যে!') : dEsc(w && w.n || '') + ' ' + dl('got there first', 'আগে পৌঁছে গেছে'));
+  function row(nm, av, pct, par, isWin) {
+    return '<div class="dvP' + (isWin ? ' win' : '') + '"><img src="' + dAv(av) + '" alt=""><span class="nm">' + (isWin ? '🏆 ' : '') + dEsc(nm) + '</span><span class="tg">' + pct + '%</span><span class="tg">📦 ' + par + '</span></div>';
+  }
+  var myAv = getAvatar();
+  $('dvRows').innerHTML = row(myName + ' (' + dl('you', 'তুমি') + ')', myAv, myPct, parcelCount, win) + row(opName, opp && opp.av, opPct, opPar, !win && !!w);
+  $('dvTime').textContent = (w && w.ms && !w.forfeit) ? '⏱️ ' + dEsc(w.n || '') + ': ' + dFmt(w.ms) : '';
+  var hasRoom = !!DX.room;
+  $('dvAgain').style.display = hasRoom ? '' : 'none';
+  $('duelOver').classList.remove('hidden');
+  try { win ? sfx.power() : sfx.crash(); vibe(win ? [40, 30, 40] : [120]); } catch (e2) {}
+  try { logEv('duel_end', { win: win ? 1 : 0, leg: selLeg }); } catch (e3) {}
+}
+function duelBackToLobby() {
+  var had = !!(DX.room && DX.ref), host = DX.isHost;
+  duelToMenu('pageDuel');
+  DX.over = false; DX.fin = false; DX.counting = false;
+  if (had) {
+    try { DX.myRef.update({ d: 0, p: 0, s: 0, f: 0, ms: 0, st: 'on', ready: false }); } catch (e) {}
+    if (host) { try { DX.ref.update({ st: 'lobby', winner: null, startAt: null }); } catch (e2) {} }
+  }
+  duelOpen();
+}
+function duelExit(toPage) { duelLeave(); duelToMenu(toPage || 'pageMain'); DX.over = false; DX.fin = false; }
+function duelQuit() { duelExit('pageMain'); } // pause menu -> forfeit (rival gets the win automatically)
+
+/* ---------- wiring ---------- */
+$('duelHome').addEventListener('click', function (e) {
+  var b = e.target.closest ? e.target.closest('[data-act]') : null; if (!b) return;
+  e.stopPropagation(); try { sfx.move(); } catch (er) {}
+  var a = b.getAttribute('data-act');
+  if (a === 'create') duelCreate();
+  else if (a === 'join') duelJoin($('duelCode').value);
+});
+$('duelLobby').addEventListener('click', function (e) {
+  var b = e.target.closest ? e.target.closest('[data-act]') : null; if (!b || b.disabled) return;
+  e.stopPropagation(); try { sfx.move(); } catch (er) {}
+  var a = b.getAttribute('data-act');
+  if (a === 'copy') dCopy(duelInviteText(), function () { dToast('📋 ' + dl('Copied!', 'কপি হয়েছে!')); });
+  else if (a === 'share') {
+    var t = duelInviteText();
+    try { if (navigator.share) { navigator.share({ title: 'Ride For Life 1v1', text: dl('Race me in Ride For Life 1v1! Room code: ', 'Ride For Life 1v1 রুম কোড: ') + DX.room, url: duelLink() }).catch(function () {}); return; } } catch (er2) {}
+    dCopy(t, function () { dToast('📋 ' + dl('Invite copied!', 'ইনভাইট কপি হয়েছে!')); });
+  }
+  else if (a === 'mapL') duelMapStep(-1);
+  else if (a === 'mapR') duelMapStep(1);
+  else if (a === 'ready') duelReadyToggle();
+  else if (a === 'start') duelStart();
+  else if (a === 'leave') { duelLeave(); duelOpen(); }
+});
+$('duelBack').addEventListener('click', function (e) {
+  e.stopPropagation(); try { sfx.move(); } catch (er) {}
+  if (DX.room) duelLeave();
+  showPage('pageMain');
+});
+$('duelRow').addEventListener('click', function () { duelOpen(); });
+$('pageDuel').addEventListener('keydown', function (e) { e.stopPropagation(); });
+$('dvAgain').addEventListener('click', function () { try { sfx.move(); } catch (e) {} duelBackToLobby(); });
+$('dvExit').addEventListener('click', function () { try { sfx.move(); } catch (e) {} duelExit('pageMain'); });
+window.addEventListener('pagehide', function () { try { if (DX.on) duelEndLocal(); } catch (e) {} });
+/* invite link:  ?room=ABCDE  -> opens the duel page and auto-joins */
+(function () {
+  var code = '';
+  try { code = (new URLSearchParams(location.search).get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); } catch (e) {}
+  if (code.length !== 5) return;
+  var tries = 0, iv = setInterval(function () {
+    tries++;
+    var sp = $('splash'), splashGone = !sp || sp.style.display === 'none';
+    var nameHidden = $('nameOverlay').classList.contains('hidden');
+    if (state === 'menu' && splashGone && nameHidden && !$('menu').classList.contains('hidden')) {
+      clearInterval(iv);
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      showPage('pageDuel'); duelOpen();
+      $('duelCode').value = code;
+      duelJoin(code);
+    } else if (tries > 120) clearInterval(iv);
+  }, 500);
+})();
 var booted = false;
 var loadSteps = 0, loadTotal = 5;
 function loadProgress(txt) {
