@@ -2196,9 +2196,11 @@ var slMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, op
 var speedLines = new THREE.LineSegments(slGeo, slMat); speedLines.frustumCulled = false; scene.add(speedLines);
 for (var sli = 0; sli < SL_N; sli++) { slX[sli] = (Math.random() < 0.5 ? -1 : 1) * rnd(5.5, 10); slY[sli] = rnd(0.3, 4.6); slZ[sli] = rnd(-75, 5); }
 var SP_N = 90, spPos = new Float32Array(SP_N * 3), spVel = new Float32Array(SP_N * 3), spLife = new Float32Array(SP_N), spI = 0;
-for (var spk = 0; spk < SP_N; spk++) spPos[spk * 3 + 1] = -50;
+var spCol = new Float32Array(SP_N * 3); // per-particle rong (atoshbazi)
+for (var spk = 0; spk < SP_N; spk++) { spPos[spk * 3 + 1] = -50; spCol[spk * 3] = 1; spCol[spk * 3 + 1] = 0.85; spCol[spk * 3 + 2] = 0.45; }
 var spGeo = new THREE.BufferGeometry();
 spGeo.setAttribute('position', new THREE.BufferAttribute(spPos, 3));
+spGeo.setAttribute('color', new THREE.BufferAttribute(spCol, 3));
 var spTex = (function () {
   var c = document.createElement('canvas'); c.width = c.height = 32;
   var g = c.getContext('2d'), gr = g.createRadialGradient(16, 16, 1, 16, 16, 15);
@@ -2206,7 +2208,7 @@ var spTex = (function () {
   g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
   return new THREE.CanvasTexture(c);
 })();
-var spMat = new THREE.PointsMaterial({ color: 0xffffff, map: spTex, size: 0.3, transparent: true, opacity: 1, depthWrite: false, alphaTest: 0.02 });
+var spMat = new THREE.PointsMaterial({ color: 0xffffff, map: spTex, size: 0.3, transparent: true, opacity: 1, depthWrite: false, alphaTest: 0.02, vertexColors: true });
 var spPts = new THREE.Points(spGeo, spMat); spPts.frustumCulled = false; scene.add(spPts);
 var headSpot = new THREE.SpotLight(0xfff0c8, 0, 42, 0.55, 0.65, 1.2);
 headSpot.position.set(0, 1.2, -0.6); scene.add(headSpot);
@@ -4683,7 +4685,53 @@ function sparks(x, y, z, n) {
     spPos[ix] = x + rnd(-0.2, 0.2); spPos[ix + 1] = y + rnd(-0.2, 0.2); spPos[ix + 2] = z + rnd(-0.2, 0.2);
     spVel[ix] = rnd(-2.6, 2.6); spVel[ix + 1] = rnd(1.5, 5.5); spVel[ix + 2] = rnd(-1.5, 1.5);
     spLife[ix / 3] = rnd(0.35, 0.7);
+    spCol[ix] = 1; spCol[ix + 1] = 0.85; spCol[ix + 2] = 0.45; // gold spark
   }
+  try { spGeo.attributes.color.needsUpdate = true; } catch (e) {}
+}
+var fwFlash = null, fwFlashT = 0;
+try {
+  fwFlash = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOWTEX, color: 0xfff2b0, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  fwFlash.scale.set(14, 14, 1); fwFlash.visible = false; scene.add(fwFlash);
+} catch (e) { fwFlash = null; }
+var FW_COLS = [[1, 0.85, 0.3], [1, 0.32, 0.3], [0.42, 1, 0.55], [0.5, 0.72, 1], [1, 0.55, 1], [1, 1, 1]];
+function firework(x, y, z) { // asol atoshbazi: rocket uthbe → akashe gol burst → flash + boom
+  try {
+    var col = FW_COLS[(Math.random() * FW_COLS.length) | 0];
+    for (var l = 0; l < 8; l++) { // launch trail
+      var ix = (spI++ % SP_N) * 3;
+      spPos[ix] = x + rnd(-0.3, 0.3); spPos[ix + 1] = 1 + l * 1.1; spPos[ix + 2] = z + rnd(-0.3, 0.3);
+      spVel[ix] = rnd(-0.4, 0.4); spVel[ix + 1] = rnd(8, 12); spVel[ix + 2] = rnd(-0.4, 0.4);
+      spLife[ix / 3] = 0.45;
+      spCol[ix] = 1; spCol[ix + 1] = 0.7; spCol[ix + 2] = 0.35;
+    }
+    try { tone(600, 0.35, 'sine', 0.035, 1400); } catch (eW) {} // sheesh whistle
+    setTimeout(function () {
+      try {
+        for (var k = 0; k < 30; k++) { // gol burst — chardike choray
+          var jx = (spI++ % SP_N) * 3;
+          var th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
+          var sp = rnd(4, 9);
+          spPos[jx] = x; spPos[jx + 1] = y; spPos[jx + 2] = z;
+          spVel[jx] = Math.sin(ph) * Math.cos(th) * sp;
+          spVel[jx + 1] = Math.cos(ph) * sp;
+          spVel[jx + 2] = Math.sin(ph) * Math.sin(th) * sp;
+          spLife[jx / 3] = rnd(1.0, 1.7);
+          spCol[jx] = col[0]; spCol[jx + 1] = col[1]; spCol[jx + 2] = col[2];
+        }
+        try { spGeo.attributes.color.needsUpdate = true; } catch (eC) {}
+        if (fwFlash) { // akash alo flash
+          fwFlash.position.set(x, y, z);
+          fwFlash.material.color.setRGB(col[0], col[1], col[2]);
+          var sc = rnd(12, 18); fwFlash.scale.set(sc, sc, 1);
+          fwFlash.visible = true; fwFlashT = 0.9;
+        }
+        try { spMat.size = 0.45; setTimeout(function () { try { spMat.size = 0.3; } catch (e) {} }, 1600); } catch (eS) {}
+        try { tone(60, 0.6, 'sawtooth', 0.09, 30); } catch (eB) {} // boom
+        setTimeout(function () { try { for (var q = 0; q < 3; q++) tone(1500 + Math.random() * 2500, 0.05, 'square', 0.02); } catch (e) {} }, 120); // photka
+      } catch (e) {}
+    }, 380);
+  } catch (e) {}
 }
 function toast(el, html, ms) {
   el.innerHTML = html; el.classList.add('show');
@@ -6700,16 +6748,11 @@ function update(dt) {
     if (state !== 'crash') player.position.y = py;
     runT += dt * (state === 'crash' ? 0 : speed * 0.45);
     if (evP().quota && state === 'play') orderSecs += dt;
-    if (state === 'play' && evP().fw) { // event fireworks: akashe atoshbazi
+    if (state === 'play' && evP().fw) { // event fireworks: rocket → akashe burst
       fwT -= dt;
       if (fwT <= 0) {
         fwT = rnd(2.5, 4.5);
-        try {
-          var _fx = rnd(-7, 7), _fz = rnd(-28, -12);
-          sparks(_fx, rnd(7, 12), _fz, 22);
-          pop('🎆', _fx, 9, _fz, '#ffe066');
-          tone(280 + Math.random() * 420, 0.25, 'sine', 0.04);
-        } catch (eFw) {}
+        try { firework(rnd(-7, 7), rnd(8, 13), rnd(-28, -12)); } catch (eFw) {}
       }
     }
   }
@@ -7017,6 +7060,7 @@ function update(dt) {
     }
   }
   spGeo.attributes.position.needsUpdate = true;
+  try { if (fwFlashT > 0 && fwFlash) { fwFlashT -= dt * 2.2; fwFlash.material.opacity = Math.max(0, fwFlashT); fwFlash.visible = fwFlashT > 0; } } catch (eF) {}
   headSpot.position.set(player.position.x, 1.2, -0.6);
   headTgt.position.set(player.position.x, 0, -22);
     headSpot.intensity = nightK * 2.1 * (weather === 'fog' ? 1.3 : 1); // ghono ondhokare rasta porar jonno joralo headlight
