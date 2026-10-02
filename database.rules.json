@@ -66,6 +66,14 @@
         ".write": "newData.val() == null || (newData.hasChildren(['p', 'n', 't']) && newData.child('p').isNumber() && newData.child('p').val() >= 0 && newData.child('p').val() <= 5000 && newData.child('n').isString() && newData.child('n').val().length <= 20 && newData.child('t').isNumber())"
       }
     },
+    "tour_join": {
+      "$tour": {
+        "$uid": {
+          ".read": true,
+          ".write": "newData.val() == null || (newData.hasChildren(['n', 'at']) && newData.child('n').isString() && newData.child('n').val().length <= 20 && newData.child('at').isNumber())"
+        }
+      }
+    },
     "ratings": {
       ".read": true,
       "$uid": {
@@ -88,6 +96,11 @@
       "billboards": {
         "$k": {
           ".validate": "newData.val() == null || (newData.hasChildren(['img']) && newData.child('img').isString() && newData.child('img').val().length <= 400000)"
+        }
+      },
+      "tournaments": {
+        "$k": {
+          ".validate": "newData.val() == null || (newData.hasChildren(['name', 'prize']) && newData.child('name').isString() && newData.child('name').val().length <= 30 && newData.child('prize').isNumber() && newData.child('prize').val() >= 0 && newData.child('prize').val() <= 1000000)"
         }
       },
       "activeEvent": {

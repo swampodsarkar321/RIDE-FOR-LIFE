@@ -75,6 +75,7 @@
     <button class="tab sel" data-tab="dash">📊 Dashboard</button>
     <button class="tab" data-tab="bikes">🏍️ Bikes</button>
     <button class="tab" data-tab="events">🎪 Events</button>
+    <button class="tab" data-tab="tours">🏆 Tournaments</button>
     <button class="tab" data-tab="boards">🪧 Boards</button>
     <button class="tab" data-tab="notif">🔔 Notify</button>
     <button class="tab" data-tab="players">👥 Players</button>
@@ -228,6 +229,26 @@
     </div>
   </div>
 
+  <div id="tab-tours" class="hidden">
+    <div class="card">
+      <h2>🏆 Add Tournament</h2>
+      <label>Name</label>
+      <input id="tName" maxlength="30" placeholder="Rangpur Cup">
+      <div class="row2">
+        <div><label>Prize pool ৳</label><input id="tPrize" type="number" value="5000" min="0" step="100"></div>
+        <div><label>Bots (0–12)</label><input id="tBots" type="number" value="4" min="0" max="12"></div>
+      </div>
+      <label>Status</label>
+      <input id="tStatus" list="tStatusList" value="open" placeholder="open / live / done">
+      <datalist id="tStatusList"><option value="open"></option><option value="live"></option><option value="done"></option></datalist>
+      <button class="btn" id="tourSave">＋ Save Tournament</button>
+    </div>
+    <div class="card">
+      <h2>🏆 Tournaments in game</h2>
+      <div id="tourListA"><p class="note">Loading…</p></div>
+    </div>
+  </div>
+
   <div id="tab-boards" class="hidden">
     <div class="card">
       <h2>🪧 Billboard Control</h2>
@@ -356,6 +377,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
     $('tab-dash').classList.toggle('hidden', t !== 'dash');
     $('tab-bikes').classList.toggle('hidden', t !== 'bikes');
     $('tab-events').classList.toggle('hidden', t !== 'events');
+    $('tab-tours').classList.toggle('hidden', t !== 'tours');
     $('tab-boards').classList.toggle('hidden', t !== 'boards');
     $('tab-notif').classList.toggle('hidden', t !== 'notif');
     $('tab-players').classList.toggle('hidden', t !== 'players');
@@ -413,6 +435,21 @@ $('evSave').addEventListener('click', function () {
   else db.ref('config/events').push(evObj()).then(done);
 });
 $('evCancel').addEventListener('click', resetEvForm);
+$('tourSave').addEventListener('click', function () {
+  if (!db) { alert('No Firebase connection!'); return; }
+  var st = ($('tStatus').value || 'open').trim().toLowerCase();
+  if (['open', 'live', 'done'].indexOf(st) < 0) st = 'open';
+  var o = {
+    name: $('tName').value.trim().slice(0, 30) || 'Tournament',
+    prize: Math.max(0, Math.round(num('tPrize', 0))),
+    bots: Math.max(0, Math.min(12, Math.round(num('tBots', 4)))),
+    status: st, at: Date.now()
+  };
+  db.ref('config/tournaments').push(o).then(function () {
+    alert('Tournament saved! Game updates live.');
+    $('tName').value = ''; $('tPrize').value = 5000; $('tBots').value = 4; $('tStatus').value = 'open';
+  });
+});
 var bbData = '';
 $('bbFile').addEventListener('change', function () {
   var f = $('bbFile').files && $('bbFile').files[0];
@@ -569,6 +606,18 @@ function startAll() {
     var v = s.val() || '—';
     $('liveNow').textContent = 'Live: ' + v + (v && v !== '—' ? ' (game-e sudhu etai cholbe)' : ' (sob open)');
   });
+  db.ref('config/tournaments').on('value', function (snap) {
+    var html = '';
+    snap.forEach(function (c) {
+      var t = c.val() || {};
+      html += '<div class="item"><b>🏆 ' + esc(t.name) + '</b> <small>· ৳' + (+t.prize || 0) + ' · ' + (+t.bots || 0) + ' bots · ' + esc(t.status) + '</small><br>' +
+        '<button class="btn small" data-tourlive="' + c.key + '">🔴 Live</button>' +
+        '<button class="btn small" data-tourdone="' + c.key + '">✔ Done</button>' +
+        '<button class="btn small danger" data-tour="' + c.key + '">Delete</button></div>';
+    });
+    $('tourListA').innerHTML = html || '<p class="note">No tournaments yet.</p>';
+    bindAll();
+  });
   db.ref('config/disabledEvents').on('value', function (s) {
     builtinDis = s.val() || {};
     renderBuiltin();
@@ -654,6 +703,22 @@ db.ref('notifications').on('value', function (snap) {
   });
 });
 function bindAll() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tour]'), function (b) {
+    b.addEventListener('click', function () {
+      if (!confirm('Delete this tournament?')) return;
+      db.ref('config/tournaments/' + b.getAttribute('data-tour')).remove();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tourlive]'), function (b) {
+    b.addEventListener('click', function () {
+      db.ref('config/tournaments/' + b.getAttribute('data-tourlive')).child('status').set('live');
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tourdone]'), function (b) {
+    b.addEventListener('click', function () {
+      db.ref('config/tournaments/' + b.getAttribute('data-tourdone')).child('status').set('done');
+    });
+  });
   Array.prototype.forEach.call(document.querySelectorAll('[data-bb]'), function (b) {
     b.addEventListener('click', function () {
       if (!confirm('Delete this billboard?')) return;

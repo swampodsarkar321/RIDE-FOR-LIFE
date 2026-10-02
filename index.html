@@ -597,6 +597,9 @@
   .mx.mini .ico { width: 36px; height: 36px; font-size: 18px; }
   .mx.mini .tx b { font-size: 15px; }
   .mx.mini .chev { font-size: 20px; }
+  #onNav { display: flex; flex-direction: column; gap: 2px; }
+  #onNav .mx { margin: 3px 0; opacity: .75; }
+  #onNav .mx.sel { opacity: 1; box-shadow: 0 0 16px rgba(255,200,61,.5), inset 0 0 0 2px var(--gold); }
   .mx-grid > * { min-width: 0; }
   .mx { min-width: 0; }
   /* PC / wide: 2-column cards (sudhu boro screen-e) */
@@ -873,7 +876,13 @@
         <div class="mpage" id="pageDuel">
       <button class="backBtn" id="duelBack">‹ Back</button>
       <div class="sec">🌐 ONLINE</div>
-      <div class="lbtabs" id="onTabs"><button class="lbtab sel" data-ontab="play">▶ Play</button><button class="lbtab" data-ontab="rank">🏅 Rank</button><button class="lbtab" data-ontab="custom">⚙️ Custom</button></div>
+      <div id="onNav">
+        <button class="mx gold mini sel" data-ontab="play"><span class="ico">▶</span><span class="tx"><b>Play</b></span><span class="chev">›</span></button>
+        <button class="mx teal mini" data-ontab="rank"><span class="ico">🏅</span><span class="tx"><b>Rank</b></span><span class="chev">›</span></button>
+        <button class="mx gray mini" data-ontab="custom"><span class="ico">⚙️</span><span class="tx"><b>Custom</b></span><span class="chev">›</span></button>
+        <button class="mx red mini" data-ontab="esports"><span class="ico">🏆</span><span class="tx"><b>Esports</b></span><span class="chev">›</span></button>
+        <button class="mx blue mini" data-ontab="events"><span class="ico">🎪</span><span class="tx"><b>Events</b></span><span class="chev">›</span></button>
+      </div>
       <div class="secCard" id="onPlay">
         <button class="btn dvBtn" id="mmGoBtn" style="width:100%;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;">🔎 Find Rival (30s)</button>
         <div id="mmStatus" style="min-height:20px;font-size:13px;font-weight:800;color:var(--gold);margin-top:6px;"></div>
@@ -883,6 +892,8 @@
         <div class="secCard" id="duelHome"></div>
         <div class="secCard" id="duelLobby" style="display:none;"></div>
       </div>
+      <div class="secCard" id="onEsports" style="display:none;"><div id="tourList"></div></div>
+      <div class="secCard" id="onEvents" style="display:none;"><div id="eventList2"></div></div>
     </div>
     <div class="mpage" id="pageRadio">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
@@ -4294,6 +4305,15 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
           ADMIN_EVENTS.push({ id: 'c_' + k, ico: e.ico || '⭐', en: [e.name_en || 'Custom', e.desc_en || ''], bn: [e.name_bn || e.name_en || 'কাস্টম', e.desc_bn || e.desc_en || ''],
             p: adminEvParams(e) });
         });
+        ADMIN_TOURS = [];
+        try {
+          var tr = cfg.tournaments || {};
+          Object.keys(tr).forEach(function (k) {
+            var o = tr[k]; if (!o) return;
+            ADMIN_TOURS.push({ key: k, name: String(o.name || 'Tournament').slice(0, 30), prize: Math.max(0, +o.prize || 0), bots: Math.max(0, Math.min(12, +o.bots || 0)), status: o.status === 'live' ? 'live' : (o.status === 'done' ? 'done' : 'open') });
+          });
+        } catch (eT) {}
+        try { if (onTabCur === 'esports') renderTours(); } catch (eT2) {}
         DISABLED_EV = {}; OVERRIDDEN_EV = {}; // built-in event control
         try {
           var dis = cfg.disabledEvents || {};
@@ -4337,8 +4357,8 @@ function evFw(id) { // event-e fireworks ache? (override soho)
   for (var j = 0; j < ADMIN_EVENTS.length; j++) if (ADMIN_EVENTS[j].id === id) return !!((ADMIN_EVENTS[j].p || {}).fw);
   return false;
 }
-function renderEvents() {
-  var el = $('eventList'); if (!el) return;
+function renderEvents(into) {
+  var el = $((into || 'eventList')); if (!el) return;
   var html = '';
   var allEv = EVENTS.concat(ADMIN_EVENTS);
   if (activeEventId) {
@@ -4364,6 +4384,54 @@ function renderEvents() {
     });
   });
   var mv = $('mEvVal'); if (mv) mv.textContent = eventMode ? evName(eventMode) + (activeEventId === eventMode ? ' ●' : '') : '';
+  if (!into) { try { renderEvents('eventList2'); } catch (e) {} }
+}
+/* ---------- esports tournaments (admin theke) ---------- */
+var ADMIN_TOURS = [];
+function tourSeed(s) { var h = 7; s = String(s); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000; return h; }
+function tourBots(t) {
+  var n = Math.min(8, Math.max(2, +t.bots || 4)), R = tourSeed(t.name || 'tour'), out = [];
+  var pool = (typeof BOTN !== 'undefined' && BOTN.length ? BOTN : ['Rider']).slice();
+  for (var i = 0; i < n; i++) {
+    R = (R * 1103515245 + 12345) % 2147483648;
+    out.push({ n: pool[R % pool.length], s: 3000 + (R % 12000) });
+  }
+  out.sort(function (a, b) { return b.s - a.s; });
+  return out;
+}
+function renderTours() {
+  try {
+    var el = $('tourList'); if (!el) return;
+    var bn = lang === 'bn', h = '';
+    if (!ADMIN_TOURS.length) h = '<div class="best">' + (bn ? '🏆 শীঘ্রই টুর্নামেন্ট আসছে!' : '🏆 Tournaments coming soon!') + '</div>';
+    ADMIN_TOURS.forEach(function (t) {
+      var live = t.status === 'live';
+      h += '<div class="legRow' + (live ? ' sel' : '') + '"><span style="font-size:22px;">🏆</span>'
+        + '<span style="flex:1;min-width:0;"><b>' + t.name + '</b>' + (live ? ' <b style="color:var(--gold)">● LIVE</b>' : '')
+        + '<br><small style="color:var(--panel-soft);">💰 ৳' + (+t.prize || 0) + ' · 🤖 ' + (+t.bots || 0) + ' bots</small></span>'
+        + '<span class="st">' + (live ? '▶' : '🔒') + '</span></div>';
+      if (live) {
+        h += tourBots(t).slice(0, 5).map(function (b, i) {
+          return '<div class="lbrow"><span class="rk">' + (i + 1) + '.</span><span class="nm">🤖 ' + b.n + '</span><span class="sc">' + b.s + '</span></div>';
+        }).join('');
+        h += '<button class="btn dvBtn" data-tourjoin="' + t.key + '" style="width:100%;margin:6px 0;font-size:18px;background:#2d9c42;box-shadow:0 5px 0 #14521f;">⚔️ ' + (bn ? 'জয়েন করো' : 'Join') + '</button>';
+      }
+    });
+    el.innerHTML = h;
+    Array.prototype.forEach.call(el.querySelectorAll('[data-tourjoin]'), function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var k = b.getAttribute('data-tourjoin');
+        try {
+          if (!fbReady || !FBDB) { toast(elHint, bn ? 'নেট নেই' : 'No connection', 1500); return; }
+          FBDB.ref('tour_join/' + k + '/' + fbUid).set({ n: playerName || 'Rider', av: getAvatar(), at: Date.now() }).then(function () {
+            toast(elHint, bn ? '✅ টুর্নামেন্টে ঢুকেছ! Best score লাগবে!' : '✅ Joined! Top score wins!', 2500);
+            try { sfx.power(); } catch (e2) {}
+          });
+        } catch (e) {}
+      });
+    });
+  } catch (e) {}
 }
 STR.en.name_div = 'Your division?'; STR.bn.name_div = 'তোমার বিভাগ?';
 STR.en.need_name = 'Please enter your name!'; STR.bn.need_name = 'নাম দাও!';
@@ -8466,7 +8534,7 @@ function boot() {
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
   $('profRow').addEventListener('click', function () { showPage('pageProfile'); renderProfile(); });
   $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
-  var _ot = $('onTabs');
+  var _ot = $('onNav');
   if (_ot) _ot.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('[data-ontab]') : null; if (!b) return; e.stopPropagation(); onTab(b.getAttribute('data-ontab')); });
   var _mmgo = $('mmGoBtn');
   if (_mmgo) _mmgo.addEventListener('click', function (e) {
@@ -9235,13 +9303,17 @@ function renderRankHub() {
 function onTab(name) {
   try {
     onTabCur = name;
-    Array.prototype.forEach.call(document.querySelectorAll('#onTabs .lbtab'), function (b) {
+    Array.prototype.forEach.call(document.querySelectorAll('#onNav .mx'), function (b) {
       b.classList.toggle('sel', b.getAttribute('data-ontab') === name);
     });
     if ($('onPlay')) $('onPlay').style.display = name === 'play' ? '' : 'none';
     if ($('onRank')) $('onRank').style.display = name === 'rank' ? '' : 'none';
     if ($('onCustom')) $('onCustom').style.display = name === 'custom' ? '' : 'none';
+    if ($('onEsports')) $('onEsports').style.display = name === 'esports' ? '' : 'none';
+    if ($('onEvents')) $('onEvents').style.display = name === 'events' ? '' : 'none';
     if (name === 'rank') renderRankHub();
+    if (name === 'esports') renderTours();
+    if (name === 'events') renderEvents('eventList2');
     try { sfx.move(); } catch (e) {}
   } catch (e) {}
 }
