@@ -825,7 +825,6 @@
       <button class="btn" id="againBtn">Ride Again</button>
       <button class="btn" id="nextBtn" style="display:none;background:#2d9c42;box-shadow:0 5px 0 #14521f;">Next Map ▶</button>
       <button class="btn" id="menuBtn" data-i18n="tomenu">‹ Back to Menu</button>
-      <button class="btn" id="shareBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;">📤 Share</button>
     </div>
     <img id="cardPrev" style="display:none;max-width:100%;border-radius:12px;margin:8px auto;" alt="score card">
     <div class="overBtns" style="margin-top:8px">
@@ -7816,7 +7815,6 @@ function boot() {
   $('photoBtn').addEventListener('click', function () { photoMode(true); });
   $('photoZoomIn').addEventListener('click', function () { photoZoom = Math.max(0.6, photoZoom - 0.1); applyPhotoCam(); });
   $('photoZoomOut').addEventListener('click', function () { photoZoom = Math.min(1.5, photoZoom + 0.1); applyPhotoCam(); });
-  $('shareBtn').addEventListener('click', function () { shareScore(); });
   $('fbBtn').addEventListener('click', function () { shareFB(); });
   $('msgBtn').addEventListener('click', function () { shareMsg(); });
   $('copyBtn').addEventListener('click', function () { copyLink(); });
