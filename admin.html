@@ -273,6 +273,8 @@
       <label>Room code</label>
       <input id="castCode" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;">
       <button class="btn" id="castGoBtn">📡 Broadcast Room</button>
+      <button class="btn ghost" id="scanBtn" style="margin-top:8px;">🔄 Scan live rooms</button>
+      <div id="scanList" style="margin-top:8px;"></div>
     </div>
     <div class="card" id="castLiveCard" style="display:none;">
       <h2>🔴 LIVE <span id="castTitle"></span></h2>
@@ -650,11 +652,14 @@ function startAll() {
         '<button class="btn small danger" data-tour="' + c.key + '">Delete</button><br>' +
         '<button class="btn small" data-bracket="' + c.key + '">🎲 Bracket</button></div>';
       var mm = t.matches || {}, mks = Object.keys(mm).sort();
+      var _sz = Math.max(2, +t.size || 2), _tot = 1;
+      while (Math.pow(2, _tot) < _sz) _tot++;
+      function _rn(r) { if (r >= _tot) return 'FINAL'; if (r === _tot - 1) return 'SEMI-FINAL'; if (_tot === 3 && r === 1) return 'QUARTER-FINAL'; return 'ROUND ' + r; }
       mks.forEach(function (mk) {
         var m = mm[mk] || {};
         var an = (m.a && m.a.n) || '?', bn2 = (m.b && m.b.n) || 'BYE';
         var wn = (m.winner && m.winner.n) || '';
-        html += '<div class="item" style="margin:6px 0 6px 12px;">R' + (m.round || 1) + ': <b>' + esc(an) + '</b> vs <b>' + esc(bn2) + '</b>' +
+        html += '<div class="item" style="margin:6px 0 6px 12px;">' + _rn(m.round || 1) + ': <b>' + esc(an) + '</b> vs <b>' + esc(bn2) + '</b>' +
           (wn ? ' → 🏆 <b>' + esc(wn) + '</b>' : '') + (m.room ? ' <small>🔑' + esc(m.room) + '</small>' : '') + '<br>' +
           '<button class="btn small" data-mroom="' + c.key + '|' + mk + '">🔑 Room</button>' +
           '<button class="btn small" data-msync="' + c.key + '|' + mk + '">✔ Sync</button></div>';
@@ -710,7 +715,7 @@ function castTalk(t) {
   } catch (e) {}
 }
 function castGo(code, title) {
-  if (!db) return;
+  if (!db) { alert('No Firebase connection! Unlock admin first.'); return; }
   castStop(); castCode = code; castLead = '';
   $('castTitle').textContent = (title || '') + ' · ' + code;
   $('castLiveCard').style.display = '';
@@ -718,7 +723,7 @@ function castGo(code, title) {
   castTimer = setInterval(function () {
     db.ref('duel_rooms/' + code).once('value').then(function (snap) {
       var r = snap.val();
-      if (!r) { $('castLive').innerHTML = '<p class="note">Room closed.</p>'; castStop(); return; }
+      if (!r) { $('castLive').innerHTML = '<p class="note">Room closed (host left?). Live room theke code naw.</p>'; castStop(); return; }
       if (r.winner && r.winner.u) {
         $('castLive').innerHTML = '<div class="item" style="text-align:center;font-size:22px;">🏆 <b>' + esc(r.winner.n || '') + '</b><br><small>WINS!</small></div>';
         castTalk('🏆 ' + (r.winner.n || '') + ' wins!');
@@ -811,6 +816,21 @@ try { var _cg = $('castGoBtn'); if (_cg) _cg.addEventListener('click', function 
   if (code.length !== 5) { alert('5-letter room code daw'); return; }
   castGo(code, 'Custom Room');
 }); } catch (e) {}
+try { var _sc = $('scanBtn'); if (_sc) _sc.addEventListener('click', scanRooms); } catch (e) {}
+function scanRooms() {
+  if (!db) { alert('No Firebase connection! Unlock first.'); return; }
+  $('scanList').innerHTML = '<p class="note">Scanning…</p>';
+  db.ref('duel_rooms').orderByChild('created').limitToLast(25).once('value').then(function (snap) {
+    var h = '';
+    snap.forEach(function (c) {
+      var r = c.val() || {}; var ps = r.players || {}; var n = Object.keys(ps).length;
+      var age = Math.max(0, Math.round((Date.now() - (+r.created || 0)) / 60000));
+      h += '<div class="item"><b>🔑 ' + esc(c.key) + '</b> <small>' + esc(r.st || '') + ' · ' + n + 'p · ' + age + 'm ago' + (r.winner ? ' · 🏆' + esc(r.winner.n || '') : '') + '</small><br><button class="btn small" data-castroom="' + c.key + '">📡 Broadcast</button></div>';
+    });
+    $('scanList').innerHTML = h || '<p class="note">No rooms.</p>';
+    bindAll();
+  }).catch(function (e) { $('scanList').innerHTML = '<p class="note">Scan failed: ' + esc(String(e)) + '</p>'; });
+}
 $('watchBtn').addEventListener('click', function () {
   if (!db) { alert('No Firebase connection!'); return; }
   var code = ($('watchCode').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -876,7 +896,10 @@ function buildBracket(tourKey) {
       up['m' + i] = { round: 1, a: a, b: b, room: null, winner: b ? null : { u: a.u, n: a.n }, st: b ? 'open' : 'done' };
       i++;
     }
-    db.ref('config/tournaments/' + tourKey + '/matches').set(up).then(function () { alert('Bracket ready!'); });
+    db.ref('config/tournaments/' + tourKey + '/matches').set(up).then(function () {
+      db.ref('config/tournaments/' + tourKey).update({ size: ps.length });
+      alert('Bracket ready! (' + ps.length + ' players)');
+    });
   });
 }
 function makeMatchRoom(tourKey, mk) {
@@ -917,6 +940,10 @@ function advanceBracket(tourKey, round) {
     var all = [];
     snap.forEach(function (c) { var v = c.val() || {}; if ((v.round | 0) === round) all.push({ k: c.key, w: v.winner }); });
     var wins = all.filter(function (x) { return x.w && x.w.u; });
+    if (all.length === 1 && wins.length === 1) { // FINAL sesh — champion!
+      db.ref('config/tournaments/' + tourKey).update({ status: 'done' }).then(function () { alert('🏆 Champion: ' + (wins[0].w.n || '?')); });
+      return;
+    }
     if (wins.length < 2 || wins.length !== all.length) return; // round sesh hoyni
     var up = {}, base = 'mR' + (round + 1) + '_';
     for (var i = 0; i < wins.length; i += 2) {
@@ -927,6 +954,9 @@ function advanceBracket(tourKey, round) {
   });
 }
 function bindAll() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-castroom]'), function (b) {
+    b.addEventListener('click', function () { castGo(b.getAttribute('data-castroom'), 'Room'); });
+  });
   Array.prototype.forEach.call(document.querySelectorAll('[data-bracket]'), function (b) {
     b.addEventListener('click', function () { buildBracket(b.getAttribute('data-bracket')); });
   });
