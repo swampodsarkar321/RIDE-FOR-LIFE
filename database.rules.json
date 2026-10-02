@@ -62,6 +62,16 @@
       },
       "activeEvent": {
         ".validate": "newData.val() == null || (newData.isString() && newData.val().length <= 40)"
+      },
+      "disabledEvents": {
+        "$k": {
+          ".validate": "newData.val() == null || newData.isBoolean()"
+        }
+      },
+      "eventOverrides": {
+        "$k": {
+          ".validate": "newData.val() == null || newData.hasChildren(['name_en'])"
+        }
       }
     }
   }

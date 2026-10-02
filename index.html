@@ -4207,9 +4207,14 @@ var EVENTS = [
 var eventMode = null, fuelDrainK = 1, fuelPickAmt = 35, scoreXK = 1;
 var activeEventId = null; // admin live korle sudhu etai cholbe
 var ADMIN_EVENTS = [], ADMIN_MINLVL = {};
+var DISABLED_EV = {}, OVERRIDDEN_EV = {}; // admin: built-in event off + override
+function adminEvParams(e) {
+  return { night: !!e.night, coinX: +e.coinX || 1, fuelX: +e.fuelX || 1, fuelPick: +e.fuelPick || 35, nitroRate: +e.nitroRate || 0, nitroDur: +e.nitroDur || 6, quota: +e.quota || 0, reward: +e.reward || 0, bonusX: +e.bonusX || 1, scoreX: +e.scoreX || 1 };
+}
 var BASE_STATS = null, BASE_COLS = null, BASE_BN = null, BASE_EN = null, BASE_TB = null, BASE_TE = null, BASE_PRC = null;
 function evP() {
   if (!eventMode) return {};
+  try { if (OVERRIDDEN_EV[eventMode] && OVERRIDDEN_EV[eventMode].p) return OVERRIDDEN_EV[eventMode].p; } catch (e) {} // admin override
   for (var i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === eventMode) return EVENTS[i].p || {};
   for (var j = 0; j < ADMIN_EVENTS.length; j++) if (ADMIN_EVENTS[j].id === eventMode) return ADMIN_EVENTS[j].p || {};
   return {};
@@ -4238,8 +4243,19 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
         Object.keys(ev).forEach(function (k) {
           var e = ev[k]; if (!e) return;
           ADMIN_EVENTS.push({ id: 'c_' + k, ico: e.ico || '⭐', en: [e.name_en || 'Custom', e.desc_en || ''], bn: [e.name_bn || e.name_en || 'কাস্টম', e.desc_bn || e.desc_en || ''],
-            p: { night: !!e.night, coinX: +e.coinX || 1, fuelX: +e.fuelX || 1, fuelPick: +e.fuelPick || 35, nitroRate: +e.nitroRate || 0, nitroDur: +e.nitroDur || 6, quota: +e.quota || 0, reward: +e.reward || 0, bonusX: +e.bonusX || 1, scoreX: +e.scoreX || 1 } });
+            p: adminEvParams(e) });
         });
+        DISABLED_EV = {}; OVERRIDDEN_EV = {}; // built-in event control
+        try {
+          var dis = cfg.disabledEvents || {};
+          Object.keys(dis).forEach(function (k) { if (dis[k]) DISABLED_EV[k] = true; });
+          var ovr = cfg.eventOverrides || {};
+          Object.keys(ovr).forEach(function (k) {
+            var oe = ovr[k]; if (!oe) return;
+            OVERRIDDEN_EV[k] = { id: k, ico: oe.ico || '⭐', en: [oe.name_en || k, oe.desc_en || ''], bn: [oe.name_bn || oe.name_en || k, oe.desc_bn || oe.desc_en || ''], p: adminEvParams(oe) };
+          });
+        } catch (eD) {}
+        if (eventMode && DISABLED_EV[eventMode] && eventMode !== activeEventId) eventMode = null; // bondho event-e khela noy
         try { syncAdminBoards(cfg.billboards); } catch (e2) {}
         try { billboardsOn = cfg.billboardsOn !== false; } catch (e2) {}
         if (!bikeUnlocked(selBike)) selBike = firstOwned();
@@ -4261,7 +4277,7 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
     });
   } catch (e) {}
 }
-function evTxt(id, k) { for (var i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === id) return lang === 'bn' ? EVENTS[i].bn[k] : EVENTS[i].en[k]; for (var j = 0; j < ADMIN_EVENTS.length; j++) if (ADMIN_EVENTS[j].id === id) return lang === 'bn' ? ADMIN_EVENTS[j].bn[k] : ADMIN_EVENTS[j].en[k]; return ''; }
+function evTxt(id, k) { try { var _o = OVERRIDDEN_EV[id]; if (_o) return lang === 'bn' ? (_o.bn[k] || _o.en[k]) : (_o.en[k] || _o.bn[k]); } catch (e) {} for (var i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === id) return lang === 'bn' ? EVENTS[i].bn[k] : EVENTS[i].en[k]; for (var j = 0; j < ADMIN_EVENTS.length; j++) if (ADMIN_EVENTS[j].id === id) return lang === 'bn' ? ADMIN_EVENTS[j].bn[k] : ADMIN_EVENTS[j].en[k]; return ''; }
 function evName(id) { return evTxt(id, 0); }
 function evDesc(id) { return evTxt(id, 1); }
 function renderEvents() {
@@ -4272,7 +4288,9 @@ function renderEvents() {
     html += '<div style="text-align:center;font-weight:800;color:var(--gold);margin-bottom:6px;">🔴 ' + (lang === 'bn' ? 'লাইভ ইভেন্ট চলছে' : 'LIVE EVENT') + '</div>';
   }
   for (var i = 0; i < allEv.length; i++) {
-    var ev = allEv[i], nm = lang === 'bn' ? ev.bn[0] : ev.en[0], ds = lang === 'bn' ? ev.bn[1] : ev.en[1];
+    var ev = allEv[i];
+    try { if (DISABLED_EV[ev.id] && ev.id !== activeEventId) continue; } catch (eD) {} // admin bondho
+    var nm = lang === 'bn' ? ev.bn[0] : ev.en[0], ds = lang === 'bn' ? ev.bn[1] : ev.en[1];
     var isLive = activeEventId && activeEventId === ev.id;
     var isLocked = activeEventId && activeEventId !== ev.id;
     html += '<button class="legRow' + (eventMode === ev.id ? ' sel' : '') + (isLocked ? ' lock' : '') + '" data-ev="' + ev.id + '"' + (isLocked ? ' data-lock="1"' : '') + '><span>' + ev.ico + ' ' + nm + (isLive ? ' <b style="color:var(--gold)">● LIVE</b>' : '') + ' <small style="color:var(--panel-soft)">' + ds + '</small></span><span class="st">' + (isLocked ? '🔒' : '▶') + '</span></button>';
