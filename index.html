@@ -871,6 +871,7 @@
       <div class="setRow"><span class="lbl"><span class="ico">👁️</span><span>Colorblind Aid</span><span class="sub">High-contrast indicators</span></span><button class="tgl" id="setCB">Off</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🛡️</span><span>Practice Mode</span><span class="sub">No crash · no leaderboard</span></span><button class="tgl" id="setPractice">Off</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🪶</span><span>Lite Mode</span><span class="sub">No shadows · saves data+battery</span></span><button class="tgl" id="setLite">Off</button></div>
+      <div class="setRow"><span class="lbl"><span class="ico">🔒</span><span>Privacy</span><span class="sub">Progress saves on this device + anonymous online scores. No account, no personal data.</span></span></div>
       <div class="setRow"><span class="lbl"><span class="ico">📊</span><span data-i18n="set_fps">Show FPS</span><span class="sub" data-i18n="set_fps_sub">Developer mode</span></span><button class="tgl" id="setFps">Off</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🌐</span><span data-i18n="set_lang">Language</span><span class="sub" data-i18n="set_lang_sub">English / বাংলা</span></span><button class="tgl on" id="setLang">English</button></div>
       <div class="setRow"><span class="lbl"><span class="ico">🔔</span><span data-i18n="set_push">Push Notification</span><span class="sub" data-i18n="set_push_sub">Daily reward reminder</span></span><button class="tgl" id="setPush">Off</button></div>
@@ -3215,9 +3216,39 @@ function cgInit() {
     window.CrazyGames.SDK.init().then(function () {
       cgReady = true; CG_PORTAL = true;
       try { applyPortalMode(); } catch (e) {}
+      try { cgSyncAudio(); } catch (eS) {}
+      try { // CG audio/mute setting change shunbo (SDK priority)
+        var _gm = window.CrazyGames.SDK.game;
+        if (_gm && _gm.addSettingsChangeListener) _gm.addSettingsChangeListener(function () { try { cgSyncAudio(); } catch (e2) {} });
+      } catch (eL) {}
       try { logEv('cg_ready', {}); } catch (e2) {}
     }).catch(function () {});
   } catch (e) {}
+}
+function cgSyncAudio() { // CG muteAudio setting-er priority (Full impl requirement)
+  try {
+    var gm = window.CrazyGames.SDK.game;
+    if (gm && gm.settings && gm.settings.muteAudio && !muted) {
+      muted = true;
+      var mb = $('mute'); if (mb) mb.textContent = '🔇';
+      try { engineStop(); } catch (e) {}
+    }
+  } catch (e) {}
+}
+function cgProgress() { // completion % + context (endless: map progress = completion)
+  try {
+    if (!cgReady) return;
+    var gm = window.CrazyGames.SDK.game;
+    try {
+      var pct = 0;
+      try { pct = Math.round((unlockLeg / (LEGS.length - 1)) * 100); } catch (e) {}
+      if (gm.reportGameCompletedPercentage) gm.reportGameCompletedPercentage(Math.max(0, Math.min(100, pct)));
+    } catch (e2) {}
+    try { if (gm.setGameContext) gm.setGameContext({ leg: String(selLeg), best: String(best) }); } catch (e3) {}
+  } catch (e) {}
+}
+function cgHappy() { // record/achievement-e portal celebrate
+  try { if (cgReady && window.CrazyGames.SDK.game.happytime) window.CrazyGames.SDK.game.happytime(); } catch (e) {}
 }
 function cgGame(start) { // gameplay start/stop event (download-size + ad pacing measure)
   try {
@@ -5443,7 +5474,7 @@ function endRun() {
       else { ot.textContent = T('crash_t'); os.textContent = T('crash_s'); }
     }
   var s = Math.floor(score), isBest = s > best;
-  if (isBest) { best = s; try { localStorage.setItem('rangpurRushBest', String(best)); } catch (e) {} }
+  if (isBest) { best = s; try { localStorage.setItem('rangpurRushBest', String(best)); } catch (e) {} try { cgHappy(); } catch (eH) {} }
   // bank + xp save
   if (dblRun) { coinCount *= 2; dblRun = false; }
   bankCoins += coinCount;
@@ -5483,10 +5514,11 @@ function endRun() {
   $('oScore').textContent = s; $('oCoins').textContent = coinCount; $('oParcel').textContent = parcelCount;
   prebuildCard(s, parcelCount, coinCount); // auto result card — ek tap-e share
   try { replayStop(false); } catch (e) {} // last 10s clip ready — Clip button-e share
-  try { cgGame(false); cgMidgame(); } catch (eCG) {} // CG: gameplay stop + midgame ad
+  try { cgGame(false); cgMidgame(); cgProgress(); } catch (eCG) {} // CG: gameplay stop + midgame ad + progress
   if (challengeTarget > 0 && s >= challengeTarget) {
     ot.textContent = '🏆 ' + (lang === 'bn' ? 'চ্যালেঞ্জ জিতেছ!' : 'Challenge beaten!');
     try { logEv('challenge_win', { t: challengeTarget, s: s }); } catch (e) {}
+    try { cgHappy(); } catch (eH) {}
     challengeTarget = 0;
     try { readChallenge(); } catch (e) {}
   }
@@ -6057,7 +6089,7 @@ function fetchFriendsBoard(cb) {
   } catch (e) { friendsFetching = false; cb([]); }
 }
 $('pauseBtn').addEventListener('click', function (e) { e.currentTarget.blur(); pauseGame(); });
-$('mute').addEventListener('click', function (e) { muted = !muted; e.currentTarget.textContent = muted ? '🔇' : '🔊'; e.currentTarget.blur(); if (muted) engineStop(); else if (state === 'play') engineStart(); try { radioTick(); } catch (e2) {} });
+$('mute').addEventListener('click', function (e) { muted = !muted; e.currentTarget.textContent = muted ? '🔇' : '🔊'; e.currentTarget.blur(); try { cgSyncAudio(); if (muted) e.currentTarget.textContent = '🔇'; } catch (eCG) {} if (muted) engineStop(); else if (state === 'play') engineStart(); try { radioTick(); } catch (e2) {} });
 $('settingsBtn').addEventListener('click', function (e) {
   e.stopPropagation();
   if (state === 'play') { state = 'pause'; document.body.dataset.ui = 'pause'; }
@@ -7994,6 +8026,7 @@ function boot() {
   selDivIdx = playerDiv ? divIndex(playerDiv) : -1;
   if (playerName) { try { $('nameInput').value = playerName; } catch (e) {} }
   renderDivGrid();
+  try { if (CG_PORTAL && !playerName) { selDivIdx = 4; var _gi = $('nameInput'); if (_gi && !_gi.value) _gi.value = 'Guest'; renderDivGrid(); } } catch (eG) {} // portal QA: 1-click-e gameplay
   if (!playerName || !playerDiv) { $('nameOverlay').classList.remove('hidden'); try { $('nameOverlay').scrollTop = 0; var nc = $('nameCard'); if (nc) nc.scrollTop = 0; } catch (e) {} }
   $('bikeL').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(-1); });
   $('bikeR').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(1); });
