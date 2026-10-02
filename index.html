@@ -472,6 +472,14 @@
     width: 110px; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;
   }
   #rwCenter b { font-size: 15px; } #rwCenter small { font-size: 11px; color: var(--panel-soft); }
+  /* ===== profile narrow-screen guard ===== */
+  #pageProfile .board { min-width: 0; overflow: hidden; }
+  @media (max-width: 360px) {
+    #pageProfile .stats { grid-template-columns: 1fr 1fr; }
+    #profAch { grid-template-columns: 1fr 1fr !important; }
+    #profName { font-size: 22px !important; }
+    #invInput { font-size: 16px !important; }
+  }
   @keyframes chasePulse { from { box-shadow: 0 0 0 0 rgba(255,59,48,0); } to { box-shadow: 0 0 14px 4px rgba(255,59,48,.7); } }
   @keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
   .stCard {
