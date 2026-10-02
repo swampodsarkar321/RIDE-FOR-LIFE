@@ -472,6 +472,24 @@
     width: 110px; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;
   }
   #rwCenter b { font-size: 15px; } #rwCenter small { font-size: 11px; color: var(--panel-soft); }
+  /* ===== matchmaking window ===== */
+  #mmWindow { position: fixed; inset: 0; z-index: 80; display: none; place-items: center; padding: 20px; background: rgba(0,0,0,.6); }
+  #mmWindow.on { display: grid; }
+  #mmWindow .mm-card {
+    width: min(340px, 92vw); text-align: center; color: #fff; border-radius: 24px; padding: 26px 22px;
+    background: linear-gradient(160deg, #16233f, #0b1226); border: 3px solid var(--gold);
+    box-shadow: 0 18px 60px rgba(0,0,0,.6), 0 0 24px rgba(255,200,61,.25);
+  }
+  #mmWindow .mm-title { font-size: 30px; letter-spacing: 2px; display: block; margin: 4px 0 2px; }
+  #mmWindow .radar { position: relative; width: 130px; height: 130px; margin: 10px auto; }
+  #mmWindow .radar b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 40px; }
+  #mmWindow .radar i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #37e05a; opacity: 0; animation: radarPing 1.8s ease-out infinite; }
+  #mmWindow .radar i:nth-child(2) { animation-delay: .6s; } #mmWindow .radar i:nth-child(3) { animation-delay: 1.2s; }
+  @keyframes radarPing { 0% { transform: scale(.25); opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
+  #mmStatus { font-size: 16px; font-weight: 800; color: var(--gold); min-height: 22px; }
+  #mmWindow .mm-bar { height: 8px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; margin: 10px 0 14px; }
+  #mmWindow .mm-bar u { display: block; height: 100%; width: 0%; background: linear-gradient(90deg,#9b5de5,#37e05a); border-radius: 5px; }
+  #mmCancel { width: 100%; box-sizing: border-box; }
   /* ===== profile narrow-screen guard ===== */
   #pageProfile .board { min-width: 0; overflow: hidden; }
   @media (max-width: 360px) {
@@ -739,6 +757,16 @@
 <div id="pops"></div>
 <div id="flash"></div>
 <div id="radioWheel"><div id="rwCenter"><b id="rwName">FM</b><small id="rwHint">tap ✕</small></div></div>
+<div id="mmWindow" style="display:none;">
+  <div class="mm-card">
+    <div style="font-size:44px;">⚔️</div>
+    <b class="mm-title">FIND RIVAL</b>
+    <div class="radar"><i></i><i></i><i></i><b>📡</b></div>
+    <div id="mmStatus">Searching…</div>
+    <div class="mm-bar"><u id="mmFill"></u></div>
+    <button class="backBtn" id="mmCancel">✕ Cancel</button>
+  </div>
+</div>
 
 <div class="overlay" id="menu">
   <div class="card" id="menuCard">
@@ -882,10 +910,6 @@
         <button class="mx gray mini" data-ontab="custom"><span class="ico">⚙️</span><span class="tx"><b>Custom</b></span><span class="chev">›</span></button>
         <button class="mx red mini" data-ontab="esports"><span class="ico">🏆</span><span class="tx"><b>Esports</b></span><span class="chev">›</span></button>
         <button class="mx blue mini" data-ontab="events"><span class="ico">🎪</span><span class="tx"><b>Events</b></span><span class="chev">›</span></button>
-      </div>
-      <div class="secCard" id="onPlay">
-        <button class="btn dvBtn" id="mmGoBtn" style="width:100%;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;">🔎 Find Rival (30s)</button>
-        <div id="mmStatus" style="min-height:20px;font-size:13px;font-weight:800;color:var(--gold);margin-top:6px;"></div>
       </div>
       <div class="secCard" id="onRank" style="display:none;"><div id="rankHub"></div></div>
       <div id="onCustom" style="display:none;">
@@ -8536,11 +8560,12 @@ function boot() {
   $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
   var _ot = $('onNav');
   if (_ot) _ot.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('[data-ontab]') : null; if (!b) return; e.stopPropagation(); onTab(b.getAttribute('data-ontab')); });
-  var _mmgo = $('mmGoBtn');
-  if (_mmgo) _mmgo.addEventListener('click', function (e) {
+  var _mmc = $('mmCancel');
+  if (_mmc) _mmc.addEventListener('click', function (e) {
     e.stopPropagation(); try { sfx.move(); } catch (_) {}
-    if (MM.on) { try { MM.ranked = false; } catch (_) {} MMStop(); mmStatus(''); }
-    else matchFind();
+    try { MM.ranked = false; } catch (_) {}
+    try { MMStop(); } catch (_) {}
+    mmStatus(''); closeMMWindow();
   });
   var _dr = $('duelRow');
   if (_dr) _dr.addEventListener('click', function () { try { onTab('play'); } catch (e) {} });
@@ -9030,7 +9055,7 @@ function duelBackToLobby() {
   }
   duelOpen();
 }
-function duelExit(toPage) { try { MMStop(); } catch (e) {} duelLeave(); duelToMenu(toPage || 'pageMain'); DX.over = false; DX.fin = false; }
+function duelExit(toPage) { try { MMStop(); } catch (e) {} try { closeMMWindow(); } catch (e) {} duelLeave(); duelToMenu(toPage || 'pageMain'); DX.over = false; DX.fin = false; }
 function duelQuit() { duelExit('pageMain'); } // pause menu -> forfeit (rival gets the win automatically)
 
 /* ---------- wiring ---------- */
@@ -9038,6 +9063,30 @@ function duelQuit() { duelExit('pageMain'); } // pause menu -> forfeit (rival ge
 var MM = { on: false, t0: 0, timer: null, pairCb: null, pairRef: null, botTimer: null, botUid: null, botPlan: null };
 var BOTN = ['Rakib Hossain', 'Mim Akter', 'Tanvir Rahman', 'Nusrat Jahan', 'Rifat Karim', 'Sadia Ahmed', 'Emon Chowdhury', 'Tania Rahman', 'Sohel Rana', 'Jui Islam', 'Mahim Rahman', 'Faria Rahman'];
 function mmStatus(t) { try { var el = $('mmStatus'); if (el) el.textContent = t || ''; } catch (e) {} }
+var mmWatch = null;
+function openMMWindow() {
+  try {
+    if (DX.room) return;
+    var w = $('radioWheel'); if (w) w.classList.remove('on');
+    try { wheelOpen = false; } catch (e) {}
+    $('mmWindow').classList.add('on');
+    try { sfx.move(); } catch (e) {}
+    if (!MM.on && !DX.room && !DX.joining) matchFind();
+    if (mmWatch) clearInterval(mmWatch);
+    mmWatch = setInterval(function () {
+      try {
+        var el = Math.floor((Date.now() - (MM.t0 || Date.now())) / 1000);
+        var f = $('mmFill'); if (f) f.style.width = Math.min(100, Math.max(0, el / 30 * 100)) + '%';
+        if (DX.room || !MM.on) { closeMMWindow(); }
+      } catch (e) {}
+    }, 500);
+  } catch (e) {}
+}
+function closeMMWindow() {
+  try { if (mmWatch) { clearInterval(mmWatch); mmWatch = null; } } catch (e) {}
+  try { var f = $('mmFill'); if (f) f.style.width = '0%'; } catch (e) {}
+  try { $('mmWindow').classList.remove('on'); } catch (e) {}
+}
 function MMStop() {
   try { if (MM.timer) { clearInterval(MM.timer); MM.timer = null; } } catch (e) {}
   try { if (MM.gTo) { clearTimeout(MM.gTo); MM.gTo = null; } } catch (e) {}
@@ -9306,7 +9355,7 @@ function onTab(name) {
     Array.prototype.forEach.call(document.querySelectorAll('#onNav .mx'), function (b) {
       b.classList.toggle('sel', b.getAttribute('data-ontab') === name);
     });
-    if ($('onPlay')) $('onPlay').style.display = name === 'play' ? '' : 'none';
+    if (name === 'play') { openMMWindow(); return; }
     if ($('onRank')) $('onRank').style.display = name === 'rank' ? '' : 'none';
     if ($('onCustom')) $('onCustom').style.display = name === 'custom' ? '' : 'none';
     if ($('onEsports')) $('onEsports').style.display = name === 'esports' ? '' : 'none';
