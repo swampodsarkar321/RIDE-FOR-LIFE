@@ -2,7 +2,7 @@
   "name": "Ride For Life - Delivery Rider",
   "short_name": "Ride For Life",
   "description": "Rangpur Division delivery ride across Bangladesh",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "start_url": ".",
   "scope": ".",
   "display": "fullscreen",

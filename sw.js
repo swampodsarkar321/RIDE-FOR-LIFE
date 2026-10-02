@@ -1,4 +1,4 @@
-var CACHE = 'rfl-v8';
+var CACHE = 'rfl-v9';
 var FILES = ['.', 'index.html', 'manifest.json', 'ride-for-life-logo.png', 'soundque-indian-dio-scooter-start-amp-ride-pass-by-soundque-field-recording-447204.mp3'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));

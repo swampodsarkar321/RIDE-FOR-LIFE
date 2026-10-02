@@ -972,10 +972,11 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/firebase-app-compat.js"></script>
+<script src="vendor/firebase-database-compat.js"></script>
+<script src="vendor/firebase-analytics-compat.js"></script>
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script>
 (function () {
 'use strict';
@@ -3205,6 +3206,52 @@ try {
     try { if (typeof firebase.analytics === 'function') { window._fa = firebase.analytics(); } } catch (e) {}
   }
 } catch (e) { fbReady = false; }
+/* ---------- CrazyGames portal: SDK v3 + portal-safe mode (fail-safe: SDK na thakleo game chole) ---------- */
+var CG_PORTAL = false, cgReady = false;
+try { var _cgh = (location.hostname || '').toLowerCase(); if (_cgh.indexOf('crazygames.com') >= 0) CG_PORTAL = true; } catch (e) {}
+function cgInit() {
+  try {
+    if (!window.CrazyGames || !window.CrazyGames.SDK || !window.CrazyGames.SDK.init) return;
+    window.CrazyGames.SDK.init().then(function () {
+      cgReady = true; CG_PORTAL = true;
+      try { applyPortalMode(); } catch (e) {}
+      try { logEv('cg_ready', {}); } catch (e2) {}
+    }).catch(function () {});
+  } catch (e) {}
+}
+function cgGame(start) { // gameplay start/stop event (download-size + ad pacing measure)
+  try {
+    if (!cgReady || !window.CrazyGames || !window.CrazyGames.SDK || !window.CrazyGames.SDK.game) return;
+    var gm = window.CrazyGames.SDK.game;
+    if (start && gm.gameplayStart) gm.gameplayStart();
+    if (!start && gm.gameplayStop) gm.gameplayStop();
+  } catch (e) {}
+}
+var cgOverCount = 0;
+function cgMidgame() { // game-over ad (Full launch) — ad fail/block hole chupchap continue
+  try {
+    if (!cgReady) return;
+    var S = window.CrazyGames.SDK;
+    if (!S.ad || !S.ad.requestAd) return;
+    cgOverCount++;
+    if (cgOverCount % 2 === 0) return; // proti 2nd game-over-e ad (pacing)
+    S.ad.requestAd('midgame', function () {}, function () {});
+  } catch (e) {}
+}
+function cgRewarded(ok, no) { // rewarded ad — ok/no callback, SDK na thakle no()
+  try {
+    if (!cgReady) { try { no(); } catch (e2) {} return; }
+    var S = window.CrazyGames.SDK;
+    if (!S.ad || !S.ad.requestAd) { try { no(); } catch (e3) {} return; }
+    S.ad.requestAd('rewarded', function () { try { ok(); } catch (e4) {} }, function () { try { no(); } catch (e5) {} });
+  } catch (e) { try { no(); } catch (e6) {} }
+}
+function applyPortalMode() { // portal iframe: install + external share lukano
+  try {
+    ['installBtn', 'splashInstall'].forEach(function (id) { var el = $(id); if (el) el.style.display = 'none'; });
+    ['fbBtn', 'msgBtn', 'waBtn', 'copyBtn'].forEach(function (id) { var b = $(id); if (b) b.style.display = 'none'; });
+  } catch (e) {}
+}
 function logEv(n, p) { try { if (window._fa) window._fa.logEvent(n, p || {}); } catch (e) {} }
 function cloudSave() { // local + cloud — sob save ekhan diye
   try {
@@ -3328,7 +3375,24 @@ function spinInfo() {
 }
 function doSpin() {
   try {
-    if (!spinInfo().can) return;
+    var sb0 = $('spinBtn');
+    if (!spinInfo().can) { // spin shesh — portal-e rewarded ad-e extra spin
+      if (sb0 && sb0._adMode && cgReady) {
+        sb0._adMode = false;
+        cgRewarded(function () {
+          var rw2 = 100 + ((Math.random() * 5) | 0) * 50;
+          bankCoins += rw2;
+          try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
+          cloudSave(); updateMenuBest();
+          var sm = $('spinMsg'); if (sm) sm.textContent = '🎉 +' + rw2 + '!';
+          var sb = $('spinBtn'); if (sb) sb.style.display = 'none';
+          try { confettiBurst(); } catch (e2) {}
+          try { logEv('spin_ad', { rw: rw2 }); } catch (e3) {}
+          sfx.coin();
+        }, function () {});
+      }
+      return;
+    }
     var r = Math.random(), rw = r < 0.3 ? 50 : r < 0.55 ? 80 : r < 0.75 ? 100 : r < 0.88 ? 150 : r < 0.96 ? 200 : r < 0.99 ? 300 : 500;
     bankCoins += rw;
     try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrSpin', dayStr()); } catch (e) {}
@@ -3440,9 +3504,13 @@ function renderDaily() {
       var sv = $('dailySave'), off = saveStreakOffer();
       if (sv) sv.style.display = off ? 'inline-block' : 'none';
     } catch (e) {}
-    try { // daily spin: dine 1 bar
+    try { // daily spin: dine 1 bar (portal-e ad dekhe extra spin)
       var sb2 = $('spinBtn'), sm2 = $('spinMsg'), si = spinInfo();
-      if (sb2) sb2.style.display = si.can ? 'inline-block' : 'none';
+      if (sb2) {
+        if (si.can) { sb2.style.display = 'inline-block'; sb2.textContent = 'SPIN'; sb2._adMode = false; }
+        else if (typeof cgReady !== 'undefined' && cgReady) { sb2.style.display = 'inline-block'; sb2.textContent = '📺 Ad Spin'; sb2._adMode = true; }
+        else sb2.style.display = 'none';
+      }
       if (sm2 && si.can) sm2.textContent = bn ? '🎡 ফ্রি স্পিন বাকি!' : '🎡 Free spin left!';
     } catch (e) {}
     var mv = $('mDailyVal');
@@ -5277,6 +5345,7 @@ function startGame(keepScore) {
   try { claimFestBike(); } catch (e) {} // festival event-e limited bike gift
   if (practice) toast(elHint, lang === 'bn' ? '🛡️ প্র্যাকটিস মোড!' : '🛡️ Practice mode!', 2000);
   try { refreshGhosts(); } catch (e2) {} // ghost score list (nijer best + bondhu)
+  try { cgGame(true); } catch (eCG) {} // CG: gameplay start
   try { fetchFriendsBoard(function () {}); } catch (e3) {} // porer run-er ghost fresh hobe
   try { replayStart(); } catch (e) {} // replay clip record suru
   try { logEv('run_start', { leg: selLeg, ev: eventMode || 'none' }); } catch (e) {}
@@ -5301,6 +5370,7 @@ function pauseGame() {
     }
   } catch (e) {}
   try { engineStop(); } catch (e2) {} try { radioTick(); } catch (e3) {}
+  try { cgGame(false); } catch (eCG) {}
 }
 function resumeGame() { if (state === 'pause') { state = 'play'; document.body.dataset.ui = 'play'; $('pause').classList.add('hidden'); last = performance.now(); try { engineStart(); } catch (e) {} try { radioTick(); } catch (e) {} } }
 /* ---------- police chase: checkpoint-e overspeed → dhawa → crash = dhora ---------- */
@@ -5413,6 +5483,7 @@ function endRun() {
   $('oScore').textContent = s; $('oCoins').textContent = coinCount; $('oParcel').textContent = parcelCount;
   prebuildCard(s, parcelCount, coinCount); // auto result card — ek tap-e share
   try { replayStop(false); } catch (e) {} // last 10s clip ready — Clip button-e share
+  try { cgGame(false); cgMidgame(); } catch (eCG) {} // CG: gameplay stop + midgame ad
   if (challengeTarget > 0 && s >= challengeTarget) {
     ot.textContent = '🏆 ' + (lang === 'bn' ? 'চ্যালেঞ্জ জিতেছ!' : 'Challenge beaten!');
     try { logEv('challenge_win', { t: challengeTarget, s: s }); } catch (e) {}
@@ -5694,11 +5765,13 @@ function shareScore() {
 }
 function sendCardText(card, txt, tag) {
   try {
-    var f = new File([card.blob], 'ride-for-life.png', { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [f] })) {
-      navigator.share({ files: [f], title: 'Ride For Life', text: txt }).catch(function () {});
-      try { logEv('share', { t: tag || 'card' }); } catch (e) {}
-      return;
+    if (!CG_PORTAL) {
+      var f = new File([card.blob], 'ride-for-life.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) {
+        navigator.share({ files: [f], title: 'Ride For Life', text: txt }).catch(function () {});
+        try { logEv('share', { t: tag || 'card' }); } catch (e) {}
+        return;
+      }
     }
   } catch (e) {}
   try {
@@ -5706,7 +5779,8 @@ function sendCardText(card, txt, tag) {
     var a = document.createElement('a'); a.href = url; a.download = 'ride-for-life-score.png';
     document.body.appendChild(a); a.click();
     setTimeout(function () { try { document.body.removeChild(a); } catch (e2) {} }, 800);
-    try { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); } catch (e2) {}
+    if (!CG_PORTAL) { try { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); } catch (e2) {} }
+    else { try { toast(elHint, lang === 'bn' ? '💾 কার্ড ডাউনলোড!' : '💾 Card downloaded!', 2000); } catch (e3) {} }
   } catch (e) {}
 }
 function sendCard(card, s) { sendCardText(card, shareText(s), 'score'); }
@@ -7863,7 +7937,7 @@ function boot() {
   loadProgress('Loading audio…');
   try { engineEnsureAudio(); } catch (e) {}
   loadProgress('Preparing world…');
-  try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {}
+  try { if ('serviceWorker' in navigator && !CG_PORTAL) navigator.serviceWorker.register('sw.js'); } catch (e) {}
   loadProgress('Almost ready…');
   OVER_T0 = ($('overTitle') || {}).textContent || ''; OVER_S0 = ($('overSub') || {}).textContent || '';
   var bb = $('brakeBtn');
@@ -7912,6 +7986,7 @@ function boot() {
   applyLang();
   applyBikeColor(); applyCustomization(); renderCustomize(); renderGarage(); renderBoard(); renderDest();
   try { applyHand(); applyTextCB(); applyLite(); } catch (eQ) {} // QoL prefs
+  try { cgInit(); if (CG_PORTAL) applyPortalMode(); } catch (eCG) {} // CrazyGames portal
   cloudLoad(); loadGameConfig();
   if (selLeg > unlockLeg) { selLeg = unlockLeg; try { localStorage.setItem('rrLeg', String(selLeg)); } catch (e) {} renderDest(); }
   document.body.dataset.ui = 'menu';
