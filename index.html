@@ -6356,21 +6356,22 @@ function update(dt) {
         }
       }
       else if (gt.kind === 'fuel') {
-        if (speed < 13) { // brake floor 11.5 — brake chaplei hobe
+        if (speed < 13) { // brake floor 11.5 — brake chaplei hobe · khali onujayi dam (৳1/%)
           var fneed = 100 - fuel;
-          if (fneed > 5 && bankCoins >= 80) { bankCoins -= 80; fuel = 100; try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {} cloudSave(); sfx.deliver(); toast(elLoc, lang === 'bn' ? '⛽ ফুল ট্যাংক! −৳80' : '⛽ Full tank! −৳80', 2200); }
+          var fcost = Math.ceil(fneed * 1);
+          if (fneed > 5 && bankCoins >= fcost) { bankCoins -= fcost; fuel = 100; try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {} cloudSave(); sfx.deliver(); toast(elLoc, lang === 'bn' ? '⛽ ফুল ট্যাংক! −৳' + fcost : '⛽ Full tank! −৳' + fcost, 2200); }
           else if (fneed <= 5) toast(elHint, lang === 'bn' ? '⛽ ট্যাংক ভর্তি!' : '⛽ Tank full!', 1500);
-          else toast(elHint, lang === 'bn' ? '⛽ ৳80 লাগবে!' : '⛽ Need ৳80!', 1500);
+          else toast(elHint, lang === 'bn' ? '⛽ ৳' + fcost + ' লাগবে!' : '⛽ Need ৳' + fcost + '!', 1500);
         } else toast(elHint, lang === 'bn' ? '⛽ থামো! (speed কমাও)' : '⛽ Stop! (slow down)', 1500);
       }
       else if (gt.kind === 'mech') {
-        if (speed < 13) { // brake floor 11.5 — samne gelei hobe
+        if (speed < 13) { // brake floor 11.5 — samne gelei hobe · damage onujayi dam (৳1.2/%)
           var miss = 100 - hp;
           if (miss < 5) toast(elHint, lang === 'bn' ? '🔧 বাইক ঠিক আছে!' : '🔧 Bike is fine!', 1500);
           else {
-            var mcc = miss > 50 ? 120 : miss >= 25 ? 70 : 20;
-            var mrep = mcc === 120 ? 100 : mcc === 70 ? 50 : 10;
-            if (bankCoins >= mcc) { bankCoins -= mcc; hp = Math.min(100, hp + mrep); try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {} cloudSave(); sfx.deliver(); toast(elLoc, (lang === 'bn' ? '🔧 মেরামত +' : '🔧 Repaired +') + mrep + '% −৳' + mcc, 2200); }
+            var mcc = Math.ceil(miss * 1.2);
+            var mrep = miss;
+            if (bankCoins >= mcc) { bankCoins -= mcc; hp = 100; try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {} cloudSave(); sfx.deliver(); toast(elLoc, (lang === 'bn' ? '🔧 ফুল মেরামত +' : '🔧 Full repair +') + mrep + '% −৳' + mcc, 2200); }
             else toast(elHint, (lang === 'bn' ? '🔧 ৳' : '🔧 Need ৳') + mcc + (lang === 'bn' ? ' লাগবে!' : '!'), 1500);
           }
         } else toast(elHint, lang === 'bn' ? '🔧 থামো! (speed কমাও)' : '🔧 Stop! (slow down)', 1500);
