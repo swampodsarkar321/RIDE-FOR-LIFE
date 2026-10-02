@@ -965,6 +965,7 @@
     </button>
     <div id="avatarGrid" style="display:none;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0;max-height:220px;overflow-y:auto;touch-action:pan-y;padding:4px;background:rgba(0,0,0,.3);border-radius:12px;border:2px solid rgba(255,255,255,.15);"></div>
     <button class="btn" id="nameBtn" data-i18n="name_go">Start</button>
+    <button class="btn" id="guestBtn" style="background:#3d6fa5;box-shadow:0 5px 0 #274a70;font-size:20px;margin-top:10px;">▶ Guest</button>
     <div class="bn" style="margin-top:14px;opacity:.8">🔑 <span id="codeLbl">Have a recovery code?</span></div>
     <div style="display:flex;gap:8px;margin-top:6px;">
       <input id="codeInput" maxlength="6" placeholder="ABC123" style="text-transform:uppercase;">
@@ -2897,6 +2898,7 @@ function makeFlood() { // bonnar pani: dube jawa rasta — slow, kintu morbe na
 }
 var floodK = 1, slipT = 0, slipOn = false, stormK = 1; // frame modifiers: bonna slow, slipstream boost, kalboishakhi jhor
 var hitStop = 0; // crash hit-stop: aghat-er muhurte freeze (juice)
+var lastKiller = ''; // kon obstacle marlo — analytics
 function makeBanner() {
   var g = new THREE.Group();
   box(0.22, 4.0, 0.22, 0x6d5b45, -5.0, 2.0, 0, g); box(0.22, 4.0, 0.22, 0x6d5b45, 5.0, 2.0, 0, g);
@@ -3729,8 +3731,10 @@ function cloudLoad() { // boot-e cloud theke notun data anle apply
   } catch (e) {}
 }
 function submitScore(s, pc) { // proti player 1 entry — sudhu highest score thake
-  if (!fbReady || !FBDB || !fbUid) return;
-  try { if (practice) return; } catch (e) {} // practice run leaderboard-e jabe na
+  if (!fbReady || !FBDB || !fbUid) { queuePending(s, pc); return; }
+  try { if (practice) return; } catch (e) {}
+  s = Math.max(0, Math.min(5000000, Math.floor(s))); // sanity clamp (rules cap)
+  if (s <= 0) return;
   try {
     var ref = FBDB.ref('scores_by_player/' + fbUid);
     ref.once('value').then(function (snap) {
@@ -3738,7 +3742,26 @@ function submitScore(s, pc) { // proti player 1 entry — sudhu highest score th
       var entry = { n: playerName || 'Rider', s: s, p: pc, div: playerDiv, tp: tParcels, t: Date.now(), av: getAvatar() };
       if (!cur || s > (cur.s || 0)) { try { ref.set(entry); } catch (e) {} }
       else { try { ref.update({ n: entry.n, div: entry.div, tp: entry.tp, t: entry.t }); } catch (e) {} }
-    });
+      try { localStorage.removeItem('rrPendScore'); } catch (e2) {}
+    }, function () { queuePending(s, pc); });
+  } catch (e) { queuePending(s, pc); }
+}
+function queuePending(s, pc) { // offline-e score harabe na — pore auto retry
+  try {
+    if (practice) return;
+    s = Math.max(0, Math.min(5000000, Math.floor(s || 0)));
+    if (s <= 0) return;
+    localStorage.setItem('rrPendScore', JSON.stringify({ s: s, pc: pc || 0, at: Date.now() }));
+  } catch (e) {}
+}
+function flushPending() {
+  try {
+    var raw = localStorage.getItem('rrPendScore');
+    if (!raw || !fbReady || !FBDB || !fbUid) return;
+    var p = JSON.parse(raw);
+    if (!p || !p.s) { try { localStorage.removeItem('rrPendScore'); } catch (e) {} return; }
+    try { localStorage.removeItem('rrPendScore'); } catch (e2) {}
+    submitScore(p.s, p.pc || 0);
   } catch (e) {}
 }
 function worldRows(arr, showDiv) {
@@ -4643,6 +4666,17 @@ function toast(el, html, ms) {
   el.innerHTML = html; el.classList.add('show');
   clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove('show'); }, ms);
 }
+function hintOnce(key, html, ms) { // first-time mechanic hint — jibone ekbar (retention)
+  try {
+    var h = {};
+    try { h = JSON.parse(localStorage.getItem('rrHints') || '{}'); } catch (e) {}
+    if (h[key]) return false;
+    h[key] = 1;
+    try { localStorage.setItem('rrHints', JSON.stringify(h)); } catch (e2) {}
+    toast(elHint, html, ms || 3000);
+    return true;
+  } catch (e) { return false; }
+}
 
 var blobGeoO = null, blobMatO = null;
 function clearAround(z, r) { // gate-er asepashe obstacle thakbe na — reachable guarantee
@@ -4757,6 +4791,7 @@ function spawnRow(z) {
     for (var hi = 0; hi < 3; hi++) if (hi !== safe) addObstacle('hartal', hi, z + rnd(-0.5, 0.5));
     if (Math.random() < 0.5) sfx.horn();
     toast(elHint, lang === 'bn' ? '🚧 হরতাল! ফাঁকা লেন নাও!' : '🚧 Blockade! Take free lane!', 2200);
+    try { hintOnce('hartal', lang === 'bn' ? '🚧 ব্যারিকেডে ধাক্কা = ক্র্যাশ! লেন বদলাও!' : '🚧 Hitting a barricade = crash! Change lane!', 2800); } catch (eH) {}
     for (var hc = 0; hc < 6; hc++) addPickup('coin', LANE_X[safe], 1.0, z + 4 + hc * 2);
     return;
   }
@@ -4769,6 +4804,7 @@ function spawnRow(z) {
     }
     if (!gapped) addObstacle('gap', (safe + 1) % 3, z);
     toast(elHint, lang === 'bn' ? '🌉 ভাঙা ব্রিজ! লাফ দাও!' : '🌉 Broken bridge! Jump!', 2200);
+    try { hintOnce('gap', lang === 'bn' ? '🌉 ফাঁকা জায়গায় পড়লে ক্র্যাশ — লাফ দাও!' : '🌉 Fall in the gap = crash — jump it!', 2800); } catch (eH) {}
     for (var ga2 = 0; ga2 < 6; ga2++) addPickup('coin', LANE_X[safe], 1.0 + 1.6 * Math.sin(Math.PI * ga2 / 5), z - 3 + ga2 * 1.3);
     return;
   }
@@ -4776,6 +4812,7 @@ function spawnRow(z) {
   if ((th0 === 'pond' || lm0 === 'river' || lm0 === 'ghat') && (weather === 'rain' || weather === 'heavy' || weather === 'storm') && dist > 200 && r < 0.35) {
     for (var fi = 0; fi < 3; fi++) if (fi !== safe || Math.random() < 0.4) addObstacle('flood', fi, z + rnd(-2, 2));
     toast(elHint, lang === 'bn' ? '🌊 বন্যার পানি! আস্তে!' : '🌊 Flooded road! Slow!', 2000);
+    try { hintOnce('flood', lang === 'bn' ? '🌊 পানিতে গতি অর্ধেক — মাঝ দিয়ে যাও!' : '🌊 Water halves speed — ride through!', 2800); } catch (eH) {}
     return;
   }
   if ((town || th0 === 'port') && dist > 250 && r < 0.38) {
@@ -4865,7 +4902,7 @@ var trickUsed = false, airT0 = 0, trickTotal = 0; // stunt: haway thakte abar ju
 try { trickTotal = +localStorage.getItem('rrTrick') || 0; } catch (e) {}
 function jump() {
   if (state !== 'play') return;
-  if (onGround) { vy = JUMP_V; onGround = false; sliding = false; slideT = 0; trickUsed = false; airT0 = time; sfx.jump(); }
+  if (onGround) { vy = JUMP_V; onGround = false; sliding = false; slideT = 0; trickUsed = false; airT0 = time; sfx.jump(); try { hintOnce('trick', lang === 'bn' ? '🤸 হাওয়ায় আবার jump = স্টান্ট বোনাস!' : '🤸 Jump again mid-air = stunt bonus!', 2600); } catch (eH) {} }
   else if (!trickUsed) { // mid-air trick — landing-e bonus
     trickUsed = true;
     try { pop('🤸!', player.position.x, py + 2.6, 0, '#ffe066'); } catch (e) {}
@@ -5111,6 +5148,7 @@ function spawnFerry(z) {
   clearAround(z, 14);
   gates.push({ mesh: m, kind: 'ferry', lane: lane, z: z, done: false });
   try { toast(elHint, lang === 'bn' ? '⛴️ সামনে ফেরি ঘাট! থামো!' : '⛴️ Ferry ghat ahead! Slow down!', 2600); } catch (e) {}
+  try { hintOnce('ferry', lang === 'bn' ? '⛴️ ফেরিতে থামলে +150 · +৳50!' : '⛴️ Stop at ferry = +150 · +৳50!', 2800); } catch (eH) {}
 }
 var gems = 0, dblRun = false;
 try { gems = +localStorage.getItem('rrGems') || 0; } catch (e) {}
@@ -5352,7 +5390,7 @@ function startGame(keepScore) {
   dist = 0; coinCount = 0; parcelCount = 0; lane = 1; targetX = 0; py = 0; vy = 0; onGround = true; sliding = false; slideT = 0; skidX = 0; skidV = 0; skidT = 0;
   if (keepScore && carryScore > 0) { score = carryScore; } else { score = 0; }
   carryScore = 0;
-  combo = 0; comboT = 0; missionGot = 0; timeScale = 1; slowT = 0; carried = 0; tutStep = 0; nmStreak = 0; runCrash = 0; trickUsed = false; airT0 = 0; floodK = 1; slipT = 0; stormK = 1;
+  combo = 0; comboT = 0; missionGot = 0; timeScale = 1; slowT = 0; carried = 0; tutStep = 0; nmStreak = 0; runCrash = 0; trickUsed = false; airT0 = 0; floodK = 1; slipT = 0; stormK = 1; lastKiller = '';
   crashOn = false; if (crashPts) crashPts.visible = false;
   pivot.rotation.set(0, 0, 0); bikeG.rotation.set(0, 0, 0);
   setLegLocs(); arrived = false;
@@ -5445,8 +5483,9 @@ function chaseBusted() { // die() theke — grace sesh hole dhora + fine
   try { sfx.fine(); logEv('chase_busted', { fine: bustedFine }); } catch (e) {}
   return true;
 }
-function die() {
+function die(killer) {
   if (state !== 'play' || invT > 0) return;
+  try { if (killer) lastKiller = killer; } catch (e) {}
   if (practice) { try { toast(elHint, lang === 'bn' ? '🛡️ প্র্যাকটিস — ক্র্যাশ নেই!' : '🛡️ Practice — no crash!', 1500); } catch (e) {} return; } // practice mode: obinashi
   try { chaseBusted(); } catch (e) {}
   hp -= bikeStat().dmg; // bike damage — morbena, damage hobe
@@ -5505,7 +5544,7 @@ function endRun() {
   } catch (e) {}
   cloudSave();
   try { submitScore(s, parcelCount); } catch (e) {}
-  try { logEv('run_end', { score: s, parcels: parcelCount, reason: endReason }); } catch (e) {}
+  try { logEv('run_end', { score: s, parcels: parcelCount, reason: endReason, leg: selLeg, dist: Math.floor(dist), killer: lastKiller || 'none' }); } catch (e) {}
   if (lvUp) toast(elLoc, F('lvl_up', riderLevel), 3200);
   // leaderboard top-5 (nam soho)
   var lb = getBoard();
@@ -6202,14 +6241,23 @@ function applyQuality(q) {
   scene.traverse(function (o) { if (o.material) o.material.needsUpdate = true; });
   stillRendered = false;
 }
-var aqAcc = 0, aqN = 0, aqSkip = 0, aqDone = false;
-function autoQuality(dt) {
-  if (aqDone || state !== 'play' || quality !== 'high') return;
+var aqAcc = 0, aqN = 0, aqSkip = 0, autoLowered = false;
+function autoQuality(dt) { // proti 20s-e re-check (gorom hole poreo nambe) + menu-teo
+  if (state !== 'play' && state !== 'menu') return;
+  if (quality !== 'high' && !autoLowered) return; // user nije low nile hostokkhep noy
   if (aqSkip < 90) { aqSkip++; return; }
   aqAcc += dt; aqN++;
-  if (aqN >= 150) {
-    aqDone = true;
-    if (aqN / aqAcc < 36) { applyQuality('low'); toast(elHint, T('aq_low'), 2600); renderSettings(); }
+  if (aqAcc >= 20) {
+    var fps = aqN / aqAcc; aqAcc = 0; aqN = 0;
+    if (fps < 34 && quality === 'high') {
+      autoLowered = true; applyQuality('low');
+      toast(elHint, T('aq_low'), 2600); renderSettings();
+      try { logEv('aq_down', { fps: Math.round(fps) }); } catch (e) {}
+    } else if (fps > 55 && autoLowered) {
+      autoLowered = false; applyQuality('high');
+      toast(elHint, lang === 'bn' ? '✨ গ্রাফিক্স ফিরল!' : '✨ Graphics back!', 2000); renderSettings();
+      try { logEv('aq_up', { fps: Math.round(fps) }); } catch (e2) {}
+    }
   }
 }
 bindSetting('setQuality', function () { applyQuality(quality === 'high' ? 'low' : 'high'); });
@@ -6702,11 +6750,12 @@ function update(dt) {
         continue;
       }
       if ((ob.kind === 'bus' || ob.kind === 'truck') && ob.z < -2 && ob.z > -16 && Math.abs(px - ob.x) < 1.2 && py < 1.5) slipOn = true; // slipstream zone
-      if (ov && py < ob.y1 - 0.05 && py + ph > ob.y0 + 0.05) { die(); break; }
+      if (ov && py < ob.y1 - 0.05 && py + ph > ob.y0 + 0.05) { die(ob.kind); break; }
     }
     if (slipOn && slipT <= 0) {
       slipT = 1.5;
       try { pop('🌪️ Slipstream!', px, py + 2.6, 0, '#7db4ff'); } catch (e) {}
+      try { hintOnce('slip', lang === 'bn' ? '🌪️ বাস/ট্রাকের পিছে থাকো = স্পিড + কয়েন!' : '🌪️ Stay behind bus/truck = speed + coins!', 2800); } catch (eH) {}
       try { logEv('slip', {}); } catch (e2) {}
     }
   }
@@ -7957,6 +8006,18 @@ function saveName() {
   updateMenuBest();
   sfx.power(); renderBoard();
 }
+function guestRide() { // nam charai 1 tap-e gameplay (bounce kombe)
+  try {
+    playerName = 'Guest' + Math.floor(100 + Math.random() * 900);
+    playerDiv = DIVS[(selDivIdx >= 0 ? selDivIdx : 4)].id;
+    try { localStorage.setItem('rrName', playerName); localStorage.setItem('rrDiv', playerDiv); } catch (e) {}
+    cloudSave();
+    $('nameOverlay').classList.add('hidden');
+    updateMenuBest();
+    try { logEv('guest', {}); } catch (e2) {}
+    sfx.power(); renderBoard();
+  } catch (e) {}
+}
 function buyUp(kind) {
   if (upLvl(kind) >= UMAX) return;
   var c = upCost(kind);
@@ -8023,6 +8084,8 @@ function boot() {
   updateMenuBest();
   try { var recNote = recoverRun(); if (recNote) $('menuBest').textContent += recNote; } catch (e) {}
   try { checkRewards(); } catch (e) {}
+  try { flushPending(); } catch (eP) {} // ager atke thaka score pathao
+  window.addEventListener('online', function () { try { flushPending(); } catch (eO) {} }); // net ele retry
   try { checkDailyNotify(); } catch (e) {}
   try { checkAdminNotif(); } catch (e) {}
   setInterval(function () { try { checkAdminNotif(); } catch (e) {} }, 30000); // 30s por por check
@@ -8062,6 +8125,7 @@ function boot() {
     btn.addEventListener('click', function (e) { e.stopPropagation(); sfx.move(); showPage('pageMain'); });
   });
   $('nameBtn').addEventListener('click', saveName);
+  try { var _gb = $('guestBtn'); if (_gb) _gb.addEventListener('click', function (e) { e.stopPropagation(); guestRide(); }); } catch (e) {}
   $('nameInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveName(); e.stopPropagation(); }, true);
   // keyboard khulle input jate upore uthe ase + card scroll hoy
   ['nameInput', 'codeInput'].forEach(function (id) {
