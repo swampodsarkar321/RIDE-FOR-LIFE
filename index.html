@@ -8426,7 +8426,7 @@ function boot() {
   $('installBtn').addEventListener('click', function (e) { e.stopPropagation(); promptInstall(); });
   $('splashInstall').addEventListener('click', function () { promptInstall(); });
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
-  $('profRow').addEventListener('click', function () { renderProfile(); });
+  $('profRow').addEventListener('click', function () { showPage('pageProfile'); renderProfile(); });
   $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
   $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, '💎 ' + gems + (lang === 'bn' ? ' · গ্যারেজে খরচ করো' : ' · spend in Garage'), 1800); });
   $('coinPlus').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
