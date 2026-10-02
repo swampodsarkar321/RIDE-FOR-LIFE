@@ -38,6 +38,8 @@
     --panel-ink: #ffffff;
     --panel-soft: rgba(255, 255, 255, .72);
   }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { box-sizing: border-box; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) { --panel: rgba(14, 20, 6, .9); }
   }
@@ -170,6 +172,8 @@
     background: linear-gradient(to top, rgba(15,26,8,.45) 0%, rgba(15,26,8,.05) 35%, rgba(15,26,8,0) 60%); z-index: 5;
   }
   .overlay.hidden { display: none; }
+  .overlay:not(#menu) { background: rgba(8, 12, 4, .86); }
+  .overlay:not(#menu) .card { background: rgba(20, 28, 12, .97); }
   #menu .card {
     background: transparent; border: 0; box-shadow: none; padding-bottom: 8px;
     max-height: 94vh; max-height: 94dvh; overflow-y: auto; overscroll-behavior: contain;
@@ -207,7 +211,7 @@
     padding: 4px 18px 6px; cursor: pointer; margin-bottom: 6px;
   }
   .secCard {
-    background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.22); border-radius: 18px;
+    background: rgba(0,0,0,.62); border: 2px solid rgba(255,255,255,.22); border-radius: 18px;
     padding: 10px 8px 12px; margin: 0 auto; max-width: 340px;
     backdrop-filter: blur(2px);
   }
@@ -218,10 +222,12 @@
     font-family: inherit; color: #fff; text-align: left;
     background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.18); border-radius: 12px;
     padding: 7px 10px; cursor: pointer; font-size: 15px; font-weight: 700;
+    width: 100%; box-sizing: border-box;
   }
+  .legRow > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .legRow.sel { border-color: var(--gold); background: rgba(255,200,61,.15); }
   .legRow.done { opacity: .85; }
-  .legRow.lock { opacity: .45; }
+  .legRow.lock { opacity: .62; }
   .legRow .km { margin-left: auto; font-size: 13px; color: var(--panel-soft); white-space: nowrap; }
   .legRow .st { font-size: 13px; white-space: nowrap; }
   .legRow .time { font-size: 12px; color: var(--panel-soft); white-space: nowrap; }
@@ -260,17 +266,17 @@
   #bikeName, #destName { font-size: 20px; font-weight: 800; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.7); min-width: 170px; }
   #bikeDots { color: var(--gold); letter-spacing: 4px; font-size: 18px; margin-bottom: 6px; text-shadow: 0 2px 4px rgba(0,0,0,.7); }
   .board {
-    background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.25); border-radius: 16px;
+    background: rgba(0,0,0,.72); border: 2px solid rgba(255,255,255,.25); border-radius: 16px;
     padding: 8px 14px 10px; margin: 10px auto 0; max-width: 330px; text-align: left;
     color: #fff; font-size: 16px; line-height: 1.5;
   }
   .board h3 { margin: 0 0 4px; font-size: 17px; color: var(--gold); text-align: center; }
   .board .me { color: var(--gold); font-weight: 800; }
-  .lbtabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .lbtabs { display: flex; gap: 5px; justify-content: center; margin-bottom: 8px; flex-wrap: nowrap; overflow-x: auto; }
   .lbtab {
-    font-family: inherit; font-weight: 800; font-size: 13px; color: #fff;
+    font-family: inherit; font-weight: 800; font-size: 12px; color: #fff; white-space: nowrap; flex-shrink: 0;
     background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.25);
-    border-radius: 999px; padding: 3px 12px 5px; cursor: pointer;
+    border-radius: 999px; padding: 3px 10px 5px; cursor: pointer;
   }
   .lbtab.sel { background: linear-gradient(135deg, #2d9c42, #1a6b2a); border-color: #7fe0a0; }
   .lbrow { display: flex; align-items: center; gap: 8px; padding: 7px 10px; margin: 5px 0; background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.12); border-radius: 12px; font-size: 15px; font-weight: 700; }
@@ -349,7 +355,8 @@
     font-size: 17px; font-weight: 700; color: #fff;
   }
   .setRow .ico { font-size: 22px; margin-right: 4px; }
-  .setRow .lbl { display: flex; align-items: center; }
+  .setRow .lbl { display: flex; align-items: center; flex-wrap: wrap; flex: 1; min-width: 0; }
+  .setRow .lbl .sub { flex-basis: 100%; margin-left: 30px; }
   .setRow .sub { display: block; font-size: 12px; color: var(--panel-soft); font-weight: 500; }
   .tgl {
     font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
@@ -740,13 +747,13 @@
       <div class="sec">🎨 Customize</div>
       <div class="secCard">
         <div style="font-size:14px;font-weight:800;margin-bottom:4px;">🪖 Helmet</div>
-        <div id="custHelmet" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div id="custHelmet" style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;"></div>
         <div style="font-size:14px;font-weight:800;margin:8px 0 4px;">💡 Light</div>
-        <div id="custLight" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div id="custLight" style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;"></div>
         <div style="font-size:14px;font-weight:800;margin:8px 0 4px;">🏍️ Sticker</div>
-        <div id="custSticker" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div id="custSticker" style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;"></div>
         <div style="font-size:14px;font-weight:800;margin:8px 0 4px;">🧥 Jacket</div>
-        <div id="custJacket" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div id="custJacket" style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;"></div>
         <div style="font-size:14px;font-weight:800;margin:8px 0 4px;">🔢 Number Plate</div>
         <div style="display:flex;gap:8px;">
           <input id="plateInput" maxlength="8" placeholder="RNG-01" style="flex:1;min-width:0;font-family:inherit;font-size:16px;font-weight:700;text-align:center;border-radius:12px;border:2px solid var(--gold);padding:6px 8px;box-sizing:border-box;text-transform:uppercase;">
@@ -901,7 +908,7 @@
     <div class="keys" id="tutKeys" style="grid-template-columns:1fr 1fr;">
       <div class="key"><b>⬅️ ➡️</b><span id="tutLr">Swipe = lane change</span></div>
       <div class="key"><b>⬆️</b><span id="tutUp">Swipe up = jump</span></div>
-      <div class="key"><b>⬇️</b><span id="tutDn">Swipe down = slide</span></div>
+      <div class="key"><b>⬇️</b><span id="tutDn">Swipe down = brake</span></div>
       <div class="key"><b>🛑</b><span id="tutBr">Hold red button = brake</span></div>
     </div>
     <p class="tag" id="tutKeys2">PC: ← → lane · ↑ jump · ↓ / S brake</p>
@@ -2259,13 +2266,13 @@ var STATIONS = [
     tracks: ['radio/Playdate (Violin) Slowed - Edit Audio By (Lindsey Stirling).mp3'] }
 ];
 STATIONS.push(
-  { id: 'folk', flag: '🎻', tag: 'FLK', name: 'Folk FM', desc: 'Dotara folk · dummy', tempo: 0.28, groove: 0, shift: 0.89, tracks: [] },
-  { id: 'pop', flag: '🎧', tag: 'POP', name: 'Pop Hits', desc: 'Top hits · dummy', tempo: 0.19, groove: 2, shift: 1.12, tracks: [] },
-  { id: 'lofi', flag: '🌙', tag: 'LOF', name: 'Lofi Night', desc: 'Chill beats · dummy', tempo: 0.30, groove: 2, shift: 0.80, tracks: [] },
-  { id: 'retro', flag: '📻', tag: 'RET', name: 'Retro Gold', desc: 'Old classics · dummy', tempo: 0.24, groove: 1, shift: 0.84, tracks: [] },
-  { id: 'jazz', flag: '🎷', tag: 'JAZ', name: 'Jazz Road', desc: 'Smooth jazz · dummy', tempo: 0.22, groove: 0, shift: 1.06, tracks: [] },
-  { id: 'baul', flag: '🪘', tag: 'BAU', name: 'Baul Beats', desc: 'Baul folk · dummy', tempo: 0.18, groove: 1, shift: 1.19, tracks: [] },
-  { id: 'game', flag: '🎮', tag: 'GAM', name: 'Gamer FM', desc: 'Fast energy · dummy', tempo: 0.16, groove: 2, shift: 1.26, tracks: [] },
+  { id: 'folk', flag: '🎻', tag: 'FLK', name: 'Folk FM', desc: 'Folk groove · dotara vibe', tempo: 0.28, groove: 0, shift: 0.89, tracks: [] },
+  { id: 'pop', flag: '🎧', tag: 'POP', name: 'Pop Hits', desc: 'Top hits all day', tempo: 0.19, groove: 2, shift: 1.12, tracks: [] },
+  { id: 'lofi', flag: '🌙', tag: 'LOF', name: 'Lofi Night', desc: 'Chill night beats', tempo: 0.30, groove: 2, shift: 0.80, tracks: [] },
+  { id: 'retro', flag: '📻', tag: 'RET', name: 'Retro Gold', desc: 'Old classics gold', tempo: 0.24, groove: 1, shift: 0.84, tracks: [] },
+  { id: 'jazz', flag: '🎷', tag: 'JAZ', name: 'Jazz Road', desc: 'Smooth road jazz', tempo: 0.22, groove: 0, shift: 1.06, tracks: [] },
+  { id: 'baul', flag: '🪘', tag: 'BAU', name: 'Baul Beats', desc: 'Baul folk soul', tempo: 0.18, groove: 1, shift: 1.19, tracks: [] },
+  { id: 'game', flag: '🎮', tag: 'GAM', name: 'Gamer FM', desc: 'Fast gamer energy', tempo: 0.16, groove: 2, shift: 1.26, tracks: [] },
   { id: 'trf', flag: '🚦', tag: 'TRF', name: 'Traffic Radio', desc: 'Traffic news · frequent updates', tempo: 0.25, groove: 0, shift: 1.0, traffic: true, tracks: [] }
 );
 var radioIdx = 0, radioTrack = 0, radioEl = null, radioBad = {}, wheelOpen = false;
@@ -3412,7 +3419,7 @@ function renderDaily() {
     for (var d = 1; d <= 7; d++) {
       var got = d < cur || (!info.claimable && d <= info.streak);
       var isToday = info.claimable && d === Math.min(cur, 7);
-      h += '<div style="min-width:38px;padding:6px 4px;border-radius:10px;font-size:13px;font-weight:800;'
+      h += '<div style="min-width:46px;padding:6px 6px;border-radius:10px;font-size:14px;font-weight:800;'
         + (got ? 'background:linear-gradient(135deg,#2d9c42,#1a6b2a);border:2px solid #7fe0a0;color:#fff;'
           : isToday ? 'background:rgba(255,200,61,.2);border:2px dashed var(--gold);color:var(--gold);'
           : 'background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);color:#fff;')
@@ -5204,7 +5211,7 @@ function showTut(ks) {
     $('tutTitle').textContent = bn ? 'কীভাবে চালাবে' : 'How to ride';
     $('tutLr').textContent = bn ? 'সোয়াইপ = লেন বদলাও' : 'Swipe = lane change';
     $('tutUp').textContent = bn ? 'উপরে সোয়াইপ = লাফ' : 'Swipe up = jump';
-    $('tutDn').textContent = bn ? 'নিচে সোয়াইপ = স্লাইড' : 'Swipe down = slide';
+    $('tutDn').textContent = bn ? 'নিচে সোয়াইপ = ব্রেক' : 'Swipe down = brake';
     $('tutBr').textContent = bn ? 'লাল বোতাম ধরো = ব্রেক' : 'Hold red button = brake';
     $('tutKeys2').textContent = bn ? 'PC: ← → লেন · ↑ লাফ · ↓ / S ব্রেক' : 'PC: ← → lane · ↑ jump · ↓ / S brake';
     $('tutBtn').textContent = bn ? 'বুঝেছি! ▶' : 'Got it! ▶';
