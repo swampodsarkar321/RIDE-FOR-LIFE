@@ -4188,7 +4188,8 @@ try { tEarn = +localStorage.getItem('rrEarn') || 0; } catch (e) {}
 try { tPerfect = +localStorage.getItem('rrPerfect') || 0; } catch (e) {}
 try { tNight = +localStorage.getItem('rrNightR') || 0; } catch (e) {}
 try { tRain = +localStorage.getItem('rrRainR') || 0; } catch (e) {}
-var BIKE_PRICE = [0, 1000, 2000, 3000, 4500, 7000]; // joto valo ability toto dam (0 = free)
+var BIKE_PRICE = [0, 1500, 3000, 4500, 0, 0]; // coin dam (4,5 = gem bike, niche)
+var BIKE_GEMS = [0, 0, 0, 0, 25, 40]; // dami bike sudhu gem-e (idx 4,5)
 var ownedBikes = [0]; // new user: normal bike free
 var DIVS = [
   { id: 'dhaka', en: 'Dhaka', bn: 'ঢাকা' },
@@ -4388,7 +4389,7 @@ function bikeStatText(i) {
   return F('bike_tpl', bikeTag(i % BIKE_STATS.length), b.spd, Math.round(b.hnd * 100), b.fuel.toFixed(2), b.dmg);
 }
 var BAG_CAP = [5, 10, 20];
-var BAG_COST = [0, 150, 400];
+var BAG_COST = [0, 300, 800]; // byag upgrade costly
 /* bike damage (persistent) */
 var hp = 100, hpStore = 100, invT = 0, finalDead = false;
 try {
@@ -4407,7 +4408,7 @@ try {
   bagLevel = +localStorage.getItem('rrBag') || 0;
   hpStore = (function () { var h = +localStorage.getItem('rrHp'); return isNaN(h) ? 100 : h; })();
   try { var ow0 = JSON.parse(localStorage.getItem('rrOwned') || 'null'); ownedBikes = (ow0 && ow0.length) ? ow0 : null; } catch (e) { ownedBikes = null; }
-  if (!ownedBikes) { ownedBikes = []; for (var bi0 = 0; bi0 < 6; bi0++) if (riderLevel >= bi0 + 1) ownedBikes.push(bi0); if (!ownedBikes.length) ownedBikes = [0]; }
+  if (!ownedBikes) { ownedBikes = []; for (var bi0 = 0; bi0 < 6; bi0++) { try { if ((BIKE_GEMS[bi0] || 0) > 0) continue; } catch (eG) {} if (riderLevel >= bi0 + 1) ownedBikes.push(bi0); } if (!ownedBikes.length) ownedBikes = [0]; }
 } catch (e) {}
 function bagCap() { return BAG_CAP[Math.min(bagLevel, 2)]; }
 var fuel = 100, fuelWarned = false, fuelCritT = 0, endReason = 'crash', arrivedName = '', OVER_T0 = '', OVER_S0 = '';
@@ -4418,6 +4419,7 @@ function repairCost() { return Math.ceil((100 - hpStore) * 1); }
 try { // festival bike (index 6): gold special — sudhu event-e unlock
   if (typeof BIKE_STATS !== 'undefined' && BIKE_STATS.length === 6) BIKE_STATS.push({ spd: 2, hnd: 0.25, fuel: 0.90, dmg: 12, tag: 'x' });
   if (typeof BIKE_PRICE !== 'undefined' && BIKE_PRICE.length === 6) BIKE_PRICE.push(0);
+  if (typeof BIKE_GEMS !== 'undefined' && BIKE_GEMS.length === 6) BIKE_GEMS.push(0);
 } catch (e) {}
 function isFestEvent(id) { try { return FEST_EVENTS.indexOf(id) >= 0; } catch (e) { return false; } }
 function claimFestBike() {
@@ -4434,6 +4436,7 @@ function claimFestBike() {
 function bikeUnlocked(i) {
   try { if (ownedBikes.indexOf(i) >= 0) return true; } catch (e) {}
   try { if (i === FEST_BIKE_IDX && isFestEvent(eventMode)) return true; } catch (e) {} // event cholle limited bike khola
+  try { if ((typeof BIKE_GEMS !== 'undefined' ? BIKE_GEMS[i] : 0) > 0) return false; } catch (e2) {} // gem bike: kintei hobe
   var pr = (typeof BIKE_PRICE !== 'undefined' && BIKE_PRICE[i]) || 0;
   if (pr > 0) return false; // coin diye kinte hbe
   var need = ADMIN_MINLVL[i] || (i + 1);
@@ -4442,6 +4445,18 @@ function bikeUnlocked(i) {
 function firstOwned() { try { for (var i = 0; i < BIKE_COLS.length; i++) if (bikeUnlocked(i)) return i; } catch (e) {} return 0; }
 function buyBike() {
   if (bikeUnlocked(selBike)) return;
+  var gm = (typeof BIKE_GEMS !== 'undefined' ? BIKE_GEMS[selBike] : 0) || 0;
+  if (gm > 0) { // dami bike: gem-e keno
+    if (gems < gm) { toast(elHint, lang === 'bn' ? '💎 ' + gm + ' জেম লাগবে!' : '💎 Need ' + gm + ' gems!', 2000); return; }
+    gems -= gm;
+    ownedBikes.push(selBike);
+    try { localStorage.setItem('rrGems', String(gems)); localStorage.setItem('rrOwned', JSON.stringify(ownedBikes)); } catch (e) {}
+    cloudSave(); applyBikeColor(); renderGarage(); updateMenuBest();
+    toast(elHint, lang === 'bn' ? '🏍️ নতুন বাইক! −💎' + gm : '🏍️ New bike! −💎' + gm, 2500);
+    try { logEv('bike_gem', { b: selBike }); } catch (e2) {}
+    sfx.power();
+    return;
+  }
   var pr = BIKE_PRICE[selBike] || 0;
   if (pr <= 0) return;
   if (bankCoins < pr) { toast(elHint, T('buy_fail'), 1800); return; }
@@ -4451,17 +4466,26 @@ function buyBike() {
   cloudSave(); applyBikeColor(); renderGarage();
   sfx.power();
 }
-function sellBike() { // garage trade-in: dam-er ordhek ferot
+function sellBike() { // garage trade-in: dam-er ordhek ferot (gem bike-e gem ferot)
   try {
     if (ownedBikes.length <= 1 || ownedBikes.indexOf(selBike) < 0) return;
+    var gm0 = (typeof BIKE_GEMS !== 'undefined' ? BIKE_GEMS[selBike] : 0) || 0;
     var pr = BIKE_PRICE[selBike] || 0;
-    if (pr <= 0) return;
+    if (gm0 <= 0 && pr <= 0) return;
     ownedBikes.splice(ownedBikes.indexOf(selBike), 1);
-    bankCoins += Math.floor(pr / 2);
+    if (gm0 > 0) {
+      var gr = Math.floor(gm0 / 2);
+      gems += gr;
+      try { localStorage.setItem('rrGems', String(gems)); } catch (eG) {}
+      toast(elHint, (lang === 'bn' ? '🔄 বিক্রি! +💎' : '🔄 Sold! +💎') + gr, 2000);
+    } else {
+      bankCoins += Math.floor(pr / 2);
+      try { localStorage.setItem('rrBank', String(bankCoins)); } catch (eB) {}
+      toast(elHint, (lang === 'bn' ? '🔄 বিক্রি! +৳' : '🔄 Sold! +৳') + Math.floor(pr / 2), 2000);
+    }
     selBike = firstOwned();
     try { localStorage.setItem('rrBank', String(bankCoins)); localStorage.setItem('rrOwned', JSON.stringify(ownedBikes)); localStorage.setItem('rrBike', String(selBike)); } catch (e) {}
-    cloudSave(); applyBikeColor(); renderGarage();
-    toast(elHint, (lang === 'bn' ? '🔄 বিক্রি! +৳' : '🔄 Sold! +৳') + Math.floor(pr / 2), 2000);
+    cloudSave(); applyBikeColor(); renderGarage(); updateMenuBest();
     try { logEv('bike_sell', { b: selBike }); } catch (e2) {}
     sfx.coin();
   } catch (e) {}
@@ -4635,7 +4659,7 @@ function grantDistrict(d, silent) {
     xp += 500; bankCoins += 1000;
     try { addGems(2); } catch (e) {}
     var gift = -1;
-    for (var i = 0; i < BIKE_PRICE.length; i++) if (ownedBikes.indexOf(i) < 0) { gift = i; break; }
+    for (var i = 0; i < BIKE_PRICE.length; i++) { try { if ((BIKE_GEMS[i] || 0) > 0) continue; } catch (eG) {} if (ownedBikes.indexOf(i) < 0) { gift = i; break; } }
     var extra = '';
     if (gift >= 0) {
       ownedBikes.push(gift);
@@ -7439,12 +7463,17 @@ function renderBikeSel() {
     if (bb) bb.style.display = 'none';
     try {
       var _pr = BIKE_PRICE[selBike] || 0;
-      if (bs) bs.style.display = (_pr > 0 && ownedBikes.indexOf(selBike) >= 0 && ownedBikes.length > 1) ? 'inline-block' : 'none';
+      var _gm = (typeof BIKE_GEMS !== 'undefined' ? BIKE_GEMS[selBike] : 0) || 0;
+      if (bs) bs.style.display = ((_pr > 0 || _gm > 0) && ownedBikes.indexOf(selBike) >= 0 && ownedBikes.length > 1) ? 'inline-block' : 'none';
     } catch (e2) { if (bs) bs.style.display = 'none'; }
   } else {
     var pr = BIKE_PRICE[selBike] || 0;
+    var gm2 = (typeof BIKE_GEMS !== 'undefined' ? BIKE_GEMS[selBike] : 0) || 0;
     if (bs) bs.style.display = 'none';
-    if (pr > 0) {
+    if (gm2 > 0) {
+      n.textContent = '🔒 ' + bikeName(selBike % BIKE_COLS.length) + ' · 💎' + gm2;
+      if (bb) { bb.style.display = 'inline-block'; bb.textContent = '💎' + gm2; }
+    } else if (pr > 0) {
       n.textContent = '🔒 ' + bikeName(selBike % BIKE_COLS.length) + ' · ৳' + pr;
       if (bb) { bb.style.display = 'inline-block'; bb.textContent = F('buynow', pr); }
     } else {
@@ -8030,7 +8059,7 @@ function renderProfile() {
   } catch (e) {}
   try { updateMenuHeader(); } catch (e) {}
 }
-function upCost(kind) { var L = upLvl(kind); if (L >= UMAX) return 0; return 50 + L * 80 + L * L * 6; } // progressive: late level-e grind bare
+function upCost(kind) { var L = upLvl(kind); if (L >= UMAX) return 0; return 110 + L * 180 + L * L * 14; } // progressive + costly: late level-e grind bare
 function renderGarage() {
   var g = $('garage'); if (!g) return;
   if ($('menuBestV')) $('menuBestV').textContent = best;
