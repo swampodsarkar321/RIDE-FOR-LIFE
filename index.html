@@ -8947,7 +8947,7 @@ function mmStatus(t) { try { var el = $('mmStatus'); if (el) el.textContent = t 
 function MMStop() {
   try { if (MM.timer) { clearInterval(MM.timer); MM.timer = null; } } catch (e) {}
   try { if (MM.gTo) { clearTimeout(MM.gTo); MM.gTo = null; } } catch (e) {}
-  try { if (MM.botTimer) { clearInterval(MM.botTimer); MM.botTimer = null; } catch (e) {}
+  try { if (MM.botTimer) { clearInterval(MM.botTimer); MM.botTimer = null; } } catch (e) {}
   try { if (MM.pairRef && MM.pairCb) MM.pairRef.off('value', MM.pairCb); } catch (e) {}
   MM.pairRef = null; MM.pairCb = null;
   try { if (fbReady && FBDB) { FBDB.ref('match_queue/' + fbUid).remove(); } } catch (e) {}
