@@ -615,9 +615,7 @@
   .mx.mini .ico { width: 36px; height: 36px; font-size: 18px; }
   .mx.mini .tx b { font-size: 15px; }
   .mx.mini .chev { font-size: 20px; }
-  #onNav { display: flex; flex-direction: column; gap: 2px; }
-  #onNav .mx { margin: 3px 0; opacity: .75; }
-  #onNav .mx.sel { opacity: 1; box-shadow: 0 0 16px rgba(255,200,61,.5), inset 0 0 0 2px var(--gold); }
+  #onNav { margin-bottom: 8px; }
   .mx-grid > * { min-width: 0; }
   .mx { min-width: 0; }
   /* PC / wide: 2-column cards (sudhu boro screen-e) */
@@ -757,7 +755,7 @@
 <div id="pops"></div>
 <div id="flash"></div>
 <div id="radioWheel"><div id="rwCenter"><b id="rwName">FM</b><small id="rwHint">tap ✕</small></div></div>
-<div id="mmWindow" style="display:none;">
+<div id="mmWindow">
   <div class="mm-card">
     <div style="font-size:44px;">⚔️</div>
     <b class="mm-title">FIND RIVAL</b>
@@ -904,13 +902,7 @@
         <div class="mpage" id="pageDuel">
       <button class="backBtn" id="duelBack">‹ Back</button>
       <div class="sec">🌐 ONLINE</div>
-      <div id="onNav">
-        <button class="mx gold mini sel" data-ontab="play"><span class="ico">▶</span><span class="tx"><b>Play</b></span><span class="chev">›</span></button>
-        <button class="mx teal mini" data-ontab="rank"><span class="ico">🏅</span><span class="tx"><b>Rank</b></span><span class="chev">›</span></button>
-        <button class="mx gray mini" data-ontab="custom"><span class="ico">⚙️</span><span class="tx"><b>Custom</b></span><span class="chev">›</span></button>
-        <button class="mx red mini" data-ontab="esports"><span class="ico">🏆</span><span class="tx"><b>Esports</b></span><span class="chev">›</span></button>
-        <button class="mx blue mini" data-ontab="events"><span class="ico">🎪</span><span class="tx"><b>Events</b></span><span class="chev">›</span></button>
-      </div>
+      <div class="lbtabs" id="onNav"><button class="lbtab sel" data-ontab="play">▶ Play</button><button class="lbtab" data-ontab="rank">🏅 Rank</button><button class="lbtab" data-ontab="custom">⚙️ Custom</button><button class="lbtab" data-ontab="esports">🏆 Esports</button><button class="lbtab" data-ontab="events">🎪 Events</button></div>
       <div class="secCard" id="onRank" style="display:none;"><div id="rankHub"></div></div>
       <div id="onCustom" style="display:none;">
         <div class="secCard" id="duelHome"></div>
@@ -9365,7 +9357,7 @@ function renderRankHub() {
 function onTab(name) {
   try {
     onTabCur = name;
-    Array.prototype.forEach.call(document.querySelectorAll('#onNav .mx'), function (b) {
+    Array.prototype.forEach.call(document.querySelectorAll('#onNav .lbtab'), function (b) {
       b.classList.toggle('sel', b.getAttribute('data-ontab') === name);
     });
     if (name === 'play') { openMMWindow(); return; }
