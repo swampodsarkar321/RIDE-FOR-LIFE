@@ -267,6 +267,13 @@
       <select id="castTour" style="width:100%;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.3);color:#fff;font-family:inherit;"></select>
       <div id="castMatches" style="margin-top:8px;"></div>
     </div>
+    <div class="card">
+      <h2>🔑 Custom Room</h2>
+      <p class="note">যেকোনো duel room code দাও — tournament ছাড়াও broadcast হবে।</p>
+      <label>Room code</label>
+      <input id="castCode" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;">
+      <button class="btn" id="castGoBtn">📡 Broadcast Room</button>
+    </div>
     <div class="card" id="castLiveCard" style="display:none;">
       <h2>🔴 LIVE <span id="castTitle"></span></h2>
       <div id="castLive"></div>
@@ -799,6 +806,11 @@ $('liveStop').addEventListener('click', function () {
 $('watchStop').addEventListener('click', function () { watchStop(); $('watchLive').innerHTML = ''; });
 try { var _ct = $('castTour'); if (_ct) _ct.addEventListener('change', renderCastMatches); } catch (e) {}
 try { var _cs = $('castStop'); if (_cs) _cs.addEventListener('click', function () { castStop(); }); } catch (e) {}
+try { var _cg = $('castGoBtn'); if (_cg) _cg.addEventListener('click', function () {
+  var code = ($('castCode').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 5) { alert('5-letter room code daw'); return; }
+  castGo(code, 'Custom Room');
+}); } catch (e) {}
 $('watchBtn').addEventListener('click', function () {
   if (!db) { alert('No Firebase connection!'); return; }
   var code = ($('watchCode').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
