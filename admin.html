@@ -1051,6 +1051,10 @@ function bindAll() {
     });
   });
 }
+try {
+  var _missing = ['castGo', 'scanRooms', 'buildBracket', 'bindAll', 'syncMatchWinner'].filter(function (f) { return typeof window[f] !== 'function'; });
+  if (_missing.length) setStatus(false, '● Admin JS broken, hard-refresh (Ctrl+Shift+R): missing ' + _missing.join(','));
+} catch (e) {}
 </script>
 </body>
 </html>
