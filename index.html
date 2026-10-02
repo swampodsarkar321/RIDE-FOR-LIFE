@@ -7869,7 +7869,7 @@ function renderStats() {
 function renderBoard() {
   try { renderStats(); } catch (e) {}
   var html = '';
-  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'frnd' ? ' sel' : '') + '" data-tab="frnd">' + (lang === 'bn' ? '👥 বন্ধু' : '👥 Friends') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">' + (lang === 'bn' ? '⚔️ যুদ্ধ' : '⚔️ War') + '</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">' + (lang === 'bn' ? '📅 সপ্তাহ' : '📅 Week') + '</button></div>';
+  html += '<div class="lbtabs"><button class="lbtab' + (lbTab === 'div' ? ' sel' : '') + '" data-tab="div">' + T('lb_div') + '</button><button class="lbtab' + (lbTab === 'glob' ? ' sel' : '') + '" data-tab="glob">' + T('lb_glob') + '</button><button class="lbtab' + (lbTab === 'frnd' ? ' sel' : '') + '" data-tab="frnd">' + (lang === 'bn' ? '👥 বন্ধু' : '👥 Friends') + '</button><button class="lbtab' + (lbTab === 'war' ? ' sel' : '') + '" data-tab="war">' + (lang === 'bn' ? '⚔️ যুদ্ধ' : '⚔️ War') + '</button><button class="lbtab' + (lbTab === 'week' ? ' sel' : '') + '" data-tab="week">' + (lang === 'bn' ? '📅 সপ্তাহ' : '📅 Week') + '</button><button class="lbtab' + (lbTab === 'rank' ? ' sel' : '') + '" data-tab="rank">' + (lang === 'bn' ? '🏅 র‍্যাংক' : '🏅 Rank') + '</button></div>';
   if (myRankCache) html += '<div class="best">🏅 #' + myRankCache.rank + ' / ' + myRankCache.tot + '</div>';
   else { try { fetchMyRank(); } catch (e) {} }
   if (lbTab === 'div') {
@@ -7877,6 +7877,10 @@ function renderBoard() {
     else if (divCache) html += botRowsHTML(divCache.list, false, divCache.n, playerDiv);
     else if (!fbReady || !FBDB) html += botRowsHTML([], false, 0, playerDiv);
     else { html += T('lb_loading'); fetchDivBoard(); }
+  } else if (lbTab === 'rank') {
+    if (rankCache) html += rankRowsHTML();
+    else if (!fbReady || !FBDB) { rankCache = { list: [], n: 0 }; html += rankRowsHTML(); }
+    else { html += T('lb_loading'); fetchRankBoard(); }
   } else if (lbTab !== 'frnd') {
     if (globCache) html += botRowsHTML(globCache.list, true, globCache.n, null);
     else if (!fbReady || !FBDB) html += botRowsHTML([], true, 0, null);
@@ -8830,7 +8834,7 @@ function suddenDeath() { // overtime: jader parcel besi se jitbe
 /* restore everything the duel touched */
 function duelEndLocal() {
   if (!DX.on && !DX.sv) return;
-  DX.on = false; DUEL.on = false; document.body.classList.remove('duel-on');
+  DX.on = false; DUEL.on = false; try { MM.ranked = false; } catch (e) {} document.body.classList.remove('duel-on');
   var s = DX.sv; DX.sv = null;
   if (s) {
     selLeg = s.selLeg; bankCoins = s.bankCoins; xp = s.xp; riderLevel = s.riderLevel; hpStore = s.hpStore; practice = s.practice; eventMode = s.eventMode;
@@ -8916,6 +8920,11 @@ function duelShowResult(w) {
   $('dvTitle').style.color = win ? '#ffc83d' : '#ff7a7a';
   $('dvSub').textContent = (w && w.forfeit) ? (win ? dl('Your rival left the race', 'প্রতিপক্ষ রেস ছেড়ে দিয়েছে') : dl('You left the race', 'তুমি রেস ছেড়ে দিয়েছ'))
     : (win ? dl('First to the destination!', 'সবার আগে গন্তব্যে!') : dEsc(w && w.n || '') + ' ' + dl('got there first', 'আগে পৌঁছে গেছে'));
+  try {
+    var _ou = (opp && r.players) ? oppUid(r) : (w && w.u !== fbUid ? w.u : null);
+    var _isBot = !!(_ou && String(_ou).indexOf('bot') === 0);
+    applyRank(win, _isBot ? null : _ou, _isBot ? (opp ? opp.n : (w && w.n)) : null, _isBot);
+  } catch (e) {}
   function row(nm, av, pct, par, isWin) {
     return '<div class="dvP' + (isWin ? ' win' : '') + '"><img src="' + dAv(av) + '" alt=""><span class="nm">' + (isWin ? '🏆 ' : '') + dEsc(nm) + '</span><span class="tg">' + pct + '%</span><span class="tg">📦 ' + par + '</span></div>';
   }
@@ -8958,7 +8967,7 @@ function MMStop() {
 function matchFind() {
   if (!fbReady || !FBDB) { dToast(dl('No connection', 'নেট নেই')); return; }
   if (DX.room || DX.joining || MM.on) return;
-  MM.on = true; MM.t0 = Date.now();
+  MM.on = true; MM.ranked = true; MM.t0 = Date.now();
   mmStatus(dl('🔎 Finding rival…', '🔎 প্রতিপক্ষ খুঁজছি…'));
   try {
     var q = FBDB.ref('match_queue/' + fbUid);
@@ -9109,6 +9118,87 @@ function botDrive(botUid) { // scripted rival pace + parcels
     }, 2000);
   } catch (e) {}
 }
+/* ---------- online rank (Elo +/-) : sudhu matchmaking, friend room na ---------- */
+var myElo = 1000, BOTR = {}, rankCache = null, rankFetching = false;
+try { myElo = +localStorage.getItem('rrElo') || 1000; } catch (e) {}
+try { BOTR = JSON.parse(localStorage.getItem('rrBotRank') || '{}'); } catch (e) { BOTR = {}; }
+function tierOf(p) {
+  if (p < 1100) return lang === 'bn' ? '🥉 ব্রোঞ্জ' : '🥉 Bronze';
+  if (p < 1300) return lang === 'bn' ? '🥈 সিলভার' : '🥈 Silver';
+  if (p < 1500) return lang === 'bn' ? '🥇 গোল্ড' : '🥇 Gold';
+  if (p < 1800) return '💎 Diamond';
+  return '👑 Legend';
+}
+function botElo(nm) {
+  if (!BOTR[nm]) { var h = 0; for (var i = 0; i < nm.length; i++) h = (h * 31 + nm.charCodeAt(i)) % 500; BOTR[nm] = 950 + h; }
+  return BOTR[nm];
+}
+function saveBotElo() { try { localStorage.setItem('rrBotRank', JSON.stringify(BOTR)); } catch (e) {} }
+function eloDelta(me, op, win) {
+  var e = 1 / (1 + Math.pow(10, (op - me) / 400));
+  return Math.round(32 * ((win ? 1 : 0) - e));
+}
+function applyRank(win, oppUid, oppName, oppIsBot) {
+  try {
+    if (!MM.ranked) return; // friend room-e rank nai
+    var me0 = myElo;
+    function done(opPts) {
+      var d = eloDelta(me0, opPts, win);
+      myElo = Math.max(0, me0 + d);
+      try { localStorage.setItem('rrElo', String(myElo)); } catch (e) {}
+      if (oppIsBot && oppName) { BOTR[oppName] = Math.max(0, opPts + eloDelta(opPts, me0, !win)); saveBotElo(); }
+      var txt = (d >= 0 ? '+' : '') + d + ' (' + myElo + ' ' + tierOf(myElo) + ')';
+      try { var ds = $('dvSub'); if (ds) ds.textContent += ' · Rank ' + txt; } catch (e) {}
+      try { toast(elHint, (lang === 'bn' ? 'অনলাইন র‍্যাংক ' : 'Online rank ') + txt, 3000); } catch (e) {}
+      if (!oppIsBot && fbReady && FBDB) {
+        try { FBDB.ref('ranked/' + fbUid).set({ p: myElo, n: dMyName(), av: getAvatar(), w: (win ? 1 : 0), t: Date.now() }); } catch (e) {}
+      }
+      rankCache = null;
+    }
+    if (oppIsBot) done(botElo(oppName || 'bot'));
+    else if (fbReady && FBDB && oppUid) {
+      FBDB.ref('ranked/' + oppUid).once('value').then(function (s) {
+        var v = s.val() || {}; done(typeof v.p === 'number' ? v.p : 1000);
+      }).catch(function () { done(1000); });
+    } else done(1000);
+  } catch (e) {}
+}
+function fetchRankBoard() {
+  if (rankFetching) return; rankFetching = true;
+  try {
+    if (!fbReady || !FBDB) { rankFetching = false; rankCache = { list: [], n: 0 }; if (lbTab === 'rank') renderBoard(); return; }
+    FBDB.ref('ranked').orderByChild('p').limitToLast(20).once('value').then(function (snap) {
+      var arr = []; snap.forEach(function (c) { var v = c.val() || {}; v._uid = c.key; arr.push(v); });
+      arr.sort(function (a, b) { return (b.p || 0) - (a.p || 0); });
+      rankCache = { list: arr, n: arr.length }; rankFetching = false;
+      if (lbTab === 'rank') renderBoard();
+    }).catch(function () { rankFetching = false; });
+  } catch (e) { rankFetching = false; }
+}
+function rankRowsHTML() {
+  try {
+    var bn = lang === 'bn';
+    var pool = [];
+    ((rankCache && rankCache.list) || []).forEach(function (e) { pool.push({ n: e.n, p: e.p || 0, av: e.av, me: e._uid === fbUid }); });
+    BOTN.forEach(function (nm) { pool.push({ n: nm, p: botElo(nm), av: '' }); });
+    var hasMe = false;
+    pool.forEach(function (e) { if (e.me) hasMe = true; });
+    if (!hasMe && playerName) pool.push({ n: playerName, p: myElo, av: getAvatar(), me: true });
+    pool.sort(function (a, b) { return b.p - a.p; });
+    var h = '<div class="best">🏅 ' + (bn ? 'তোমার: ' : 'You: ') + myElo + ' ' + tierOf(myElo) + '</div>';
+    var meRank = -1, meE = null;
+    pool.forEach(function (e, i) { if (e.me) { meRank = i + 1; meE = e; } });
+    h += pool.slice(0, 15).map(function (e, i) {
+      var av = e.av || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Rider';
+      return '<div class="lbrow' + (e.me ? ' me' : '') + '"><span class="rk">' + medal(i) + '</span><span class="nm"><img src="' + av + '" style="width:28px;height:28px;border-radius:50%;vertical-align:-6px;margin-right:4px;"> ' + e.n + '<small>' + tierOf(e.p) + '</small></span><span class="sc">' + e.p + '</span></div>';
+    }).join('');
+    if (meE && meRank > 15) {
+      var av2 = meE.av || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Rider';
+      h += '<div class="lbrow me"><span class="rk">' + meRank + '.</span><span class="nm"><img src="' + av2 + '" style="width:28px;height:28px;border-radius:50%;vertical-align:-6px;margin-right:4px;"> ' + meE.n + '<small>' + tierOf(meE.p) + '</small></span><span class="sc">' + meE.p + '</span></div>';
+    }
+    return h;
+  } catch (e) { return ''; }
+}
 $('duelHome').addEventListener('click', function (e) {
   var b = e.target.closest ? e.target.closest('[data-act]') : null; if (!b) return;
   e.stopPropagation(); try { sfx.move(); } catch (er) {}
@@ -9116,7 +9206,7 @@ $('duelHome').addEventListener('click', function (e) {
   if (a === 'create') duelCreate();
   else if (a === 'join') duelJoin($('duelCode').value);
   else if (a === 'match') matchFind();
-  else if (a === 'matchCancel') MMStop();
+  else if (a === 'matchCancel') { try { MM.ranked = false; } catch (e) {} MMStop(); }
 });
 $('duelLobby').addEventListener('click', function (e) {
   var b = e.target.closest ? e.target.closest('[data-act]') : null; if (!b || b.disabled) return;

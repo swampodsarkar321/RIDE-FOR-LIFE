@@ -60,6 +60,12 @@
         ".write": true
       }
     },
+    "ranked": {
+      ".read": true,
+      "$uid": {
+        ".write": "newData.val() == null || (newData.hasChildren(['p', 'n', 't']) && newData.child('p').isNumber() && newData.child('p').val() >= 0 && newData.child('p').val() <= 5000 && newData.child('n').isString() && newData.child('n').val().length <= 20 && newData.child('t').isNumber())"
+      }
+    },
     "ratings": {
       ".read": true,
       "$uid": {
