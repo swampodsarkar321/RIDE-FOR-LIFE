@@ -759,10 +759,9 @@
       <div class="mm-tag" data-i18n="mm_tag">Deliver More Than Just Packages</div>
       <div class="mx-grid">
       <button class="mx gold" data-page="pageDest"><span class="ico">📖</span><span class="tx"><b data-i18n="mm_story">Story Mode</b><small data-i18n="mm_story_s">Ride the Rangpur journey offline</small></span><span class="chev">›</span></button>
-      <button class="mx orange" id="duelRow" data-page="pageDuel"><span class="ico">⚔️</span><span class="tx"><b>1v1 Duel</b><small>Race a friend live · Room code</small></span><span class="chev">›</span></button>
+      <button class="mx orange" id="duelRow" data-page="pageDuel"><span class="ico">🌐</span><span class="tx"><b>ONLINE</b><small>Play rank · custom rooms</small></span><span class="chev">›</span></button>
       <button class="mx purple" id="missionRow" data-page="pageMission"><span class="ico">🎯</span><span class="tx"><b data-i18n="mm_jobs">Daily Mission</b><small data-i18n="mm_jobs_s">Complete Today's Challenge</small></span><span class="chev">›</span></button>
       <button class="mx green" data-page="pageGarage"><span class="ico">🛠️</span><span class="tx"><b data-i18n="mm_garage">Garage</b><small data-i18n="mm_garage_s">Upgrade Your Bike &amp; Gear</small></span><span class="chev">›</span></button>
-      <button class="mx red" data-page="pageBoard"><span class="ico">📊</span><span class="tx"><b data-i18n="mm_rides">My Rides</b><small data-i18n="mm_rides_s">Stats, Earnings &amp; Progress</small></span><span class="chev">›</span></button>
       <button class="mx gray" id="settingsCard"><span class="ico">⚙️</span><span class="tx"><b data-i18n="mm_set">Settings</b><small data-i18n="mm_set_s">Game Options &amp; Controls</small></span><span class="chev">›</span></button>
       <div class="mx-duo">
         <button class="mx teal mini" data-page="pageEvents"><span class="ico">🎪</span><span class="tx"><b data-i18n="mm_events">Events</b></span><span class="chev">›</span></button>
@@ -873,9 +872,17 @@
     </div>
         <div class="mpage" id="pageDuel">
       <button class="backBtn" id="duelBack">‹ Back</button>
-      <div class="sec">⚔️ 1v1 Duel</div>
-      <div class="secCard" id="duelHome"></div>
-      <div class="secCard" id="duelLobby" style="display:none;"></div>
+      <div class="sec">🌐 ONLINE</div>
+      <div class="lbtabs" id="onTabs"><button class="lbtab sel" data-ontab="play">▶ Play</button><button class="lbtab" data-ontab="rank">🏅 Rank</button><button class="lbtab" data-ontab="custom">⚙️ Custom</button></div>
+      <div class="secCard" id="onPlay">
+        <button class="btn dvBtn" id="mmGoBtn" style="width:100%;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;">🔎 Find Rival (30s)</button>
+        <div id="mmStatus" style="min-height:20px;font-size:13px;font-weight:800;color:var(--gold);margin-top:6px;"></div>
+      </div>
+      <div class="secCard" id="onRank" style="display:none;"><div id="rankHub"></div></div>
+      <div id="onCustom" style="display:none;">
+        <div class="secCard" id="duelHome"></div>
+        <div class="secCard" id="duelLobby" style="display:none;"></div>
+      </div>
     </div>
     <div class="mpage" id="pageRadio">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
@@ -8459,6 +8466,16 @@ function boot() {
   $('dailyRow').addEventListener('click', function () { renderDaily(); $('dailyOverlay').classList.remove('hidden'); });
   $('profRow').addEventListener('click', function () { showPage('pageProfile'); renderProfile(); });
   $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
+  var _ot = $('onTabs');
+  if (_ot) _ot.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('[data-ontab]') : null; if (!b) return; e.stopPropagation(); onTab(b.getAttribute('data-ontab')); });
+  var _mmgo = $('mmGoBtn');
+  if (_mmgo) _mmgo.addEventListener('click', function (e) {
+    e.stopPropagation(); try { sfx.move(); } catch (_) {}
+    if (MM.on) { try { MM.ranked = false; } catch (_) {} MMStop(); mmStatus(''); }
+    else matchFind();
+  });
+  var _dr = $('duelRow');
+  if (_dr) _dr.addEventListener('click', function () { try { onTab('play'); } catch (e) {} });
   $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, '💎 ' + gems + (lang === 'bn' ? ' · গ্যারেজে খরচ করো' : ' · spend in Garage'), 1800); });
   $('coinPlus').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
   // radio FM: tap = next station · hold = GTA wheel · prothom touch-e audio unlock
@@ -8700,9 +8717,7 @@ function buildHome() {
     '<div style="margin:10px 0 6px;font-size:13px;color:var(--panel-soft);">— ' + dl('or join a friend', 'অথবা বন্ধুর রুমে ঢোকো') + ' —</div>' +
     '<div style="display:flex;gap:8px;"><input id="duelCode" class="dvIn" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:4px;">' +
     '<button class="btn dvBtn" data-act="join" style="white-space:nowrap;background:#3d6fa5;box-shadow:0 5px 0 #274a70;">' + dl('Join', 'জয়েন') + '</button></div>' +
-    '<div style="margin:10px 0 6px;font-size:13px;color:var(--panel-soft);">— ' + dl('or auto match', 'অথবা অটো ম্যাচ') + ' —</div>' +
-    '<button class="btn dvBtn" data-act="match" style="width:100%;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;">🔎 ' + dl('Find Rival (30s)', 'প্রতিপক্ষ খোঁজো (৩০ সে)') + '</button>' +
-    '<div id="mmStatus" style="min-height:20px;font-size:13px;font-weight:800;color:var(--gold);margin-top:6px;"></div>';
+    '';
   $('duelName').value = nm || DX.name || playerName || '';
   $('duelCode').value = cd;
 }
@@ -8711,7 +8726,7 @@ function duelOpen() {
   if (!inRoom) buildHome();
   if ($('duelHome')) $('duelHome').style.display = inRoom ? 'none' : '';
   if ($('duelLobby')) $('duelLobby').style.display = inRoom ? '' : 'none';
-  if (inRoom) renderLobby(DX.data);
+  if (inRoom) { try { onTab('custom'); } catch (e) {} renderLobby(DX.data); }
 }
 function renderLobby(r) {
   var box = $('duelLobby'); if (!box || !r || !DX.room) return;
@@ -9172,6 +9187,7 @@ function fetchRankBoard() {
       arr.sort(function (a, b) { return (b.p || 0) - (a.p || 0); });
       rankCache = { list: arr, n: arr.length }; rankFetching = false;
       if (lbTab === 'rank') renderBoard();
+      try { renderRankHub(); } catch (e) {}
     }).catch(function () { rankFetching = false; });
   } catch (e) { rankFetching = false; }
 }
@@ -9208,6 +9224,27 @@ $('duelHome').addEventListener('click', function (e) {
   else if (a === 'match') matchFind();
   else if (a === 'matchCancel') { try { MM.ranked = false; } catch (e) {} MMStop(); }
 });
+var onTabCur = 'play';
+function renderRankHub() {
+  try {
+    var el = $('rankHub'); if (!el) return;
+    if (rankCache) el.innerHTML = rankRowsHTML();
+    else { el.innerHTML = '<div class="best">…</div>'; fetchRankBoard(); }
+  } catch (e) {}
+}
+function onTab(name) {
+  try {
+    onTabCur = name;
+    Array.prototype.forEach.call(document.querySelectorAll('#onTabs .lbtab'), function (b) {
+      b.classList.toggle('sel', b.getAttribute('data-ontab') === name);
+    });
+    if ($('onPlay')) $('onPlay').style.display = name === 'play' ? '' : 'none';
+    if ($('onRank')) $('onRank').style.display = name === 'rank' ? '' : 'none';
+    if ($('onCustom')) $('onCustom').style.display = name === 'custom' ? '' : 'none';
+    if (name === 'rank') renderRankHub();
+    try { sfx.move(); } catch (e) {}
+  } catch (e) {}
+}
 $('duelLobby').addEventListener('click', function (e) {
   var b = e.target.closest ? e.target.closest('[data-act]') : null; if (!b || b.disabled) return;
   e.stopPropagation(); try { sfx.move(); } catch (er) {}
