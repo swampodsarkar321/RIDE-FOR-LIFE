@@ -616,6 +616,17 @@
   .mx.mini .tx b { font-size: 15px; }
   .mx.mini .chev { font-size: 20px; }
   #onNav { margin-bottom: 8px; }
+  /* ===== hub windows (one per ONLINE option) ===== */
+  .hubWin { position: fixed; inset: 0; z-index: 55; display: none; place-items: center; padding: 18px; background: rgba(0,0,0,.55); }
+  .hubWin.on { display: grid; }
+  .hubWin .hub-card {
+    width: min(380px, 94vw); max-height: 86vh; overflow-y: auto; overscroll-behavior: contain;
+    text-align: center; color: #fff; border-radius: 24px; padding: 20px 16px;
+    background: linear-gradient(160deg, #16233f, #0b1226); border: 3px solid rgba(255,255,255,.2);
+    box-shadow: 0 18px 60px rgba(0,0,0,.6); touch-action: pan-y; -webkit-overflow-scrolling: touch;
+  }
+  .hubWin .hub-title { font-size: 24px; display: block; margin-bottom: 10px; }
+  .hubWin .hubClose { width: 100%; box-sizing: border-box; margin-top: 10px; }
   .mx-grid > * { min-width: 0; }
   .mx { min-width: 0; }
   /* PC / wide: 2-column cards (sudhu boro screen-e) */
@@ -902,15 +913,18 @@
         <div class="mpage" id="pageDuel">
       <button class="backBtn" id="duelBack">‹ Back</button>
       <div class="sec">🌐 ONLINE</div>
-      <div class="lbtabs" id="onNav"><button class="lbtab sel" data-ontab="play">▶ Play</button><button class="lbtab" data-ontab="rank">🏅 Rank</button><button class="lbtab" data-ontab="custom">⚙️ Custom</button><button class="lbtab" data-ontab="esports">🏆 Esports</button><button class="lbtab" data-ontab="events">🎪 Events</button></div>
-      <div class="secCard" id="onRank" style="display:none;"><div id="rankHub"></div></div>
-      <div id="onCustom" style="display:none;">
-        <div class="secCard" id="duelHome"></div>
-        <div class="secCard" id="duelLobby" style="display:none;"></div>
+      <div id="onNav">
+        <button class="mx gold" data-hub="play"><span class="ico">▶</span><span class="tx"><b>Play</b><small>Ranked matchmaking</small></span><span class="chev">›</span></button>
+        <button class="mx teal" data-hub="rank"><span class="ico">🏅</span><span class="tx"><b>Rank</b><small>Elo ratings &amp; tiers</small></span><span class="chev">›</span></button>
+        <button class="mx gray" data-hub="custom"><span class="ico">⚙️</span><span class="tx"><b>Custom</b><small>Friend rooms with code</small></span><span class="chev">›</span></button>
+        <button class="mx red" data-hub="esports"><span class="ico">🏆</span><span class="tx"><b>Esports</b><small>Tournaments &amp; prizes</small></span><span class="chev">›</span></button>
+        <button class="mx blue" data-hub="events"><span class="ico">🎪</span><span class="tx"><b>Events</b><small>Special game events</small></span><span class="chev">›</span></button>
       </div>
-      <div class="secCard" id="onEsports" style="display:none;"><div id="tourList"></div></div>
-      <div class="secCard" id="onEvents" style="display:none;"><div id="eventList2"></div></div>
     </div>
+<div class="hubWin" id="winRank"><div class="hub-card"><b class="hub-title">🏅 Rank</b><div id="rankHub"></div><button class="backBtn hubClose">✕ Close</button></div></div>
+<div class="hubWin" id="winCustom"><div class="hub-card"><b class="hub-title">⚙️ Custom</b><div id="duelHome"></div><div id="duelLobby" style="display:none;"></div><button class="backBtn hubClose">✕ Close</button></div></div>
+<div class="hubWin" id="winEsports"><div class="hub-card"><b class="hub-title">🏆 Esports</b><div id="tourList"></div><button class="backBtn hubClose">✕ Close</button></div></div>
+<div class="hubWin" id="winEvents"><div class="hub-card"><b class="hub-title">🎪 Events</b><div id="eventList2"></div><button class="backBtn hubClose">✕ Close</button></div></div>
     <div class="mpage" id="pageRadio">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
       <div class="sec">📻 Radio FM</div>
@@ -8564,7 +8578,10 @@ function boot() {
   $('profRow').addEventListener('click', function () { showPage('pageProfile'); renderProfile(); });
   $('settingsCard').addEventListener('click', function (e) { e.stopPropagation(); $('settings').classList.remove('hidden'); renderSettings(); });
   var _ot = $('onNav');
-  if (_ot) _ot.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('[data-ontab]') : null; if (!b) return; e.stopPropagation(); onTab(b.getAttribute('data-ontab')); });
+  if (_ot) _ot.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('[data-hub]') : null; if (!b) return; e.stopPropagation(); onTab(b.getAttribute('data-hub')); });
+  Array.prototype.forEach.call(document.querySelectorAll('.hubClose'), function (b) {
+    b.addEventListener('click', function (e) { e.stopPropagation(); try { sfx.move(); } catch (_) {} closeHubs(); });
+  });
   var _mmc = $('mmCancel');
   if (_mmc) _mmc.addEventListener('click', function (e) {
     e.stopPropagation(); try { sfx.move(); } catch (_) {}
@@ -8573,7 +8590,7 @@ function boot() {
     mmStatus(''); closeMMWindow();
   });
   var _dr = $('duelRow');
-  if (_dr) _dr.addEventListener('click', function () { try { onTab('play'); } catch (e) {} });
+  if (_dr) _dr.addEventListener('click', function () { try { closeHubs(); } catch (e) {} });
   $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, '💎 ' + gems + (lang === 'bn' ? ' · গ্যারেজে খরচ করো' : ' · spend in Garage'), 1800); });
   $('coinPlus').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, T('mm_gemsoon'), 1800); });
   // radio FM: tap = next station · hold = GTA wheel · prothom touch-e audio unlock
@@ -9060,7 +9077,7 @@ function duelBackToLobby() {
   }
   duelOpen();
 }
-function duelExit(toPage) { try { MMStop(); } catch (e) {} try { closeMMWindow(); } catch (e) {} duelLeave(); duelToMenu(toPage || 'pageMain'); DX.over = false; DX.fin = false; }
+function duelExit(toPage) { try { MMStop(); } catch (e) {} try { closeMMWindow(); } catch (e) {} try { closeHubs(); } catch (e) {} duelLeave(); duelToMenu(toPage || 'pageMain'); DX.over = false; DX.fin = false; }
 function duelQuit() { duelExit('pageMain'); } // pause menu -> forfeit (rival gets the win automatically)
 
 /* ---------- wiring ---------- */
@@ -9354,20 +9371,29 @@ function renderRankHub() {
     else { el.innerHTML = '<div class="best">…</div>'; fetchRankBoard(); }
   } catch (e) {}
 }
-function onTab(name) {
+function openHub(name) {
   try {
-    onTabCur = name;
-    Array.prototype.forEach.call(document.querySelectorAll('#onNav .lbtab'), function (b) {
-      b.classList.toggle('sel', b.getAttribute('data-ontab') === name);
-    });
-    if (name === 'play') { openMMWindow(); return; }
-    if ($('onRank')) $('onRank').style.display = name === 'rank' ? '' : 'none';
-    if ($('onCustom')) $('onCustom').style.display = name === 'custom' ? '' : 'none';
-    if ($('onEsports')) $('onEsports').style.display = name === 'esports' ? '' : 'none';
-    if ($('onEvents')) $('onEvents').style.display = name === 'events' ? '' : 'none';
+    closeHubs();
+    var map = { rank: 'winRank', custom: 'winCustom', esports: 'winEsports', events: 'winEvents' };
+    var el = $(map[name]); if (!el) return;
+    el.classList.add('on');
     if (name === 'rank') renderRankHub();
     if (name === 'esports') renderTours();
     if (name === 'events') renderEvents('eventList2');
+  } catch (e) {}
+}
+function closeHubs() {
+  try {
+    ['winRank', 'winCustom', 'winEsports', 'winEvents'].forEach(function (id) {
+      var el = $(id); if (el) el.classList.remove('on');
+    });
+  } catch (e) {}
+}
+function onTab(name) {
+  try {
+    onTabCur = name;
+    if (name === 'play') { openMMWindow(); return; }
+    openHub(name);
     try { sfx.move(); } catch (e) {}
   } catch (e) {}
 }
