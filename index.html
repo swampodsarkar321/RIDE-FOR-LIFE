@@ -3231,7 +3231,8 @@ function cgInit() {
     if (!window.CrazyGames || !window.CrazyGames.SDK || !window.CrazyGames.SDK.init) return;
     window.CrazyGames.SDK.init().then(function () {
       cgReady = true; CG_PORTAL = true;
-      try { applyPortalMode(); } catch (e) {}
+      try { applyPortalMode(); applyPortalPerf(); } catch (e) {}
+      try { cgLoaded(); } catch (eCL) {}
       try { cgSyncAudio(); } catch (eS) {}
       try { // CG audio/mute setting change shunbo (SDK priority)
         var _gm = window.CrazyGames.SDK.game;
@@ -3298,6 +3299,16 @@ function applyPortalMode() { // portal iframe: install + external share lukano
     ['installBtn', 'splashInstall'].forEach(function (id) { var el = $(id); if (el) el.style.display = 'none'; });
     ['fbBtn', 'msgBtn', 'waBtn', 'copyBtn'].forEach(function (id) { var b = $(id); if (b) b.style.display = 'none'; });
   } catch (e) {}
+}
+function applyPortalPerf() { // portal/QA device: stable fps (4GB Chromebook safe)
+  try {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    try { sunLight.castShadow = true; sunLight.shadow.mapSize.set(1024, 1024); if (sunLight.shadow.map) { sunLight.shadow.map.dispose(); sunLight.shadow.map = null; } } catch (e) {}
+  } catch (e2) {}
+}
+function cgLoaded() { // loading sesh + menu ready
+  try { if (cgReady && window.CrazyGames.SDK.game.loadingStop) window.CrazyGames.SDK.game.loadingStop(); } catch (e) {}
 }
 function logEv(n, p) { try { if (window._fa) window._fa.logEvent(n, p || {}); } catch (e) {} }
 function cloudSave() { // local + cloud — sob save ekhan diye
@@ -5476,7 +5487,7 @@ function showTut(ks) {
 }
 function startGame(keepScore) {
   try { clampLeg(); } catch (e) {} // strict: last city thekei suru
-  try { if (!localStorage.getItem('rrTut')) { showTut(keepScore); return; } } catch (e) {}
+  try { if (!CG_PORTAL && !localStorage.getItem('rrTut')) { showTut(keepScore); return; } } catch (e) {} // portal-e tutorial skip: instant gameplay
   if (state === 'menu') { justFinished = -1; carryScore = 0; }
   var emergency = '';
   if (hpStore <= 0) { // bike full smashed: repair na kore ride noy
@@ -8256,7 +8267,8 @@ function boot() {
   applyLang();
   applyBikeColor(); applyCustomization(); renderCustomize(); renderGarage(); renderBoard(); renderDest();
   try { applyHand(); applyTextCB(); applyLite(); } catch (eQ) {} // QoL prefs
-  try { cgInit(); if (CG_PORTAL) applyPortalMode(); } catch (eCG) {} // CrazyGames portal
+  try { cgInit(); if (CG_PORTAL) { applyPortalMode(); applyPortalPerf(); } } catch (eCG) {} // CrazyGames portal
+  try { cgLoaded(); } catch (eCL) {}
   cloudLoad(); loadGameConfig();
   if (selLeg > unlockLeg) { selLeg = unlockLeg; try { localStorage.setItem('rrLeg', String(selLeg)); } catch (e) {} renderDest(); }
   document.body.dataset.ui = 'menu';
@@ -8265,6 +8277,13 @@ function boot() {
   if (playerName) { try { $('nameInput').value = playerName; } catch (e) {} }
   renderDivGrid();
   try { if (CG_PORTAL && !playerName) { selDivIdx = 4; var _gi = $('nameInput'); if (_gi && !_gi.value) _gi.value = 'Guest'; renderDivGrid(); } } catch (eG) {} // portal QA: 1-click-e gameplay
+  try { if (CG_PORTAL && !playerName && !playerDiv) { // portal: gate charai menu — QA/bot 1 click-e gameplay
+    playerName = 'Guest' + Math.floor(100 + Math.random() * 900);
+    playerDiv = 'rangpur';
+    try { localStorage.setItem('rrName', playerName); localStorage.setItem('rrDiv', playerDiv); } catch (eG2) {}
+    selDivIdx = 4;
+    try { renderDivGrid(); } catch (eG3) {}
+  } } catch (eG) {}
   if (!playerName || !playerDiv) { $('nameOverlay').classList.remove('hidden'); try { $('nameOverlay').scrollTop = 0; var nc = $('nameCard'); if (nc) nc.scrollTop = 0; } catch (e) {} }
   $('bikeL').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(-1); });
   $('bikeR').addEventListener('click', function (e) { e.stopPropagation(); cycleBike(1); });
