@@ -8786,7 +8786,7 @@ function duelCountdown(r) {
 }
 function duelBegin(r) {
   if (!DX.sv) DX.sv = { selLeg: selLeg, bankCoins: bankCoins, xp: xp, riderLevel: riderLevel, hpStore: hpStore, practice: practice, eventMode: eventMode };
-  DX.on = true; DX.over = false; DX.fin = false; DX.lastKey = ''; DX.lastSend = 0;
+  DX.on = true; DUEL.on = true; DX.over = false; DX.fin = false; DX.lastKey = ''; DX.lastSend = 0;
   document.body.classList.add('duel-on');
   practice = false; eventMode = null; carryScore = 0; justFinished = -1;
   selLeg = clamp(r.leg | 0, 0, LEGS.length - 1);
@@ -8801,7 +8801,7 @@ function duelBegin(r) {
 /* restore everything the duel touched */
 function duelEndLocal() {
   if (!DX.on && !DX.sv) return;
-  DX.on = false; document.body.classList.remove('duel-on');
+  DX.on = false; DUEL.on = false; document.body.classList.remove('duel-on');
   var s = DX.sv; DX.sv = null;
   if (s) {
     selLeg = s.selLeg; bankCoins = s.bankCoins; xp = s.xp; riderLevel = s.riderLevel; hpStore = s.hpStore; practice = s.practice; eventMode = s.eventMode;
