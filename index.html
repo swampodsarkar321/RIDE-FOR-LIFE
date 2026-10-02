@@ -371,6 +371,11 @@
     background: linear-gradient(160deg, rgba(20,28,14,.95), rgba(10,16,8,.98));
     border: 3px solid rgba(255,255,255,.2);
   }
+  #settings, #pause, #dailyOverlay, #tutOverlay { overflow-y: auto; place-items: start center; }
+  #settings .card, #pause .card, #dailyOverlay .card, #tutOverlay .card {
+    max-height: 94vh; max-height: 94dvh; overflow-y: auto; overscroll-behavior: contain;
+    touch-action: pan-y; -webkit-overflow-scrolling: touch; scrollbar-width: thin; margin: auto;
+  }
   #settings h1 { text-shadow: 0 3px 0 rgba(0,0,0,.4); }
   #fpsBox {
     position: fixed; bottom: 8px; left: 8px; z-index: 20; color: #0f0;
