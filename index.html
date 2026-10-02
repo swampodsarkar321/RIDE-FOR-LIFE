@@ -492,7 +492,7 @@
   #mmCancel { width: 100%; box-sizing: border-box; }
   #vsRows .lbrow { text-align: left; }
   #vsRows .vsTag { font-size: 26px; text-align: center; font-weight: 900; color: var(--gold); margin: 2px 0; }
-  #vsCount { font-size: 46px; font-weight: 900; color: var(--gold); min-height: 56px; }
+  #vsCount { font-size: 76px; font-weight: 900; color: var(--gold); min-height: 88px; line-height: 1; text-shadow: 0 4px 0 rgba(0,0,0,.4); }
   #vsCancel { width: 100%; box-sizing: border-box; margin-top: 10px; }
   /* ===== profile narrow-screen guard ===== */
   #pageProfile .board { min-width: 0; overflow: hidden; }
@@ -8932,7 +8932,7 @@ function duelStart() {
 /* ---------- countdown + race begin ---------- */
 function duelCountdown(r) {
   DX.counting = true;
-  var el = $('duelCount'); el.classList.remove('hidden');
+  var el = $('duelCount'); if (!MM.vs) el.classList.remove('hidden');
   try { ac(); } catch (e) {}
   var lastN = 0;
   (function tick() {
