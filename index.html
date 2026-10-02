@@ -5736,8 +5736,38 @@ function readChallenge() {
     }
   } catch (e) { challengeTarget = 0; }
 }
-/* ---------- replay clip: last 10s canvas capture + share ---------- */
+/* ---------- replay clip: last 10s canvas capture + direct download (watermark soho) ---------- */
 var replayChunks = [], replayRec = null, replayBlob = null, replayUrl = null;
+var wmCanvas = null, wmCtx = null;
+function replayWM() { // watermark canvas ready: game frame + niche watermark — etai record hobe
+  try {
+    if (!renderer || !renderer.domElement) return null;
+    var vw = renderer.domElement.width || 480, vh = renderer.domElement.height || 270;
+    var sc = Math.min(1, 480 / Math.max(vw, vh));
+    var W = Math.max(2, Math.round(vw * sc)), H = Math.max(2, Math.round(vh * sc));
+    if (!wmCanvas) { wmCanvas = document.createElement('canvas'); wmCtx = wmCanvas.getContext('2d'); }
+    if (wmCanvas.width !== W || wmCanvas.height !== H) { wmCanvas.width = W; wmCanvas.height = H; }
+    return true;
+  } catch (e) { return null; }
+}
+function replayDraw() { // proti frame: game chobi + niche watermark ako
+  try {
+    if (!replayRec || !wmCtx || !wmCanvas) return;
+    var W = wmCanvas.width, H = wmCanvas.height;
+    wmCtx.drawImage(renderer.domElement, 0, 0, W, H);
+    var fs = Math.max(12, Math.round(W * 0.035));
+    wmCtx.font = '800 ' + fs + 'px Arial, sans-serif';
+    wmCtx.textAlign = 'center';
+    var label = 'Ride For Life';
+    var tw = wmCtx.measureText(label).width;
+    var pad = fs * 0.7, bw = tw + pad * 2, bh = fs * 1.9;
+    var bx = (W - bw) / 2, by = H - bh - fs * 0.5;
+    wmCtx.fillStyle = 'rgba(0,0,0,0.45)';
+    wmCtx.fillRect(bx, by, bw, bh);
+    wmCtx.fillStyle = '#ffffff';
+    wmCtx.fillText(label, W / 2, by + bh / 2 + fs * 0.36);
+  } catch (e) {}
+}
 function replayShowBtn() {
   try { var rb = $('replayBtn'); if (rb && replayBlob) rb.style.display = 'inline-block'; } catch (e) {}
 }
@@ -5746,9 +5776,12 @@ function replayStart() {
     replayStop(true);
     replayChunks = []; replayBlob = null;
     try { var rb = $('replayBtn'); if (rb) rb.style.display = 'none'; } catch (e) {}
-    if (!renderer || !renderer.domElement || !renderer.domElement.captureStream) return;
+    if (!renderer || !renderer.domElement) return;
     if (typeof MediaRecorder === 'undefined') return;
-    var stream = renderer.domElement.captureStream(15);
+    if (!replayWM()) return;
+    if (!wmCanvas.captureStream) return;
+    try { replayDraw(); } catch (e0) {} // prothom frame age theke
+    var stream = wmCanvas.captureStream(15); // watermark-soho canvas record
     var mime = '';
     try {
       if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) mime = 'video/webm;codecs=vp8';
@@ -5786,23 +5819,19 @@ function replayStop(silent) {
     }
   } catch (e) {}
 }
-function shareReplay() {
+function shareReplay() { // direct download (share sheet khulbe na) — watermark video-tei aka
   try {
     if (!replayBlob && replayChunks.length) {
       try { replayBlob = new Blob(replayChunks, { type: 'video/webm' }); } catch (e) {}
     }
-    if (!replayBlob) return;
-    var f = new File([replayBlob], 'ride-for-life-clip.webm', { type: 'video/webm' });
-    var txt = shareText(Math.floor(score));
-    if (navigator.canShare && navigator.canShare({ files: [f] })) {
-      navigator.share({ files: [f], title: 'Ride For Life', text: txt }).catch(function () {});
-      try { logEv('share_replay', {}); } catch (e) {}
-      return;
-    }
-    var url = replayUrl || URL.createObjectURL(replayBlob);
-    var a = document.createElement('a'); a.href = url; a.download = 'ride-for-life-clip.webm';
+    if (!replayBlob) { toast(elHint, lang === 'bn' ? '🎬 ক্লিপ নেই!' : '🎬 No clip!', 1800); return; }
+    if (replayUrl) { try { URL.revokeObjectURL(replayUrl); } catch (e2) {} }
+    replayUrl = URL.createObjectURL(replayBlob);
+    var a = document.createElement('a'); a.href = replayUrl; a.download = 'ride-for-life-clip.webm';
     document.body.appendChild(a); a.click();
-    setTimeout(function () { try { document.body.removeChild(a); } catch (e2) {} }, 800);
+    setTimeout(function () { try { document.body.removeChild(a); } catch (e3) {} }, 800);
+    try { logEv('replay_dl', {}); } catch (e4) {}
+    toast(elHint, lang === 'bn' ? '💾 ক্লিপ ডাউনলোড!' : '💾 Clip downloaded!', 2000);
   } catch (e) {}
 }
 /* ---------- district pride share card ---------- */
@@ -6938,6 +6967,7 @@ function frame(now) {
   autoQuality(dt);
   try { if (state === 'play') midRunSave(false); } catch (e) {} // 15s por por autosave
   renderer.render(scene, camera);
+  try { replayDraw(); } catch (eR) {} // record cholle frame + watermark ako
   if (showFps) {
     fpsAcc += dt; fpsN++;
     if (fpsAcc >= 0.5) {
