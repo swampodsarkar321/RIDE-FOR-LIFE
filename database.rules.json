@@ -48,6 +48,18 @@
         ".write": true
       }
     },
+    "match_queue": {
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "match_pair": {
+      "$id": {
+        ".read": true,
+        ".write": true
+      }
+    },
     "ratings": {
       ".read": true,
       "$uid": {

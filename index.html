@@ -6569,7 +6569,16 @@ function update(dt) {
     try { chaseTick(dt); } catch (e) {}
     try { zoneTick(); } catch (e) {}
     // gontobye pouchano?
-    if (DUEL.on) { if (!arrived && dist >= leg().len) { arrived = true; duelFinish(); } } else
+    if (DUEL.on) {
+    if (!arrived && dist >= leg().len) {
+      if (parcelCount >= DUEL_QUOTA) { arrived = true; duelFinish(); }
+      else {
+        if (!quotaWarned) { quotaWarned = true; try { toast(elLoc, (lang === 'bn' ? '📦 আরও ' : '📦 Need ') + (DUEL_QUOTA - parcelCount) + (lang === 'bn' ? ' parcel লাগবে!' : ' more parcels!'), 3000); } catch (e) {} }
+        overT += dt;
+        if (overT > 45) { overT = -9999; try { suddenDeath(); } catch (e) {} }
+      }
+    }
+  } else
     if (!arrived && dist >= leg().len) {
       arrived = true; endReason = 'arrive'; arrivedName = legName(leg());
       var ab = Math.round((500 + selLeg * 200) * (evP().bonusX || 1));
@@ -8684,7 +8693,10 @@ function buildHome() {
     '<button class="btn dvBtn" data-act="create" style="width:100%;margin:12px 0 4px;background:#2d9c42;box-shadow:0 5px 0 #14521f;">🏁 ' + dl('Create Room', 'রুম বানাও') + '</button>' +
     '<div style="margin:10px 0 6px;font-size:13px;color:var(--panel-soft);">— ' + dl('or join a friend', 'অথবা বন্ধুর রুমে ঢোকো') + ' —</div>' +
     '<div style="display:flex;gap:8px;"><input id="duelCode" class="dvIn" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:4px;">' +
-    '<button class="btn dvBtn" data-act="join" style="white-space:nowrap;background:#3d6fa5;box-shadow:0 5px 0 #274a70;">' + dl('Join', 'জয়েন') + '</button></div>';
+    '<button class="btn dvBtn" data-act="join" style="white-space:nowrap;background:#3d6fa5;box-shadow:0 5px 0 #274a70;">' + dl('Join', 'জয়েন') + '</button></div>' +
+    '<div style="margin:10px 0 6px;font-size:13px;color:var(--panel-soft);">— ' + dl('or auto match', 'অথবা অটো ম্যাচ') + ' —</div>' +
+    '<button class="btn dvBtn" data-act="match" style="width:100%;background:#9b5de5;box-shadow:0 5px 0 #5a2e8a;">🔎 ' + dl('Find Rival (30s)', 'প্রতিপক্ষ খোঁজো (৩০ সে)') + '</button>' +
+    '<div id="mmStatus" style="min-height:20px;font-size:13px;font-weight:800;color:var(--gold);margin-top:6px;"></div>';
   $('duelName').value = nm || DX.name || playerName || '';
   $('duelCode').value = cd;
 }
@@ -8797,6 +8809,21 @@ function duelBegin(r) {
   var o = oppOf(DX.data);
   try { $('dMeN').textContent = dl('You', 'তুমি'); $('dOpN').textContent = o ? String(o.n).slice(0, 10) : dl('Rival', 'প্রতিপক্ষ'); } catch (e2) {}
   try { logEv('duel_start', { leg: selLeg }); } catch (e3) {}
+  quotaWarned = false; overT = 0;
+  try { toast(elLoc, (lang === 'bn' ? '🏁 জিততে হলে আগে পৌঁছাও + ' : '🏁 Win: finish first + ') + DUEL_QUOTA + '📦', 3200); } catch (e4) {}
+}
+var DUEL_QUOTA = 5, quotaWarned = false, overT = 0;
+function suddenDeath() { // overtime: jader parcel besi se jitbe
+  try {
+    if (!DX.ref || (DX.data && DX.data.winner)) return;
+    var opp = oppOf(DX.data || {});
+    var op = opp ? (opp.p | 0) : 0;
+    if (parcelCount < op) return; // pichiye — protipokkher suddenDeath likhbe
+    var mine = { u: fbUid, n: dMyName(), ms: Math.max(0, srvNow() - DX.t0), p: parcelCount, t: Date.now(), sd: 1 };
+    DX.ref.child('winner').transaction(function (cur) { return cur ? undefined : mine; }, undefined, false).then(function (res) {
+      try { duelShowResult(res.snapshot.val() || mine); } catch (e) {}
+    }).catch(function () { try { duelShowResult(mine); } catch (e) {} });
+  } catch (e) {}
 }
 /* restore everything the duel touched */
 function duelEndLocal() {
@@ -8909,16 +8936,185 @@ function duelBackToLobby() {
   }
   duelOpen();
 }
-function duelExit(toPage) { duelLeave(); duelToMenu(toPage || 'pageMain'); DX.over = false; DX.fin = false; }
+function duelExit(toPage) { try { MMStop(); } catch (e) {} duelLeave(); duelToMenu(toPage || 'pageMain'); DX.over = false; DX.fin = false; }
 function duelQuit() { duelExit('pageMain'); } // pause menu -> forfeit (rival gets the win automatically)
 
 /* ---------- wiring ---------- */
+/* ---------- matchmaking: 30s real search, na pele bot (real-er moto) ---------- */
+var MM = { on: false, t0: 0, timer: null, pairCb: null, pairRef: null, botTimer: null, botUid: null, botPlan: null };
+var BOTN = ['Rakib Hossain', 'Mim Akter', 'Tanvir Rahman', 'Nusrat Jahan', 'Rifat Karim', 'Sadia Ahmed', 'Emon Chowdhury', 'Tania Rahman', 'Sohel Rana', 'Jui Islam', 'Mahim Rahman', 'Faria Rahman'];
+function mmStatus(t) { try { var el = $('mmStatus'); if (el) el.textContent = t || ''; } catch (e) {} }
+function MMStop() {
+  try { if (MM.timer) { clearInterval(MM.timer); MM.timer = null; } } catch (e) {}
+  try { if (MM.gTo) { clearTimeout(MM.gTo); MM.gTo = null; } } catch (e) {}
+  try { if (MM.botTimer) { clearInterval(MM.botTimer); MM.botTimer = null; } catch (e) {}
+  try { if (MM.pairRef && MM.pairCb) MM.pairRef.off('value', MM.pairCb); } catch (e) {}
+  MM.pairRef = null; MM.pairCb = null;
+  try { if (fbReady && FBDB) { FBDB.ref('match_queue/' + fbUid).remove(); } } catch (e) {}
+  MM.on = false; MM.botUid = null; MM.botPlan = null;
+}
+function matchFind() {
+  if (!fbReady || !FBDB) { dToast(dl('No connection', 'নেট নেই')); return; }
+  if (DX.room || DX.joining || MM.on) return;
+  MM.on = true; MM.t0 = Date.now();
+  mmStatus(dl('🔎 Finding rival…', '🔎 প্রতিপক্ষ খুঁজছি…'));
+  try {
+    var q = FBDB.ref('match_queue/' + fbUid);
+    q.set({ n: dMyName(), av: getAvatar(), lvl: riderLevel, t: Date.now() });
+    try { q.onDisconnect().remove(); } catch (e) {}
+  } catch (e) { MM.on = false; return; }
+  MM.timer = setInterval(function () {
+    try {
+      if (!MM.on) { MMStop(); return; }
+      var el = Math.floor((Date.now() - MM.t0) / 1000), left = 30 - el;
+      if (left <= 0) { MMStop(); matchBot(); return; }
+      mmStatus(dl('🔎 Finding rival… ', '🔎 প্রতিপক্ষ খুঁজছি… ') + left + 's');
+      FBDB.ref('match_queue').once('value').then(function (snap) {
+        if (!MM.on) return;
+        var cand = null, now = Date.now();
+        snap.forEach(function (c) {
+          if (cand || c.key === fbUid) return;
+          var v = c.val() || {};
+          if (v.t && now - v.t < 35000) cand = c.key;
+        });
+        if (!cand) return;
+        clearInterval(MM.timer); MM.timer = null;
+        var pairId = [fbUid, cand].sort().join('_');
+        if (fbUid < cand) matchHost(pairId);
+        else matchGuest(pairId);
+      }).catch(function () {});
+    } catch (e) {}
+  }, 3000);
+}
+function matchCleanup() {
+  try { if (FBDB) FBDB.ref('match_queue/' + fbUid).remove(); } catch (e) {}
+  try { if (MM.timer) { clearInterval(MM.timer); MM.timer = null; } } catch (e) {}
+}
+function matchHost(pairId) {
+  mmStatus(dl('⚔️ Rival found! Creating race…', '⚔️ প্রতিপক্ষ পেয়েছি! রেস বানাচ্ছি…'));
+  var leg = (Math.random() * (Math.min(unlockLeg, LEGS.length - 1) + 1)) | 0;
+  var code = genCode(), ref = FBDB.ref('duel_rooms/' + code);
+  var room = { host: fbUid, created: Date.now(), leg: clamp(leg, 0, LEGS.length - 1), st: 'lobby', round: 0, players: {} };
+  room.players[fbUid] = mkPlayer(dMyName());
+  ref.transaction(function (cur) { return (cur && cur.created && Date.now() - cur.created < 3 * 3600 * 1000) ? undefined : room; }, undefined, false).then(function (res) {
+    if (!res.committed || !MM.on) { MMStop(); return; }
+    try { FBDB.ref('match_pair/' + pairId).set({ room: code, at: Date.now() }); } catch (e) {}
+    enterRoom(code, true);
+    MM.timer = setInterval(function () { // guest ready hole auto-start
+      try {
+        if (!MM.on || !DX.room) { MMStop(); return; }
+        if (Date.now() - MM.t0 > 90000) { MMStop(); duelExit('pageMain'); return; }
+        var r = DX.data;
+        if (r && r.guest) {
+          var g = r.players && r.players[r.guest];
+          if (g && g.ready && g.st !== 'left') { MMStop(); duelStart(); }
+        }
+      } catch (e) {}
+    }, 2000);
+  }).catch(function () { MMStop(); matchBot(); });
+}
+function matchGuest(pairId) {
+  mmStatus(dl('⚔️ Rival found! Joining…', '⚔️ প্রতিপক্ষ পেয়েছি! ঢুকছি…'));
+  try { if (MM.timer) { clearInterval(MM.timer); MM.timer = null; } } catch (e) {}
+  var gTo = setTimeout(function () { if (MM.on && !DX.room) { MMStop(); matchBot(); } }, 25000);
+  MM.gTo = gTo;
+  try {
+    MM.pairRef = FBDB.ref('match_pair/' + pairId);
+    MM.pairCb = MM.pairRef.on('value', function (snap) {
+      try {
+        var v = snap.val();
+        if (v && v.room) {
+          try { MM.pairRef.off('value', MM.pairCb); } catch (e) {}
+          try { if (MM.gTo) { clearTimeout(MM.gTo); MM.gTo = null; } } catch (e2) {}
+          MM.pairRef = null;
+          matchCleanup();
+          duelJoin(v.room);
+          var wt = setInterval(function () { // join hole auto-ready
+            try {
+              if (!DX.room || !DX.data) return;
+              clearInterval(wt);
+              if (DX.myRef) DX.myRef.child('ready').set(true);
+            } catch (e) {}
+          }, 1500);
+        }
+      } catch (e) {}
+    });
+  } catch (e) { MMStop(); matchBot(); }
+}
+function matchBot() { // 30s-e keu nai — bot, kintu dekhte real-er moto
+  if (DX.room || DX.joining) return;
+  mmStatus(dl('⚔️ Rival found! Starting…', '⚔️ প্রতিপক্ষ পেয়েছি! শুরু হচ্ছে…'));
+  var nm = BOTN[(Math.random() * BOTN.length) | 0];
+  var bav = '';
+  try { bav = avatarUrl((Math.random() * 192) | 0); } catch (e) {}
+  var botUid = 'bot' + Date.now().toString(36);
+  var leg = (Math.random() * (Math.min(unlockLeg, LEGS.length - 1) + 1)) | 0;
+  var code = genCode(), ref = FBDB.ref('duel_rooms/' + code);
+  var room = { host: fbUid, created: Date.now(), leg: clamp(leg, 0, LEGS.length - 1), st: 'lobby', round: 0, players: {} };
+  room.players[fbUid] = mkPlayer(dMyName());
+  room.players[botUid] = { n: nm, av: bav, d: 0, p: 0, s: 0, f: 0, ms: 0, st: 'on', ready: true };
+  room.guest = botUid;
+  ref.transaction(function (cur) { return (cur && cur.created && Date.now() - cur.created < 3 * 3600 * 1000) ? undefined : room; }, undefined, false).then(function (res) {
+    if (!res.committed) { matchBot(); return; }
+    enterRoom(code, true);
+    MM.botUid = botUid;
+    var wt = setInterval(function () {
+      try {
+        if (!DX.room || !DX.data) return;
+        clearInterval(wt);
+        duelStart();
+        setTimeout(function () { botDrive(botUid); }, 3500);
+      } catch (e) {}
+    }, 1500);
+  }).catch(function () { dToast(dl('No connection', 'নেট নেই')); });
+}
+function botDrive(botUid) { // scripted rival pace + parcels
+  try {
+    if (MM.botTimer) clearInterval(MM.botTimer);
+    var L = leg().len, pace = L / (L / 24 * (0.92 + Math.random() * 0.16));
+    MM.botPlan = { pace: pace, overT: 0 };
+    MM.botTimer = setInterval(function () {
+      try {
+        if (!DX.on || DX.over || !DX.ref) { clearInterval(MM.botTimer); MM.botTimer = null; return; }
+        var el = (srvNow() - DX.t0) / 1000;
+        var d = Math.min(L, MM.botPlan.pace * el);
+        var p = Math.min(DUEL_QUOTA + 2, Math.floor(d / L * (DUEL_QUOTA + 3)));
+        var upd = {};
+        if (d >= L && p >= DUEL_QUOTA) { // bot finish — winner transaction
+          upd['players/' + botUid + '/d'] = L; upd['players/' + botUid + '/p'] = p;
+          upd['players/' + botUid + '/f'] = 1; upd['players/' + botUid + '/st'] = 'fin';
+          DX.ref.update(upd).catch(function () {});
+          clearInterval(MM.botTimer); MM.botTimer = null;
+          var bw = { u: botUid, n: (DX.data && DX.data.players && DX.data.players[botUid] && DX.data.players[botUid].n) || 'Rival', ms: Math.max(0, srvNow() - DX.t0), p: p, t: Date.now() };
+          DX.ref.child('winner').transaction(function (cur) { return cur ? undefined : bw; }, undefined, false).catch(function () {});
+          return;
+        }
+        if (d >= L) { // overtime — jar parcel besi
+          MM.botPlan.overT += 2;
+          if (MM.botPlan.overT > 45) {
+            var me = (DX.data && DX.data.players && DX.data.players[fbUid]) || {};
+            if (p >= (me.p | 0)) {
+              var bw2 = { u: botUid, n: (DX.data.players[botUid] || {}).n || 'Rival', ms: Math.max(0, srvNow() - DX.t0), p: p, t: Date.now(), sd: 1 };
+              DX.ref.child('winner').transaction(function (cur) { return cur ? undefined : bw2; }, undefined, false).catch(function () {});
+              clearInterval(MM.botTimer); MM.botTimer = null;
+              return;
+            }
+          }
+        }
+        upd['players/' + botUid + '/d'] = Math.floor(d); upd['players/' + botUid + '/p'] = p;
+        DX.ref.update(upd).catch(function () {});
+      } catch (e) {}
+    }, 2000);
+  } catch (e) {}
+}
 $('duelHome').addEventListener('click', function (e) {
   var b = e.target.closest ? e.target.closest('[data-act]') : null; if (!b) return;
   e.stopPropagation(); try { sfx.move(); } catch (er) {}
   var a = b.getAttribute('data-act');
   if (a === 'create') duelCreate();
   else if (a === 'join') duelJoin($('duelCode').value);
+  else if (a === 'match') matchFind();
+  else if (a === 'matchCancel') MMStop();
 });
 $('duelLobby').addEventListener('click', function (e) {
   var b = e.target.closest ? e.target.closest('[data-act]') : null; if (!b || b.disabled) return;
