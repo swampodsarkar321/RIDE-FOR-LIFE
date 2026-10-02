@@ -3311,6 +3311,7 @@ function cgLoaded() { // loading sesh + menu ready
   try { if (cgReady && window.CrazyGames.SDK.game.loadingStop) window.CrazyGames.SDK.game.loadingStop(); } catch (e) {}
 }
 function logEv(n, p) { try { if (window._fa) window._fa.logEvent(n, p || {}); } catch (e) {} }
+try { window.addEventListener('error', function (e) { try { logEv('js_err', { m: String((e && e.message) || 'err').slice(0, 120) }); } catch (e2) {} }); } catch (e3) {} // real-player crash log (analytics-e dekha jabe)
 function cloudSave() { // local + cloud — sob save ekhan diye
   try {
     var now = Date.now();
@@ -3687,7 +3688,7 @@ function midRunSave(force) { // run-er majhe tab close/call ele progress bachao
         d: Math.floor(dist), b: bankCoins, x: Math.floor(xp), at: now
       }));
     } catch (e) {}
-    cloudSave();
+    // cloud save sudhu run sheshe (battery/data + Firebase cost bachao)
   } catch (e) {}
 }
 function recoverRun() { // boot-e ager ochomapto run-er earning ferot
@@ -3796,7 +3797,7 @@ function worldRows(arr, showDiv) {
     var av = e.av || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Rider';
     var sub = e.p + '📦' + (showDiv && (e.dv || e.div) ? ' · ' + divName(e.dv || e.div) : '');
     if (me && typeof selTitle !== 'undefined' && selTitle && selTitle !== 'new') { try { sub += ' · ' + titleText(selTitle); } catch (e2) {} }
-    return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm"><img src="' + av + '" style="width:28px;height:28px;border-radius:50%;vertical-align:-6px;margin-right:4px;"> ' + (e.n || T('rider')) + '<small>' + sub + '</small></span><span class="sc">' + e.s + '</span></div>';
+    return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm"><img src="' + av + '" onerror="this.style.display=\'none\'" style="width:28px;height:28px;border-radius:50%;vertical-align:-6px;margin-right:4px;"> ' + (e.n || T('rider')) + '<small>' + sub + '</small></span><span class="sc">' + e.s + '</span></div>';
   }).join('');
 }
 function refreshWorldBoards() { // over screen-e world + division (10s throttle)
@@ -5614,6 +5615,7 @@ function die(killer) {
   try { chaseBusted(); } catch (e) {}
   hp -= bikeStat().dmg; // bike damage — morbena, damage hobe
   state = 'crash'; crashT = 0; shake = 1.7; hitStop = 0.09; // juice: jhakuni + freeze
+  try { if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) shake = 0; } catch (eRM) {}
   // crash slow-mo: 0.6s slow motion + parcel bhanga toast
   slowT = 0.6; timeScale = 0.3;
   combo = 0; comboT = 0;
@@ -7628,11 +7630,11 @@ function botRowsHTML(real, showDiv, realN, divId) {
       var av = e.av || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Rider';
       var sub = (e.p || 0) + '📦' + (showDiv && (e.dv || e.div) ? ' · ' + divName(e.dv || e.div) : '');
       if (me && typeof selTitle !== 'undefined' && selTitle && selTitle !== 'new') { try { sub += ' · ' + titleText(selTitle); } catch (e2) {} }
-      return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm"><img src="' + av + '" style="width:28px;height:28px;border-radius:50%;vertical-align:-6px;margin-right:4px;"> ' + (e.n || T('rider')) + '<small>' + sub + '</small></span><span class="sc">' + (e.s || 0) + '</span></div>';
+      return '<div class="lbrow' + me + '"><span class="rk">' + medal(i) + '</span><span class="nm"><img src="' + av + '" onerror="this.style.display=\'none\'" style="width:28px;height:28px;border-radius:50%;vertical-align:-6px;margin-right:4px;"> ' + (e.n || T('rider')) + '<small>' + sub + '</small></span><span class="sc">' + (e.s || 0) + '</span></div>';
     }).join('');
     if (meE && meRank > 9) {
       var av2 = meE.av || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Rider';
-      rows += '<div class="lbrow me"><span class="rk">' + meRank + '.</span><span class="nm"><img src="' + av2 + '" style="width:28px;height:28px;border-radius:50%;vertical-align:-6px;margin-right:4px;"> ' + (meE.n || T('rider')) + '<small>' + (meE.p || 0) + '📦</small></span><span class="sc">' + (meE.s || 0) + '</span></div>';
+      rows += '<div class="lbrow me"><span class="rk">' + meRank + '.</span><span class="nm"><img src="' + av2 + '" onerror="this.style.display=\'none\'" style="width:28px;height:28px;border-radius:50%;vertical-align:-6px;margin-right:4px;"> ' + (meE.n || T('rider')) + '<small>' + (meE.p || 0) + '📦</small></span><span class="sc">' + (meE.s || 0) + '</span></div>';
     }
     return h + (rows || T('lb_empty'));
   } catch (e) { return worldRows(merged, showDiv); }
