@@ -494,6 +494,12 @@
   #vsRows .vsTag { font-size: 26px; text-align: center; font-weight: 900; color: var(--gold); margin: 2px 0; }
   #vsCount { font-size: 76px; font-weight: 900; color: var(--gold); min-height: 88px; line-height: 1; text-shadow: 0 4px 0 rgba(0,0,0,.4); }
   #vsCancel { width: 100%; box-sizing: border-box; margin-top: 10px; }
+  /* ===== spectator broadcast ===== */
+  #specBody .lbrow { text-align: left; }
+  #specBody .spd { font-size: 22px; font-weight: 900; color: #7dff9a; }
+  #specBody .gap { text-align: center; font-weight: 900; font-size: 18px; color: var(--gold); margin: 4px 0; }
+  @keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  #specWin .hub-title .live-dot { animation: liveBlink 1.2s infinite; }
   /* ===== profile narrow-screen guard ===== */
   #pageProfile .board { min-width: 0; overflow: hidden; }
   @media (max-width: 360px) {
@@ -929,6 +935,7 @@
 <div class="hubWin" id="winEsports"><div class="hub-card"><b class="hub-title">🏆 Esports</b><div id="tourList"></div><button class="backBtn hubClose">✕ Close</button></div></div>
 <div class="hubWin" id="winEvents"><div class="hub-card"><b class="hub-title">🎪 Events</b><div id="eventList2"></div><button class="backBtn hubClose">✕ Close</button></div></div>
 <div class="hubWin" id="winVs"><div class="hub-card"><b class="hub-title">⚔️ VERSUS</b><div id="vsRows"></div><div id="vsCount">…</div><div class="best" id="vsRule">🏁 Finish first + 5📦 wins</div><button class="backBtn" id="vsCancel">✕ Cancel</button></div></div>
+<div class="hubWin" id="specWin"><div class="hub-card" style="width:min(440px,96vw);border-color:#ff3b30;"><b class="hub-title">📺 <span class="live-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff3b30;box-shadow:0 0 8px #ff3b30;"></span> LIVE</b><div id="specBody"></div><div id="specTicker" style="min-height:40px;font-size:13px;color:var(--gold);margin-top:6px;"></div><button class="backBtn" id="specClose" style="width:100%;box-sizing:border-box;margin-top:8px;">✕ Close</button></div></div>
     <div class="mpage" id="pageRadio">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
       <div class="sec">📻 Radio FM</div>
@@ -5622,6 +5629,7 @@ function showTut(ks) {
   } catch (e) {}
 }
 function startGame(keepScore) {
+  try { specStop(); } catch (e) {}
   if (!DUEL.on) try { clampLeg(); } catch (e) {} // strict: last city thekei suru
   try { if (!DUEL.on && !localStorage.getItem('rrTut')) { showTut(keepScore); return; } } catch (e) {}
   if (state === 'menu') { justFinished = -1; carryScore = 0; }
@@ -8608,6 +8616,12 @@ function boot() {
     try { MMStop(); } catch (_) {}
     mmStatus(''); closeMMWindow();
   });
+  var _spc = $('specClose');
+  if (_spc) _spc.addEventListener('click', function (e) {
+    e.stopPropagation(); try { sfx.move(); } catch (_) {}
+    specStop();
+    try { $('specWin').classList.remove('on'); } catch (_) {}
+  });
   var _vsc = $('vsCancel');
   if (_vsc) _vsc.addEventListener('click', function (e) {
     e.stopPropagation(); try { sfx.move(); } catch (_) {}
@@ -8859,6 +8873,9 @@ function buildHome() {
     '<div style="margin:10px 0 6px;font-size:13px;color:var(--panel-soft);">— ' + dl('or join a friend', 'অথবা বন্ধুর রুমে ঢোকো') + ' —</div>' +
     '<div style="display:flex;gap:8px;"><input id="duelCode" class="dvIn" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:4px;">' +
     '<button class="btn dvBtn" data-act="join" style="white-space:nowrap;background:#3d6fa5;box-shadow:0 5px 0 #274a70;">' + dl('Join', 'জয়েন') + '</button></div>' +
+    '<div style="margin:10px 0 6px;font-size:13px;color:var(--panel-soft);">— ' + dl('or watch live', 'অথবা লাইভ দেখো') + ' —</div>' +
+    '<div style="display:flex;gap:8px;"><input id="specCode" class="dvIn" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:4px;">' +
+    '<button class="btn dvBtn" data-act="spec" style="white-space:nowrap;background:#c23b3b;box-shadow:0 5px 0 #7a1a1a;">📺 ' + dl('Watch', 'দেখো') + '</button></div>' +
     '';
   $('duelName').value = nm || DX.name || playerName || '';
   $('duelCode').value = cd;
@@ -9434,12 +9451,75 @@ function rankRowsHTML() {
     return h;
   } catch (e) { return ''; }
 }
+/* ---------- spectator broadcast: 2 rider eksathe, commentary soho ---------- */
+var specTimer = null, specLast = {}, specFeed = [], specLead = '';
+function specStop() { try { if (specTimer) { clearInterval(specTimer); specTimer = null; } } catch (e) {} }
+function specSay(t) {
+  try {
+    specFeed.unshift(t); if (specFeed.length > 3) specFeed.pop();
+    var el = $('specTicker'); if (el) el.innerHTML = specFeed.join('<br>');
+  } catch (e) {}
+}
+function specWatch(code) {
+  code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 5) { dToast(dl('Enter the 5-letter room code', '৫ অক্ষরের রুম কোড দাও')); return; }
+  if (!fbReady || !FBDB) { dToast(dl('No connection', 'নেট নেই')); return; }
+  specStop(); specFeed = []; specLead = ''; specLast = {};
+  $('specWin').classList.add('on');
+  specTimer = setInterval(function () {
+    try {
+      FBDB.ref('duel_rooms/' + code).once('value').then(function (snap) {
+        var r = snap.val();
+        if (!r || !r.players) { specSay(dl('Waiting for riders…', 'রাইডারদের অপেক্ষা…')); return; }
+        specRender(code, r);
+      }).catch(function () {});
+    } catch (e) {}
+  }, 1000);
+}
+function specRender(code, r) {
+  try {
+    var keys = Object.keys(r.players || {}).slice(0, 2), bn = lang === 'bn';
+    if (r.winner && r.winner.u) {
+      var w = r.winner;
+      $('specBody').innerHTML = '<div style="font-size:52px;">🏆</div><div style="font-size:24px;font-weight:900;color:var(--gold);">' + dEsc(w.n || '') + '</div><div class="best">' + (bn ? 'জিতে গেছে!' : 'WINS!') + '</div>';
+      specSay('🏆 ' + (w.n || '') + (bn ? ' জিতেছে!' : ' wins!'));
+      specStop();
+      return;
+    }
+    var rows = '', infos = [];
+    keys.forEach(function (k) {
+      var p = r.players[k] || {};
+      var prev = specLast[k] || { d: 0, t: Date.now() };
+      var now = Date.now(), d = +p.d || 0;
+      var kmh = prev.t ? Math.max(0, Math.round((d - prev.d) / Math.max(1, (now - prev.t) / 1000) * 3.6)) : 0;
+      if (kmh > 200) kmh = 0;
+      specLast[k] = { d: d, t: now };
+      var pct = Math.min(100, Math.round(d / 2900 * 100));
+      infos.push({ k: k, n: p.n || '?', pct: pct, kmh: kmh, p: (+p.p || 0), s: (+p.s || 0), st: p.st || '' });
+    });
+    infos.sort(function (a, b) { return b.pct - a.pct; });
+    if (infos.length === 2) {
+      var lead = infos[0].k;
+      if (specLead && lead !== specLead) specSay('🔥 ' + infos[0].n + (bn ? ' এগিয়ে গেল!' : ' takes the lead!'));
+      specLead = lead;
+      if (infos[0].pct >= 90 && !specFeed.join(' ').match(' stretch')) specSay('🏁 ' + (bn ? 'শেষ ল্যাপ! ' : 'Final stretch! ') + infos[0].n + ' ' + infos[0].pct + '%');
+    }
+    rows = infos.map(function (e, i) {
+      return '<div class="lbrow' + (i === 0 ? ' me' : '') + '"><span class="nm">' + (i === 0 ? '🥇 ' : '') + dEsc(e.n) + '<small>' + e.pct + '% · 📦' + e.p + ' · ' + e.s + 'pts · ' + e.st + '</small><span class="spd">' + e.kmh + ' km/h</span></span></div>'
+        + '<div style="height:8px;border-radius:4px;background:rgba(255,255,255,.12);margin:2px 0 6px;"><u style="display:block;height:100%;width:' + e.pct + '%;background:linear-gradient(90deg,#2d9c42,#ffc83d);border-radius:4px;"></u></div>';
+    }).join('');
+    if (infos.length === 2) rows += '<div class="gap">GAP ' + Math.abs(infos[0].pct - infos[1].pct) + '%</div>';
+    rows = '<div class="best">🔑 ' + code + ' · ' + (r.st || '') + '</div>' + rows;
+    $('specBody').innerHTML = rows;
+  } catch (e) {}
+}
 $('duelHome').addEventListener('click', function (e) {
   var b = e.target.closest ? e.target.closest('[data-act]') : null; if (!b) return;
   e.stopPropagation(); try { sfx.move(); } catch (er) {}
   var a = b.getAttribute('data-act');
   if (a === 'create') duelCreate();
   else if (a === 'join') duelJoin($('duelCode').value);
+  else if (a === 'spec') specWatch($('specCode').value);
   else if (a === 'match') matchFind();
   else if (a === 'matchCancel') { try { MM.ranked = false; } catch (e) {} MMStop(); }
 });
