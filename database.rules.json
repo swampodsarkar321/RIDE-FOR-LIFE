@@ -48,6 +48,12 @@
         ".write": true
       }
     },
+    "ratings": {
+      ".read": true,
+      "$uid": {
+        ".write": "newData.val() == null || (newData.hasChildren(['r', 'at']) && newData.child('r').isNumber() && newData.child('r').val() >= 1 && newData.child('r').val() <= 5 && newData.child('at').isNumber())"
+      }
+    },
     "config": {
       ".read": true,
       ".write": true,
@@ -77,12 +83,6 @@
       "eventOverrides": {
         "$k": {
           ".validate": "newData.val() == null || newData.hasChildren(['name_en'])"
-        }
-      },
-      "ratings": {
-        "$uid": {
-          ".read": true,
-          ".write": "newData.val() == null || (newData.hasChildren(['r', 'at']) && newData.child('r').isNumber() && newData.child('r').val() >= 1 && newData.child('r').val() <= 5 && newData.child('at').isNumber())"
         }
       }
     }

@@ -1,4 +1,4 @@
-var CACHE = 'rfl-v9';
+var CACHE = 'rfl-v10';
 var FILES = ['.', 'index.html', 'manifest.json', 'ride-for-life-logo.png', 'soundque-indian-dio-scooter-start-amp-ride-pass-by-soundque-field-recording-447204.mp3'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
@@ -13,9 +13,9 @@ self.addEventListener('fetch', function (e) {
   e.respondWith(
     caches.match(e.request).then(function (hit) {
       var net = fetch(e.request).then(function (res) {
-        if (res && res.ok && new URL(e.request.url).origin === location.origin) {
+        if (res && res.status === 200 && new URL(e.request.url).origin === location.origin) {
           var copy = res.clone();
-          caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+          caches.open(CACHE).then(function (c) { c.put(e.request, copy).catch(function () {}); }).catch(function () {});
         }
         return res;
       }).catch(function () { return hit; });
