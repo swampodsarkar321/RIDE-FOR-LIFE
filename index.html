@@ -490,6 +490,10 @@
   #mmWindow .mm-bar { height: 8px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; margin: 10px 0 14px; }
   #mmWindow .mm-bar u { display: block; height: 100%; width: 0%; background: linear-gradient(90deg,#9b5de5,#37e05a); border-radius: 5px; }
   #mmCancel { width: 100%; box-sizing: border-box; }
+  #vsRows .lbrow { text-align: left; }
+  #vsRows .vsTag { font-size: 26px; text-align: center; font-weight: 900; color: var(--gold); margin: 2px 0; }
+  #vsCount { font-size: 46px; font-weight: 900; color: var(--gold); min-height: 56px; }
+  #vsCancel { width: 100%; box-sizing: border-box; margin-top: 10px; }
   /* ===== profile narrow-screen guard ===== */
   #pageProfile .board { min-width: 0; overflow: hidden; }
   @media (max-width: 360px) {
@@ -924,6 +928,7 @@
 <div class="hubWin" id="winCustom"><div class="hub-card"><b class="hub-title">⚙️ Custom</b><div id="duelHome"></div><div id="duelLobby" style="display:none;"></div><button class="backBtn hubClose">✕ Close</button></div></div>
 <div class="hubWin" id="winEsports"><div class="hub-card"><b class="hub-title">🏆 Esports</b><div id="tourList"></div><button class="backBtn hubClose">✕ Close</button></div></div>
 <div class="hubWin" id="winEvents"><div class="hub-card"><b class="hub-title">🎪 Events</b><div id="eventList2"></div><button class="backBtn hubClose">✕ Close</button></div></div>
+<div class="hubWin" id="winVs"><div class="hub-card"><b class="hub-title">⚔️ VERSUS</b><div id="vsRows"></div><div id="vsCount">…</div><div class="best" id="vsRule">🏁 Finish first + 5📦 wins</div><button class="backBtn" id="vsCancel">✕ Cancel</button></div></div>
     <div class="mpage" id="pageRadio">
       <button class="backBtn" data-back data-i18n="back">‹ Back</button>
       <div class="sec">📻 Radio FM</div>
@@ -8588,6 +8593,14 @@ function boot() {
     try { MMStop(); } catch (_) {}
     mmStatus(''); closeMMWindow();
   });
+  var _vsc = $('vsCancel');
+  if (_vsc) _vsc.addEventListener('click', function (e) {
+    e.stopPropagation(); try { sfx.move(); } catch (_) {}
+    try { MM.ranked = false; } catch (_) {}
+    try { MMStop(); } catch (_) {}
+    try { duelLeave(); } catch (_) {}
+    closeVs();
+  });
   var _dr = $('duelRow');
   if (_dr) _dr.addEventListener('click', function () { try { closeHubs(); } catch (e) {} });
   $('gemRow').addEventListener('click', function (e) { e.stopPropagation(); toast(elHint, '💎 ' + gems + (lang === 'bn' ? ' · গ্যারেজে খরচ করো' : ' · spend in Garage'), 1800); });
@@ -8840,7 +8853,7 @@ function duelOpen() {
   if (!inRoom) buildHome();
   if ($('duelHome')) $('duelHome').style.display = inRoom ? 'none' : '';
   if ($('duelLobby')) $('duelLobby').style.display = inRoom ? '' : 'none';
-  if (inRoom) { try { onTab('custom'); } catch (e) {} renderLobby(DX.data); }
+  if (inRoom) { if (!MM.vs) { try { onTab('custom'); } catch (e) {} } renderLobby(DX.data); }
 }
 function renderLobby(r) {
   var box = $('duelLobby'); if (!box || !r || !DX.room) return;
@@ -8945,6 +8958,7 @@ function duelBegin(r) {
   try { $('dMeN').textContent = dl('You', 'তুমি'); $('dOpN').textContent = o ? String(o.n).slice(0, 10) : dl('Rival', 'প্রতিপক্ষ'); } catch (e2) {}
   try { logEv('duel_start', { leg: selLeg }); } catch (e3) {}
   quotaWarned = false; overT = 0;
+  try { closeVs(); } catch (e5) {}
   try { toast(elLoc, (lang === 'bn' ? '🏁 জিততে হলে আগে পৌঁছাও + ' : '🏁 Win: finish first + ') + DUEL_QUOTA + '📦', 3200); } catch (e4) {}
 }
 var DUEL_QUOTA = 5, quotaWarned = false, overT = 0;
@@ -9076,7 +9090,7 @@ function duelBackToLobby() {
   }
   duelOpen();
 }
-function duelExit(toPage) { try { MMStop(); } catch (e) {} try { closeMMWindow(); } catch (e) {} try { closeHubs(); } catch (e) {} duelLeave(); duelToMenu(toPage || 'pageMain'); DX.over = false; DX.fin = false; }
+function duelExit(toPage) { try { MMStop(); } catch (e) {} try { closeMMWindow(); } catch (e) {} try { closeVs(); } catch (e) {} try { closeHubs(); } catch (e) {} duelLeave(); duelToMenu(toPage || 'pageMain'); DX.over = false; DX.fin = false; }
 function duelQuit() { duelExit('pageMain'); } // pause menu -> forfeit (rival gets the win automatically)
 
 /* ---------- wiring ---------- */
@@ -9108,6 +9122,55 @@ function closeMMWindow() {
   try { var f = $('mmFill'); if (f) f.style.width = '0%'; } catch (e) {}
   try { $('mmWindow').classList.remove('on'); } catch (e) {}
 }
+var vsTimer = null;
+function openVs() {
+  try {
+    closeMMWindow(); closeHubs();
+    MM.vs = true;
+    renderVs();
+    $('winVs').classList.add('on');
+    if (vsTimer) clearInterval(vsTimer);
+    vsTimer = setInterval(function () {
+      try {
+        if (!DX.room || DX.on) { closeVs(); return; }
+        renderVs();
+      } catch (e) {}
+    }, 1000);
+  } catch (e) {}
+}
+function closeVs() {
+  try { if (vsTimer) { clearInterval(vsTimer); vsTimer = null; } } catch (e) {}
+  try { MM.vs = false; } catch (e) {}
+  try { $('winVs').classList.remove('on'); } catch (e) {}
+}
+function renderVs() {
+  try {
+    var r = DX.data || {}, L = (typeof LEGS !== 'undefined' && LEGS[Math.min(selLeg, LEGS.length - 1)]) ? LEGS[Math.min(selLeg, LEGS.length - 1)] : null;
+    var me = { n: dMyName(), av: getAvatar(), p: myElo };
+    var o = oppOf(r) || {};
+    var on = o.n || '…';
+    function prow(nm, av, pts, tag) {
+      return '<div class="lbrow' + (tag ? ' me' : '') + '"><span class="nm"><img src="' + (av || 'https://api.dicebear.com/7.x/adventurer/svg?seed=Rider') + '" style="width:34px;height:34px;border-radius:50%;vertical-align:-8px;margin-right:6px;"> ' + nm + '</span><span class="sc">' + pts + '</span></div>';
+    }
+    var ouid = oppUid(r);
+    var isBot = !!ouid && String(ouid).indexOf('bot') === 0;
+    var opPts = o.n ? (isBot ? tierOf(botEloSafe(o.n)) : '?') : '…';
+    var h = prow(me.n + ' (' + (lang === 'bn' ? 'তুমি' : 'you') + ')', me.av, me.p + ' ' + tierOf(me.p), true);
+    h += '<div class="vsTag">VS</div>';
+    h += prow(on, o.av, opPts, false);
+    try { h += '<div class="best">🗺️ ' + legName(leg()) + ' · 📦 ' + DUEL_QUOTA + '</div>'; } catch (e) {}
+    $('vsRows').innerHTML = h;
+    var c = '…';
+    try {
+      if (r.startAt && r.st === 'go') {
+        var left = Math.max(0, Math.ceil((r.startAt - srvNow()) / 1000));
+        c = left > 0 ? left : 'GO!';
+      } else c = '⏳';
+    } catch (e) {}
+    $('vsCount').textContent = c;
+  } catch (e) {}
+}
+function botEloSafe(nm) { try { return botElo(nm); } catch (e) { return 1000; } }
 function MMStop() {
   try { if (MM.timer) { clearInterval(MM.timer); MM.timer = null; } } catch (e) {}
   try { if (MM.gTo) { clearTimeout(MM.gTo); MM.gTo = null; } } catch (e) {}
@@ -9164,6 +9227,7 @@ function matchHost(pairId) {
     if (!res.committed || !MM.on) { MMStop(); return; }
     try { FBDB.ref('match_pair/' + pairId).set({ room: code, at: Date.now() }); } catch (e) {}
     enterRoom(code, true);
+    openVs();
     MM.timer = setInterval(function () { // guest ready hole auto-start
       try {
         if (!MM.on || !DX.room) { MMStop(); return; }
@@ -9197,6 +9261,7 @@ function matchGuest(pairId) {
             try {
               if (!DX.room || !DX.data) return;
               clearInterval(wt);
+              openVs();
               if (DX.myRef) DX.myRef.child('ready').set(true);
             } catch (e) {}
           }, 1500);
@@ -9221,6 +9286,7 @@ function matchBot() { // 30s-e keu nai — bot, kintu dekhte real-er moto
   ref.transaction(function (cur) { return (cur && cur.created && Date.now() - cur.created < 3 * 3600 * 1000) ? undefined : room; }, undefined, false).then(function (res) {
     if (!res.committed) { matchBot(); return; }
     enterRoom(code, true);
+    openVs();
     MM.botUid = botUid;
     var wt = setInterval(function () {
       try {
