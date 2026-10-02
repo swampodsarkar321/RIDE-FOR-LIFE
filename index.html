@@ -3328,7 +3328,7 @@ function cloudSave() { // local + cloud — sob save ekhan diye
     } catch (e) {}
     if (!fbReady || !FBDB || !fbUid) return;
     FBDB.ref('players/' + fbUid).set({
-      name: playerName || '', best: best, bank: bankCoins, level: riderLevel,
+      name: playerName || '', best: best, bank: bankCoins, level: riderLevel, gems: gems,
       xp: Math.floor(xp), bike: selBike, bag: bagLevel, hp: hpStore,
       leg: selLeg, unlock: unlockLeg, upS: upSpeed, upH: upHandle, upF: upFuel, upM: upMag, upN: upNitro,
       div: playerDiv, tp: tParcels, owned: ownedBikes,
@@ -3467,7 +3467,7 @@ function checkAdminNotif() { // admin pathano notification check
     }).catch(function () {});
   } catch (e) {}
 }
-var DAILY_PAY = [100, 150, 200, 250, 300, 400, 500];
+var DAILY_PAY = [75, 110, 150, 190, 230, 290, 360]; // economy hard: -25%
 var MISSIONS = [
   { id: 'parcel', en: 'Deliver {0} parcels', bn: '{0} পার্সেল ডেলিভার করো', target: 20, reward: 300 },
   { id: 'score', en: 'Score {0} points', bn: '{0} পয়েন্ট স্কোর করো', target: 3000, reward: 400 },
@@ -3637,15 +3637,16 @@ function checkRewards() { // bondhur gift ele bank-e dhukbe
   if (!fbReady || !FBDB || !fbUid) return;
   try {
     FBDB.ref('rewards/' + fbUid).once('value').then(function (snap) {
-      var tot = 0, n = 0;
-      snap.forEach(function (c) { var v = c.val() || {}; tot += Math.min(500, +v.amt || 0); n++; });
+      var tot = 0, n = 0, gemTot = 0;
+      snap.forEach(function (c) { var v = c.val() || {}; tot += Math.min(500, +v.amt || 0); gemTot += Math.min(20, +v.gems || 0); n++; });
       if (n > 0) {
         bankCoins += tot;
+        if (gemTot > 0) { try { addGems(gemTot); } catch (eG) {} }
         try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
         FBDB.ref('rewards/' + fbUid).remove().catch(function () {});
         cloudSave(); updateMenuBest();
         try { logEv('invite_bonus', { n: n }); } catch (e) {}
-        var mb = $('menuBest'); if (mb) mb.textContent += (lang === 'bn' ? ' · 🎁 গিফট ৳' + tot : ' · 🎁 gift ৳' + tot);
+        var mb = $('menuBest'); if (mb) mb.textContent += (lang === 'bn' ? ' · 🎁 গিফট ৳' + tot + (gemTot > 0 ? ' +💎' + gemTot : '') : ' · 🎁 gift ৳' + tot + (gemTot > 0 ? ' +💎' + gemTot : ''));
       }
     }).catch(function () {});
   } catch (e) {}
@@ -3713,6 +3714,7 @@ function cloudLoad() { // boot-e cloud theke notun data anle apply
       try {
         if (typeof r.best === 'number') best = r.best;
         if (typeof r.bank === 'number') bankCoins = r.bank;
+        if (typeof r.gems === 'number') { gems = Math.max(0, Math.min(999, Math.floor(r.gems))); try { localStorage.setItem('rrGems', String(gems)); } catch (eG) {} }
         if (typeof r.level === 'number') riderLevel = r.level;
         if (typeof r.xp === 'number') xp = r.xp;
         if (typeof r.bike === 'number') selBike = r.bike;
@@ -4511,7 +4513,7 @@ function newOrder(loud) {
   } catch (e) {}
   var EP1 = evP();
   if (EP1.quota) { orderNeed = EP1.quota; orderReward = EP1.reward || EP1.quota * 60; }
-  else { orderNeed = Math.min(bagCap(), 3 + ((Math.random() * 4) | 0)); orderReward = orderNeed * 40 + ((Math.random() * 3) | 0) * 20; }
+  else { orderNeed = Math.min(bagCap(), 3 + ((Math.random() * 4) | 0)); orderReward = Math.round((orderNeed * 40 + ((Math.random() * 3) | 0) * 20) * 0.7); } // economy hard: -30%
   if (spType === 'groc') { orderNeed = Math.min(bagCap(), orderNeed + 2); orderReward += 80; }
   if (loud) {
     var _rt = (orderNo <= 2) ? '<br><small>' + (lang === 'bn' ? '⚡ তাড়াতাড়ি = ×1.3 · 🌟 পারফেক্ট = ×1.6' : '⚡ fast = x1.3 · 🌟 perfect = x1.6') + '</small>' : '';
@@ -6473,8 +6475,8 @@ function update(dt) {
     if (!arrived && dist >= leg().len) {
       arrived = true; endReason = 'arrive'; arrivedName = legName(leg());
       var ab = Math.round((500 + selLeg * 200) * (evP().bonusX || 1));
-      score += ab; xp += 200; bankCoins += 100;
-      if (heat > 0) { chaseStop(); bankCoins += 200; try { logEv('chase_escape', {}); } catch (e) {} } // dhawa theke pouche gele escape!
+      score += ab; xp += 200; bankCoins += 60;
+      if (heat > 0) { chaseStop(); bankCoins += 140; try { logEv('chase_escape', {}); } catch (e) {} } // dhawa theke pouche gele escape!
       sfx.deliver();
       if (selLeg === LEGS.length - 1) {
         justFinished = selLeg;
@@ -6648,17 +6650,17 @@ function update(dt) {
       }
       else if (gt.kind === 'ferry') { // nouka par: thamle bonus + ferry par
         if (speed < 13) {
-          score += 150; xp += 40; bankCoins += 50;
+          score += 150; xp += 40; bankCoins += 30;
           try { localStorage.setItem('rrBank', String(bankCoins)); } catch (e) {}
           sfx.deliver();
-          toast(elLoc, lang === 'bn' ? '⛴️ নদী পার! +150 · +৳50' : '⛴️ River crossed! +150 · +৳50', 2600);
+          toast(elLoc, lang === 'bn' ? '⛴️ নদী পার! +150 · +৳30' : '⛴️ River crossed! +150 · +৳30', 2600);
           try { logEv('ferry', {}); } catch (e2) {}
         } else toast(elHint, lang === 'bn' ? '⛴️ ফেরি মিস! থামতে হতো!' : '⛴️ Missed ferry! Had to stop!', 1800);
       }
       else if (lane === gt.lane && carried > 0) {
         var custN = gt.cust != null ? CUSTS[gt.cust % CUSTS.length] : null;
         if (speed > 13) { toast(elHint, (lang === 'bn' ? '🏠 থামো! ' : '🏠 Slow down! ') + (custN ? custN[0] + ' #' + custN[1] : ''), 1500); return; }
-        var pay = carried * 30; pop('📦 +' + pay, player.position.x, 3, 0, '#7dff9a');
+        var pay = carried * 20; pop('📦 +' + pay, player.position.x, 3, 0, '#7dff9a');
         score += pay; xp += carried * 10;
         sfx.deliver();
         if (carried >= orderNeed) {
