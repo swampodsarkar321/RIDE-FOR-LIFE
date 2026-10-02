@@ -42,6 +42,12 @@
         ".write": "newData.val() == null || (newData.hasChildren(['title', 'body', 'at']) && newData.child('title').isString() && newData.child('title').val().length <= 40 && newData.child('body').isString() && newData.child('body').val().length <= 80 && newData.child('at').isNumber())"
       }
     },
+    "duel_rooms": {
+      "$code": {
+        ".read": true,
+        ".write": true
+      }
+    },
     "config": {
       ".read": true,
       ".write": true,
