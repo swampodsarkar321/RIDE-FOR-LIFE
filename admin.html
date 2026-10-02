@@ -669,6 +669,53 @@ function startAll() {
     bindAll();
     try { refreshCastTours(); } catch (e) {}
   });
+
+  db.ref('config/disabledEvents').on('value', function (s) {
+    builtinDis = s.val() || {};
+    renderBuiltin();
+  });
+  db.ref('config/eventOverrides').on('value', function (s) {
+    builtinOvr = s.val() || {};
+    renderBuiltin();
+  });
+  db.ref('config/billboards').on('value', function (snap) {
+    var html = '', n = 0;
+    snap.forEach(function (c) {
+      n++;
+      var b = c.val() || {};
+      html += '<div class="item"><img src="' + esc(b.img) + '" style="max-width:100%;border-radius:8px;border:2px solid rgba(255,255,255,.3);"><br>' +
+        '<button class="btn small danger" data-bb="' + c.key + '">Delete</button></div>';
+    });
+    $('bbList').innerHTML = html || '<p class="note">No custom billboards yet.</p>';
+    bindAll();
+  });
+  // Ratings
+  db.ref('ratings').on('value', function (snap) {
+    var total = 0, count = 0, dist = {1:0,2:0,3:0,4:0,5:0};
+    var html = '';
+    snap.forEach(function (c) {
+      var v = c.val() || {};
+      var r = v.r;
+      if (r >= 1 && r <= 5) {
+        total += r;
+        count++;
+        dist[r]++;
+      }
+      var dt = new Date(v.at || 0);
+      html += '<div class="item"><b>User: ' + c.key.slice(0,8) + '…</b><br><small>⭐ ' + r + '/5 · ' + dt.toLocaleString() + '</small></div>';
+    });
+    var avg = count ? (total / count).toFixed(1) : '—';
+    $('stAvgRating').textContent = avg;
+    $('stTotalRatings').textContent = count;
+    var distStr = '';
+    for (var i = 5; i >= 1; i--) {
+      var pct = count ? Math.round((dist[i] / count) * 100) : 0;
+      distStr += '⭐' + i + ': ' + dist[i] + ' (' + pct + '%)  ';
+    }
+    $('stRatingDist').textContent = distStr || '—';
+    $('ratingList').innerHTML = html || '<p class="note">No ratings yet.</p>';
+  });
+}
 var TOUR_CACHE = {}, castTimer = null, castLead = '', castCode = '';
 function refreshCastTours() {
   try {
@@ -752,52 +799,7 @@ function castGo(code, title) {
     }).catch(function () {});
   }, 1000);
 }
-  db.ref('config/disabledEvents').on('value', function (s) {
-    builtinDis = s.val() || {};
-    renderBuiltin();
-  });
-  db.ref('config/eventOverrides').on('value', function (s) {
-    builtinOvr = s.val() || {};
-    renderBuiltin();
-  });
-  db.ref('config/billboards').on('value', function (snap) {
-    var html = '', n = 0;
-    snap.forEach(function (c) {
-      n++;
-      var b = c.val() || {};
-      html += '<div class="item"><img src="' + esc(b.img) + '" style="max-width:100%;border-radius:8px;border:2px solid rgba(255,255,255,.3);"><br>' +
-        '<button class="btn small danger" data-bb="' + c.key + '">Delete</button></div>';
-    });
-    $('bbList').innerHTML = html || '<p class="note">No custom billboards yet.</p>';
-    bindAll();
-  });
-  // Ratings
-  db.ref('ratings').on('value', function (snap) {
-    var total = 0, count = 0, dist = {1:0,2:0,3:0,4:0,5:0};
-    var html = '';
-    snap.forEach(function (c) {
-      var v = c.val() || {};
-      var r = v.r;
-      if (r >= 1 && r <= 5) {
-        total += r;
-        count++;
-        dist[r]++;
-      }
-      var dt = new Date(v.at || 0);
-      html += '<div class="item"><b>User: ' + c.key.slice(0,8) + '…</b><br><small>⭐ ' + r + '/5 · ' + dt.toLocaleString() + '</small></div>';
-    });
-    var avg = count ? (total / count).toFixed(1) : '—';
-    $('stAvgRating').textContent = avg;
-    $('stTotalRatings').textContent = count;
-    var distStr = '';
-    for (var i = 5; i >= 1; i--) {
-      var pct = count ? Math.round((dist[i] / count) * 100) : 0;
-      distStr += '⭐' + i + ': ' + dist[i] + ' (' + pct + '%)  ';
-    }
-    $('stRatingDist').textContent = distStr || '—';
-    $('ratingList').innerHTML = html || '<p class="note">No ratings yet.</p>';
-  });
-}
+
 $('liveSet').addEventListener('click', function () {
   if (!db) { alert('No Firebase connection!'); return; }
   var v = $('liveSel').value.trim();
