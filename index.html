@@ -933,13 +933,11 @@
         <button class="mx gold" data-hub="play"><span class="ico">▶</span><span class="tx"><b>Play</b><small>Ranked matchmaking</small></span><span class="chev">›</span></button>
         <button class="mx teal" data-hub="rank"><span class="ico">🏅</span><span class="tx"><b>Rank</b><small>Elo ratings &amp; tiers</small></span><span class="chev">›</span></button>
         <button class="mx gray" data-hub="custom"><span class="ico">⚙️</span><span class="tx"><b>Custom</b><small>Friend rooms with code</small></span><span class="chev">›</span></button>
-        <button class="mx red" data-hub="esports"><span class="ico">🏆</span><span class="tx"><b>Esports</b><small>Tournaments &amp; prizes</small></span><span class="chev">›</span></button>
         <button class="mx blue" data-hub="events"><span class="ico">🎪</span><span class="tx"><b>Events</b><small>Special game events</small></span><span class="chev">›</span></button>
       </div>
     </div>
 <div class="hubWin" id="winRank"><div class="hub-card"><b class="hub-title">🏅 Rank</b><div id="rankHub"></div><button class="backBtn hubClose">✕ Close</button></div></div>
 <div class="hubWin" id="winCustom"><div class="hub-card"><b class="hub-title">⚙️ Custom</b><div id="duelHome"></div><div id="duelLobby" style="display:none;"></div><button class="backBtn hubClose">✕ Close</button></div></div>
-<div class="hubWin" id="winEsports"><div class="hub-card"><b class="hub-title">🏆 Esports</b><div id="tourList"></div><button class="backBtn hubClose">✕ Close</button></div></div>
 <div class="hubWin" id="winEvents"><div class="hub-card"><b class="hub-title">🎪 Events</b><div id="eventList2"></div><button class="backBtn hubClose">✕ Close</button></div></div>
 <div class="hubWin" id="winVs"><div class="hub-card"><b class="hub-title">⚔️ VERSUS</b><div id="vsRows"></div><div id="vsCount">…</div><div class="best" id="vsRule">🏁 Finish first + 5📦 wins</div><button class="backBtn" id="vsCancel">✕ Cancel</button></div></div>
 <div class="hubWin" id="specWin"><div class="hub-card" style="width:min(440px,96vw);border-color:#ff3b30;"><b class="hub-title">📺 <span class="live-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff3b30;box-shadow:0 0 8px #ff3b30;"></span> LIVE</b><div id="specBody"></div><div id="specTicker" style="min-height:40px;font-size:13px;color:var(--gold);margin-top:6px;"></div><button class="backBtn" id="specClose" style="width:100%;box-sizing:border-box;margin-top:8px;">✕ Close</button></div></div>
@@ -4354,15 +4352,6 @@ function loadGameConfig() { // admin panel theke bike + event ase — live
           ADMIN_EVENTS.push({ id: 'c_' + k, ico: e.ico || '⭐', en: [e.name_en || 'Custom', e.desc_en || ''], bn: [e.name_bn || e.name_en || 'কাস্টম', e.desc_bn || e.desc_en || ''],
             p: adminEvParams(e) });
         });
-        ADMIN_TOURS = [];
-        try {
-          var tr = cfg.tournaments || {};
-          Object.keys(tr).forEach(function (k) {
-            var o = tr[k]; if (!o) return;
-            ADMIN_TOURS.push({ key: k, name: String(o.name || 'Tournament').slice(0, 30), prize: Math.max(0, +o.prize || 0), bots: Math.max(0, Math.min(12, +o.bots || 0)), status: o.status === 'live' ? 'live' : (o.status === 'done' ? 'done' : 'open'), size: Math.max(2, +o.size || 2), matches: o.matches || {} });
-          });
-        } catch (eT) {}
-        try { if (onTabCur === 'esports') renderTours(); } catch (eT2) {}
         DISABLED_EV = {}; OVERRIDDEN_EV = {}; // built-in event control
         try {
           var dis = cfg.disabledEvents || {};
@@ -4434,81 +4423,6 @@ function renderEvents(into) {
   });
   var mv = $('mEvVal'); if (mv) mv.textContent = eventMode ? evName(eventMode) + (activeEventId === eventMode ? ' ●' : '') : '';
   if (!into) { try { renderEvents('eventList2'); } catch (e) {} }
-}
-/* ---------- esports tournaments (admin theke) ---------- */
-var ADMIN_TOURS = [];
-function tourSeed(s) { var h = 7; s = String(s); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000; return h; }
-function roundName(size, r) {
-  var tot = 1, n = Math.max(2, size || 2);
-  while (Math.pow(2, tot) < n) tot++;
-  if (r >= tot) return 'FINAL';
-  if (r === tot - 1) return tot > 1 ? 'SEMI-FINAL' : 'FINAL';
-  if (tot === 3 && r === 1) return 'QUARTER-FINAL';
-  return 'ROUND ' + r;
-}
-function tourBots(t) {
-  var n = Math.min(8, Math.max(2, +t.bots || 4)), R = tourSeed(t.name || 'tour'), out = [];
-  var pool = (typeof BOTN !== 'undefined' && BOTN.length ? BOTN : ['Rider']).slice();
-  for (var i = 0; i < n; i++) {
-    R = (R * 1103515245 + 12345) % 2147483648;
-    out.push({ n: pool[R % pool.length], s: 3000 + (R % 12000) });
-  }
-  out.sort(function (a, b) { return b.s - a.s; });
-  return out;
-}
-function renderTours() {
-  try {
-    var el = $('tourList'); if (!el) return;
-    var bn = lang === 'bn', h = '';
-    if (!ADMIN_TOURS.length) h = '<div class="best">' + (bn ? '🏆 শীঘ্রই টুর্নামেন্ট আসছে!' : '🏆 Tournaments coming soon!') + '</div>';
-    ADMIN_TOURS.forEach(function (t) {
-      var live = t.status === 'live';
-      h += '<div class="legRow' + (live ? ' sel' : '') + '"><span style="font-size:22px;">🏆</span>'
-        + '<span style="flex:1;min-width:0;"><b>' + t.name + '</b>' + (live ? ' <b style="color:var(--gold)">● LIVE</b>' : '')
-        + '<br><small style="color:var(--panel-soft);">💰 ৳' + (+t.prize || 0) + ' · 🤖 ' + (+t.bots || 0) + ' bots</small></span>'
-        + '<span class="st">' + (live ? '▶' : '🔒') + '</span></div>';
-      var _mm = t.matches || {}, _mks = Object.keys(_mm).sort(), _myMatch = null;
-      if (_mks.length) {
-        var _lastR = 0;
-        _mks.forEach(function (mk) {
-          var m = _mm[mk] || {};
-          if (m.round > _lastR) { _lastR = m.round; h += '<div class="best" style="margin:6px 0 2px;">' + roundName(t.size, m.round) + '</div>'; }
-          var an = (m.a && m.a.n) || '?', bnn = (m.b && m.b.n) || 'BYE';
-          var wn = (m.winner && m.winner.n) || '';
-          try {
-            if ((m.a && m.a.u === fbUid) || (m.b && m.b.u === fbUid)) _myMatch = m;
-          } catch (e) {}
-          h += '<div class="lbrow"><span class="nm">' + an + ' <small>vs</small> ' + bnn + (wn ? ' <small>🏆 ' + wn + '</small>' : '') + '</span><span class="sc">' + (m.room ? '🔑' + m.room : '') + '</span></div>';
-        });
-        if (t.status === 'done') {
-          var _ch = null, _chr = -1;
-          _mks.forEach(function (mk) { var m = _mm[mk] || {}; if ((m.round || 0) >= _chr && m.winner && m.winner.n) { _chr = m.round; _ch = m.winner.n; } });
-          if (_ch) h += '<div class="best">🏆 ' + (bn ? 'চ্যাম্পিয়ন: ' : 'Champion: ') + '<b>' + _ch + '</b></div>';
-        }
-        if (_myMatch && _myMatch.room) h += '<div class="best">🔑 ' + (bn ? 'তোমার ম্যাচ কোড: ' : 'Your match code: ') + '<b>' + _myMatch.room + '</b></div>';
-      }
-      if (live) {
-        h += tourBots(t).slice(0, 5).map(function (b, i) {
-          return '<div class="lbrow"><span class="rk">' + (i + 1) + '.</span><span class="nm">🤖 ' + b.n + '</span><span class="sc">' + b.s + '</span></div>';
-        }).join('');
-        h += '<button class="btn dvBtn" data-tourjoin="' + t.key + '" style="width:100%;margin:6px 0;font-size:18px;background:#2d9c42;box-shadow:0 5px 0 #14521f;">⚔️ ' + (bn ? 'জয়েন করো' : 'Join') + '</button>';
-      }
-    });
-    el.innerHTML = h;
-    Array.prototype.forEach.call(el.querySelectorAll('[data-tourjoin]'), function (b) {
-      b.addEventListener('click', function (e) {
-        e.stopPropagation();
-        var k = b.getAttribute('data-tourjoin');
-        try {
-          if (!fbReady || !FBDB) { toast(elHint, bn ? 'নেট নেই' : 'No connection', 1500); return; }
-          FBDB.ref('tour_join/' + k + '/' + fbUid).set({ n: playerName || 'Rider', av: getAvatar(), at: Date.now() }).then(function () {
-            toast(elHint, bn ? '✅ টুর্নামেন্টে ঢুকেছ! Best score লাগবে!' : '✅ Joined! Top score wins!', 2500);
-            try { sfx.power(); } catch (e2) {}
-          });
-        } catch (e) {}
-      });
-    });
-  } catch (e) {}
 }
 STR.en.name_div = 'Your division?'; STR.bn.name_div = 'তোমার বিভাগ?';
 STR.en.need_name = 'Please enter your name!'; STR.bn.need_name = 'নাম দাও!';
@@ -9556,17 +9470,16 @@ function renderRankHub() {
 function openHub(name) {
   try {
     closeHubs();
-    var map = { rank: 'winRank', custom: 'winCustom', esports: 'winEsports', events: 'winEvents' };
+    var map = { rank: 'winRank', custom: 'winCustom', events: 'winEvents' };
     var el = $(map[name]); if (!el) return;
     el.classList.add('on');
     if (name === 'rank') renderRankHub();
-    if (name === 'esports') renderTours();
     if (name === 'events') renderEvents('eventList2');
   } catch (e) {}
 }
 function closeHubs() {
   try {
-    ['winRank', 'winCustom', 'winEsports', 'winEvents'].forEach(function (id) {
+    ['winRank', 'winCustom', 'winEvents'].forEach(function (id) {
       var el = $(id); if (el) el.classList.remove('on');
     });
   } catch (e) {}

@@ -75,8 +75,6 @@
     <button class="tab sel" data-tab="dash">📊 Dashboard</button>
     <button class="tab" data-tab="bikes">🏍️ Bikes</button>
     <button class="tab" data-tab="events">🎪 Events</button>
-    <button class="tab" data-tab="tours">🏆 Tournaments</button>
-    <button class="tab" data-tab="cast">📡 Broadcast</button>
     <button class="tab" data-tab="boards">🪧 Boards</button>
     <button class="tab" data-tab="notif">🔔 Notify</button>
     <button class="tab" data-tab="players">👥 Players</button>
@@ -230,60 +228,6 @@
     </div>
   </div>
 
-  <div id="tab-tours" class="hidden">
-    <div class="card">
-      <h2>🏆 Add Tournament</h2>
-      <label>Name</label>
-      <input id="tName" maxlength="30" placeholder="Rangpur Cup">
-      <div class="row2">
-        <div><label>Prize pool ৳</label><input id="tPrize" type="number" value="5000" min="0" step="100"></div>
-        <div><label>Bots (0–12)</label><input id="tBots" type="number" value="4" min="0" max="12"></div>
-      </div>
-      <label>Status</label>
-      <input id="tStatus" list="tStatusList" value="open" placeholder="open / live / done">
-      <datalist id="tStatusList"><option value="open"></option><option value="live"></option><option value="done"></option></datalist>
-      <button class="btn" id="tourSave">＋ Save Tournament</button>
-    </div>
-    <div class="card">
-      <h2>🏆 Tournaments in game</h2>
-      <div id="tourListA"><p class="note">Loading…</p></div>
-    </div>
-    <div class="card">
-      <h2>👁 Live Watch (drone board)</h2>
-      <p class="note">Duel room code দাও — 2 জনের live progress একসাথে (FF custom room style)।</p>
-      <label>Room code</label>
-      <input id="watchCode" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;">
-      <button class="btn" id="watchBtn">👁 Watch</button>
-      <button class="btn ghost" id="watchStop">Stop</button>
-      <div id="watchLive" style="margin-top:8px;"></div>
-    </div>
-  </div>
-
-  <div id="tab-cast" class="hidden">
-    <div class="card">
-      <h2>📡 Broadcast — host live</h2>
-      <p class="note">Tournament বাছো → live match এ GO LIVE — 2 জনের broadcast একসাথে।</p>
-      <label>Tournament</label>
-      <select id="castTour" style="width:100%;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.3);color:#fff;font-family:inherit;"></select>
-      <div id="castMatches" style="margin-top:8px;"></div>
-    </div>
-    <div class="card">
-      <h2>🔑 Custom Room</h2>
-      <p class="note">যেকোনো duel room code দাও — tournament ছাড়াও broadcast হবে।</p>
-      <label>Room code</label>
-      <input id="castCode" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;">
-      <button class="btn" id="castGoBtn">📡 Broadcast Room</button>
-      <button class="btn ghost" id="scanBtn" style="margin-top:8px;">🔄 Scan live rooms</button>
-      <div id="scanList" style="margin-top:8px;"></div>
-    </div>
-    <div class="card" id="castLiveCard" style="display:none;">
-      <h2>🔴 LIVE <span id="castTitle"></span></h2>
-      <div id="castLive"></div>
-      <div id="castTalk" style="font-size:13px;color:#ffc83d;min-height:36px;margin-top:6px;"></div>
-      <button class="btn ghost" id="castStop">Stop</button>
-    </div>
-  </div>
-
   <div id="tab-boards" class="hidden">
     <div class="card">
       <h2>🪧 Billboard Control</h2>
@@ -412,8 +356,6 @@ Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
     $('tab-dash').classList.toggle('hidden', t !== 'dash');
     $('tab-bikes').classList.toggle('hidden', t !== 'bikes');
     $('tab-events').classList.toggle('hidden', t !== 'events');
-    $('tab-tours').classList.toggle('hidden', t !== 'tours');
-    $('tab-cast').classList.toggle('hidden', t !== 'cast');
     $('tab-boards').classList.toggle('hidden', t !== 'boards');
     $('tab-notif').classList.toggle('hidden', t !== 'notif');
     $('tab-players').classList.toggle('hidden', t !== 'players');
@@ -471,21 +413,7 @@ $('evSave').addEventListener('click', function () {
   else db.ref('config/events').push(evObj()).then(done);
 });
 $('evCancel').addEventListener('click', resetEvForm);
-$('tourSave').addEventListener('click', function () {
-  if (!db) { alert('No Firebase connection!'); return; }
-  var st = ($('tStatus').value || 'open').trim().toLowerCase();
-  if (['open', 'live', 'done'].indexOf(st) < 0) st = 'open';
-  var o = {
-    name: $('tName').value.trim().slice(0, 30) || 'Tournament',
-    prize: Math.max(0, Math.round(num('tPrize', 0))),
-    bots: Math.max(0, Math.min(12, Math.round(num('tBots', 4)))),
-    status: st, at: Date.now()
-  };
-  db.ref('config/tournaments').push(o).then(function () {
-    alert('Tournament saved! Game updates live.');
-    $('tName').value = ''; $('tPrize').value = 5000; $('tBots').value = 4; $('tStatus').value = 'open';
-  });
-});
+
 var bbData = '';
 $('bbFile').addEventListener('change', function () {
   var f = $('bbFile').files && $('bbFile').files[0];
@@ -642,33 +570,7 @@ function startAll() {
     var v = s.val() || '—';
     $('liveNow').textContent = 'Live: ' + v + (v && v !== '—' ? ' (game-e sudhu etai cholbe)' : ' (sob open)');
   });
-  db.ref('config/tournaments').on('value', function (snap) {
-    var html = '';
-    snap.forEach(function (c) {
-      var t = c.val() || {};
-      html += '<div class="item"><b>🏆 ' + esc(t.name) + '</b> <small>· ৳' + (+t.prize || 0) + ' · ' + (+t.bots || 0) + ' bots · ' + esc(t.status) + '</small><br>' +
-        '<button class="btn small" data-tourlive="' + c.key + '">🔴 Live</button>' +
-        '<button class="btn small" data-tourdone="' + c.key + '">✔ Done</button>' +
-        '<button class="btn small danger" data-tour="' + c.key + '">Delete</button><br>' +
-        '<button class="btn small" data-bracket="' + c.key + '">🎲 Bracket</button></div>';
-      var mm = t.matches || {}, mks = Object.keys(mm).sort();
-      var _sz = Math.max(2, +t.size || 2), _tot = 1;
-      while (Math.pow(2, _tot) < _sz) _tot++;
-      function _rn(r) { if (r >= _tot) return 'FINAL'; if (r === _tot - 1) return 'SEMI-FINAL'; if (_tot === 3 && r === 1) return 'QUARTER-FINAL'; return 'ROUND ' + r; }
-      mks.forEach(function (mk) {
-        var m = mm[mk] || {};
-        var an = (m.a && m.a.n) || '?', bn2 = (m.b && m.b.n) || 'BYE';
-        var wn = (m.winner && m.winner.n) || '';
-        html += '<div class="item" style="margin:6px 0 6px 12px;">' + _rn(m.round || 1) + ': <b>' + esc(an) + '</b> vs <b>' + esc(bn2) + '</b>' +
-          (wn ? ' → 🏆 <b>' + esc(wn) + '</b>' : '') + (m.room ? ' <small>🔑' + esc(m.room) + '</small>' : '') + '<br>' +
-          '<button class="btn small" data-mroom="' + c.key + '|' + mk + '">🔑 Room</button>' +
-          '<button class="btn small" data-msync="' + c.key + '|' + mk + '">✔ Sync</button></div>';
-      });
-    });
-    $('tourListA').innerHTML = html || '<p class="note">No tournaments yet.</p>';
-    bindAll();
-    try { refreshCastTours(); } catch (e) {}
-  });
+  
 
   db.ref('config/disabledEvents').on('value', function (s) {
     builtinDis = s.val() || {};
@@ -716,90 +618,11 @@ function startAll() {
     $('ratingList').innerHTML = html || '<p class="note">No ratings yet.</p>';
   });
 }
-var TOUR_CACHE = {}, castTimer = null, castLead = '', castCode = '';
-function refreshCastTours() {
-  try {
-    db.ref('config/tournaments').once('value').then(function (snap) {
-      TOUR_CACHE = snap.val() || {};
-      var sel = $('castTour'), cur = sel.value;
-      sel.innerHTML = '';
-      Object.keys(TOUR_CACHE).forEach(function (k) {
-        var o = document.createElement('option');
-        o.value = k; o.textContent = (TOUR_CACHE[k] || {}).name || k;
-        sel.appendChild(o);
-      });
-      if (cur && TOUR_CACHE[cur]) sel.value = cur;
-      renderCastMatches();
-    });
-  } catch (e) {}
-}
-function renderCastMatches() {
-  try {
-    var k = $('castTour').value, t = TOUR_CACHE[k] || {}, mm = t.matches || {};
-    var h = '';
-    Object.keys(mm).sort().forEach(function (mk) {
-      var m = mm[mk] || {};
-      var an = (m.a && m.a.n) || '?', bn = (m.b && m.b.n) || 'BYE';
-      var wn = (m.winner && m.winner.n) || '';
-      h += '<div class="item">R' + (m.round || 1) + ': <b>' + esc(an) + '</b> vs <b>' + esc(bn) + '</b>' +
-        (wn ? ' → 🏆 <b>' + esc(wn) + '</b>' : '') + (m.room ? ' <small>🔑' + esc(m.room) + '</small>' : '') + '<br>' +
-        (m.room ? '<button class="btn small" data-castgo="' + m.room + '|' + esc(t.name || '') + '">📡 GO LIVE</button>' : '<small>no room yet</small>') + '</div>';
-    });
-    $('castMatches').innerHTML = h || '<p class="note">No matches — make bracket first.</p>';
-    Array.prototype.forEach.call(document.querySelectorAll('[data-castgo]'), function (b) {
-      b.addEventListener('click', function () {
-        var p = (b.getAttribute('data-castgo') || '').split('|');
-        castGo(p[0], p[1]);
-      });
-    });
-  } catch (e) {}
-}
-function castStop() { try { if (castTimer) { clearInterval(castTimer); castTimer = null; } } catch (e) {} try { $('castLiveCard').style.display = 'none'; } catch (e) {} castCode = ''; }
-function castTalk(t) {
-  try {
-    var el = $('castTalk');
-    el.innerHTML = t + '<br>' + el.innerHTML.split('<br>').slice(0, 2).join('<br>');
-  } catch (e) {}
-}
-function castGo(code, title) {
-  if (!db) { alert('No Firebase connection! Unlock admin first.'); return; }
-  castStop(); castCode = code; castLead = '';
-  $('castTitle').textContent = (title || '') + ' · ' + code;
-  $('castLiveCard').style.display = '';
-  $('castLive').innerHTML = '<p class="note">Connecting…</p>';
-  castTimer = setInterval(function () {
-    db.ref('duel_rooms/' + code).once('value').then(function (snap) {
-      var r = snap.val();
-      if (!r) { $('castLive').innerHTML = '<p class="note">Room closed (host left?). Live room theke code naw.</p>'; castStop(); return; }
-      if (r.winner && r.winner.u) {
-        $('castLive').innerHTML = '<div class="item" style="text-align:center;font-size:22px;">🏆 <b>' + esc(r.winner.n || '') + '</b><br><small>WINS!</small></div>';
-        castTalk('🏆 ' + (r.winner.n || '') + ' wins!');
-        castStop();
-        return;
-      }
-      var ps = r.players || {}, keys = Object.keys(ps).slice(0, 2), rows = [], infos = [];
-      keys.forEach(function (k) {
-        var p = ps[k] || {};
-        var pct = Math.min(100, Math.round(((+p.d || 0) / 2900) * 100));
-        infos.push({ n: p.n || '?', pct: pct, kmh: (+p.v || 0), par: (+p.p || 0), s: (+p.s || 0) });
-      });
-      infos.sort(function (a, b) { return b.pct - a.pct; });
-      if (infos.length === 2) {
-        if (castLead && infos[0].n !== castLead) castTalk('🔥 ' + infos[0].n + ' takes the lead!');
-        castLead = infos[0].n;
-        if (infos[0].pct >= 90) castTalk('🏁 Final stretch! ' + infos[0].n + ' ' + infos[0].pct + '%');
-      }
-      var h = '';
-      infos.forEach(function (e, i) {
-        h += '<div class="item"><div style="display:flex;align-items:center;gap:8px;"><b style="min-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (i === 0 ? '🥇 ' : '') + esc(e.n) + '</b>'
-          + '<span style="position:relative;flex:1;height:18px;border-radius:999px;background:rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.25);overflow:hidden;"><u style="display:block;height:100%;width:' + e.pct + '%;background:' + (i === 0 ? 'linear-gradient(90deg,#37e05a,#b6ff5a)' : 'linear-gradient(90deg,#8a8f96,#c9ced4)') + ';border-radius:999px;"></u><i style="position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:900;color:#fff;">' + e.pct + '%</i></span>'
-          + '<b>📦' + e.par + '</b></div><small>' + e.kmh + ' km/h · ' + e.s + 'pts</small></div>';
-      });
-      if (infos.length === 2) h += '<div class="center"><small>GAP ' + Math.abs(infos[0].pct - infos[1].pct) + '%</small></div>';
-      $('castLive').innerHTML = h;
-    }).catch(function () {});
-  }, 1000);
-}
+
+
+
+
+
 
 $('liveSet').addEventListener('click', function () {
   if (!db) { alert('No Firebase connection!'); return; }
@@ -811,51 +634,11 @@ $('liveStop').addEventListener('click', function () {
   if (!db) return;
   db.ref('config/activeEvent').remove().then(function () { alert('Live off — sob event open.'); });
 });
-$('watchStop').addEventListener('click', function () { watchStop(); $('watchLive').innerHTML = ''; });
-try { var _ct = $('castTour'); if (_ct) _ct.addEventListener('change', renderCastMatches); } catch (e) {}
-try { var _cs = $('castStop'); if (_cs) _cs.addEventListener('click', function () { castStop(); }); } catch (e) {}
-try { var _cg = $('castGoBtn'); if (_cg) _cg.addEventListener('click', function () {
-  var code = ($('castCode').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (code.length !== 5) { alert('5-letter room code daw'); return; }
-  castGo(code, 'Custom Room');
-}); } catch (e) {}
-try { var _sc = $('scanBtn'); if (_sc) _sc.addEventListener('click', scanRooms); } catch (e) {}
-function scanRooms() {
-  if (!db) { alert('No Firebase connection! Unlock first.'); return; }
-  $('scanList').innerHTML = '<p class="note">Scanning…</p>';
-  db.ref('duel_rooms').orderByChild('created').limitToLast(25).once('value').then(function (snap) {
-    var h = '';
-    snap.forEach(function (c) {
-      var r = c.val() || {}; var ps = r.players || {}; var n = Object.keys(ps).length;
-      var age = Math.max(0, Math.round((Date.now() - (+r.created || 0)) / 60000));
-      h += '<div class="item"><b>🔑 ' + esc(c.key) + '</b> <small>' + esc(r.st || '') + ' · ' + n + 'p · ' + age + 'm ago' + (r.winner ? ' · 🏆' + esc(r.winner.n || '') : '') + '</small><br><button class="btn small" data-castroom="' + c.key + '">📡 Broadcast</button></div>';
-    });
-    $('scanList').innerHTML = h || '<p class="note">No rooms.</p>';
-    bindAll();
-  }).catch(function (e) { $('scanList').innerHTML = '<p class="note">Scan failed: ' + esc(String(e)) + '</p>'; });
-}
-$('watchBtn').addEventListener('click', function () {
-  if (!db) { alert('No Firebase connection!'); return; }
-  var code = ($('watchCode').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (code.length !== 5) { alert('5-letter room code daw'); return; }
-  watchStop();
-  watchTimer = setInterval(function () {
-    db.ref('duel_rooms/' + code).once('value').then(function (snap) {
-      var r = snap.val();
-      if (!r) { $('watchLive').innerHTML = '<p class="note">Room not found (closed?).</p>'; watchStop(); return; }
-      var ps = r.players || {}, keys = Object.keys(ps), h = '';
-      h += '<div class="item"><b>🔑 ' + esc(code) + '</b> <small>' + esc(r.st || '') + (r.winner ? ' · 🏆 ' + esc((r.winner.n || '')) : '') + '</small></div>';
-      keys.slice(0, 2).forEach(function (k) {
-        var p = ps[k] || {};
-        var pct = Math.min(100, Math.round(((+p.d || 0) / 2900) * 100));
-        h += '<div class="item"><b>' + esc(p.n || '?') + '</b> <small>' + esc(p.st || '') + ' · 📦' + (+p.p || 0) + ' · ' + (+p.s || 0) + 'pts</small>'
-          + '<div style="height:10px;border-radius:5px;background:rgba(255,255,255,.12);margin-top:4px;"><u style="display:block;height:100%;width:' + pct + '%;background:linear-gradient(90deg,#2d9c42,#ffc83d);border-radius:5px;"></u></div>'
-          + '<small>' + pct + '%</small></div>';
-      });
-      $('watchLive').innerHTML = h;
-    }).catch(function () { $('watchLive').innerHTML = '<p class="note">Watch error.</p>'; watchStop(); });
-  }, 1500);
-});
+
+
+
+
+
 $('nSend').addEventListener('click', function () {
   if (!db) { alert('No Firebase connection!'); return; }
   var title = $('nTitle').value.trim() || 'Ride For Life';
@@ -884,113 +667,20 @@ db.ref('notifications').on('value', function (snap) {
     });
   });
 });
-var watchTimer = null;
-function watchStop() { try { if (watchTimer) { clearInterval(watchTimer); watchTimer = null; } } catch (e) {} }
-function buildBracket(tourKey) {
-  if (!db) return;
-  db.ref('tour_join/' + tourKey).once('value').then(function (snap) {
-    var ps = [];
-    snap.forEach(function (c) { var v = c.val() || {}; ps.push({ u: c.key, n: String(v.n || 'Rider').slice(0, 20) }); });
-    if (ps.length < 2) { alert('Need 2+ joined players (now ' + ps.length + ')'); return; }
-    if (!confirm(ps.length + ' players → Round 1 bracket? Old matches replaced.')) return;
-    var up = {}, i = 0;
-    for (var k = 0; k < ps.length; k += 2) {
-      var a = ps[k], b = (k + 1 < ps.length) ? ps[k + 1] : null;
-      up['m' + i] = { round: 1, a: a, b: b, room: null, winner: b ? null : { u: a.u, n: a.n }, st: b ? 'open' : 'done' };
-      i++;
-    }
-    db.ref('config/tournaments/' + tourKey + '/matches').set(up).then(function () {
-      db.ref('config/tournaments/' + tourKey).update({ size: ps.length });
-      alert('Bracket ready! (' + ps.length + ' players)');
-    });
-  });
-}
-function makeMatchRoom(tourKey, mk) {
-  if (!db) return;
-  db.ref('config/tournaments/' + tourKey + '/matches/' + mk).once('value').then(function (s) {
-    var m = s.val() || {};
-    if (!m.a || !m.b) { alert('Need 2 players'); return; }
-    var code = '', ch = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    for (var i = 0; i < 5; i++) code += ch.charAt((Math.random() * ch.length) | 0);
-    var room = { host: m.a.u, created: Date.now(), leg: 0, st: 'lobby', round: 1, guest: null, players: {} };
-    room.players[m.a.u] = { n: m.a.n, av: '', d: 0, p: 0, s: 0, f: 0, ms: 0, st: 'on', ready: false };
-    room.players[m.b.u] = { n: m.b.n, av: '', d: 0, p: 0, s: 0, f: 0, ms: 0, st: 'on', ready: false };
-    db.ref('duel_rooms/' + code).transaction(function (cur) { return cur ? undefined : room; }).then(function (res) {
-      if (!res.committed) { alert('Code clash, try again'); return; }
-      db.ref('config/tournaments/' + tourKey + '/matches/' + mk).update({ room: code, st: 'live' }).then(function () {
-        alert('Room ' + code + ' — players join from Custom with code!');
-      });
-    });
-  });
-}
-function syncMatchWinner(tourKey, mk) {
-  if (!db) return;
-  db.ref('config/tournaments/' + tourKey + '/matches/' + mk).once('value').then(function (s) {
-    var m = s.val() || {};
-    if (!m.room) { alert('No room yet'); return; }
-    db.ref('duel_rooms/' + m.room + '/winner').once('value').then(function (ws) {
-      var w = ws.val();
-      if (!w || !w.u) { alert('No winner yet in room'); return; }
-      db.ref('config/tournaments/' + tourKey + '/matches/' + mk).update({ winner: { u: w.u, n: String(w.n || '?').slice(0, 20) }, st: 'done' }).then(function () {
-        advanceBracket(tourKey, m.round || 1);
-      });
-    });
-  });
-}
-function advanceBracket(tourKey, round) {
-  if (!db) return;
-  db.ref('config/tournaments/' + tourKey + '/matches').once('value').then(function (snap) {
-    var all = [];
-    snap.forEach(function (c) { var v = c.val() || {}; if ((v.round | 0) === round) all.push({ k: c.key, w: v.winner }); });
-    var wins = all.filter(function (x) { return x.w && x.w.u; });
-    if (all.length === 1 && wins.length === 1) { // FINAL sesh — champion!
-      db.ref('config/tournaments/' + tourKey).update({ status: 'done' }).then(function () { alert('🏆 Champion: ' + (wins[0].w.n || '?')); });
-      return;
-    }
-    if (wins.length < 2 || wins.length !== all.length) return; // round sesh hoyni
-    var up = {}, base = 'mR' + (round + 1) + '_';
-    for (var i = 0; i < wins.length; i += 2) {
-      var a = wins[i].w, b = wins[i + 1] ? wins[i + 1].w : null;
-      up[base + (i / 2)] = { round: round + 1, a: a, b: b, room: null, winner: b ? null : a, st: b ? 'open' : 'done' };
-    }
-    db.ref('config/tournaments/' + tourKey + '/matches').update(up).then(function () { alert('Round ' + (round + 1) + ' ready!'); });
-  });
-}
+
+
+
+
+
+
 function bindAll() {
-  Array.prototype.forEach.call(document.querySelectorAll('[data-castroom]'), function (b) {
-    b.addEventListener('click', function () { castGo(b.getAttribute('data-castroom'), 'Room'); });
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-bracket]'), function (b) {
-    b.addEventListener('click', function () { buildBracket(b.getAttribute('data-bracket')); });
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-mroom]'), function (b) {
-    b.addEventListener('click', function () {
-      var p = (b.getAttribute('data-mroom') || '').split('|');
-      makeMatchRoom(p[0], p[1]);
-    });
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-msync]'), function (b) {
-    b.addEventListener('click', function () {
-      var p = (b.getAttribute('data-msync') || '').split('|');
-      syncMatchWinner(p[0], p[1]);
-    });
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-tour]'), function (b) {
-    b.addEventListener('click', function () {
-      if (!confirm('Delete this tournament?')) return;
-      db.ref('config/tournaments/' + b.getAttribute('data-tour')).remove();
-    });
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-tourlive]'), function (b) {
-    b.addEventListener('click', function () {
-      db.ref('config/tournaments/' + b.getAttribute('data-tourlive')).child('status').set('live');
-    });
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-tourdone]'), function (b) {
-    b.addEventListener('click', function () {
-      db.ref('config/tournaments/' + b.getAttribute('data-tourdone')).child('status').set('done');
-    });
-  });
+  
+  
+  
+  
+  
+  
+  
   Array.prototype.forEach.call(document.querySelectorAll('[data-bb]'), function (b) {
     b.addEventListener('click', function () {
       if (!confirm('Delete this billboard?')) return;
@@ -1054,10 +744,6 @@ function bindAll() {
     });
   });
 }
-try {
-  var _missing = ['castGo', 'scanRooms', 'buildBracket', 'bindAll', 'syncMatchWinner'].filter(function (f) { return typeof window[f] !== 'function'; });
-  if (_missing.length) setStatus(false, '● Admin JS broken, hard-refresh (Ctrl+Shift+R): missing ' + _missing.join(','));
-} catch (e) {}
 </script>
 </body>
 </html>
